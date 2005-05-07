@@ -136,8 +136,6 @@
 (defmethod c-useds (other) (declare (ignore other)))
 (defmethod c-useds ((c c-dependent)) (cd-useds c))
 
-
-
 (defun c-validp (c)
   (eql (c-value-state c) :valid))
 

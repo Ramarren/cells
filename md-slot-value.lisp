@@ -56,7 +56,7 @@
 (defun c-influenced-by-pulse (c); &aux (ip *data-pulse-id*))
   (unless (c-currentp c)
     (count-it :c-influenced-by-pulse)
-    (trc c "c-influenced-by-pulse> " c (c-useds c))
+    (trc nil "c-influenced-by-pulse> " c (c-useds c))
     (some (lambda (used)
             (c-value-ensure-current used)
             (when (and (c-changed used) (> (c-pulse used)(c-pulse c)))

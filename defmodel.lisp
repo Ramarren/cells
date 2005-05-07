@@ -60,7 +60,7 @@
      ; -------  defclass ---------------  (^slot-value ,model ',',slotname)
      ;
      
-     (prog1
+     (progn
        (defclass ,class ,(or directsupers '(model-object));; now we can def the class
                ,(mapcar (lambda (s)
                           (list* (car s)
@@ -123,5 +123,5 @@ the defmodel form for ~a" ',class ',class))))
                             )
                          ))
                      ))
-           slotspecs))))
-
+           slotspecs)
+       (find-class ',class))))

@@ -34,6 +34,7 @@
            (not (c-optimized-away-p c)) ;; c-streams come this way repeatedly even if optimized away
            (c-validp c)
            (not (c-synaptic c)) ;; no slot to cache invariant result, so they have to stay around)
+           (every (lambda (syn) (null (cd-useds syn))) (cd-synapses c))
            (null (cd-useds c)))
          
          (progn

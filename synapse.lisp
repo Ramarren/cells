@@ -48,12 +48,14 @@
       :synaptic t
       :rule (c-lambda-var (,c-var)
               (let ((,new-value (progn ,@body)))
-                (trc nil "generic synaptic rule sees body value" ,c-var ,new-value)
+                (trc "generic synaptic rule sees body value" ,c-var ,new-value)
                 (if ,(if fire-p `(funcall ,fire-p ,c-var ,new-value) t)
                   (progn
-                    (trc nil "Synapse fire YES!!" ,c-var)
+                    (trc "Synapse fire YES!!" ,c-var)
                     (funcall ,fire-value ,c-var ,new-value))
-                  .cache))))))
+                  (progn
+                    (trc "Synapse fire NO!! use cache" .cache)
+                    .cache)))))))
 
 ;__________________________________________________________________________________
 ;

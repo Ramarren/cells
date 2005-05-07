@@ -99,6 +99,7 @@
     (when c
       (when (c-ephemeral-p c)
         (trc nil "!!!!!!!!!!!!!! c-ephemeral-reset resetting:" c)
+        (md-slot-value-store (c-model c) (c-slot-name c) nil)
         (setf (c-value c) nil)))) ;; good q: what does (setf <ephem> 'x) return? historically nil, but...?
 
 ;----------------- change detection ---------------------------------
