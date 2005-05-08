@@ -40,16 +40,16 @@
           (reset-cells ()
             :report "Reset cells and retry getting the slot value."
             (cell-reset)
-            (go retry)))))
-
-    ;; (count-it :md-slot-value slot-name)
-    (if c
-        (prog1
-            (with-integrity (:md-slot-value)
-              (c-value-ensure-current c))
-          (when (car *c-calculators*)
-            (c-link-ex c)))
-      (values (bd-slot-value self slot-name) nil))))
+            (go retry))))))
+  
+  ;; (count-it :md-slot-value slot-name)
+  (if c
+      (prog1
+          (with-integrity (:md-slot-value)
+            (c-value-ensure-current c))
+        (when (car *c-calculators*)
+          (c-link-ex c)))
+    (values (bd-slot-value self slot-name) nil)))
   
 (defun c-value-ensure-current (c)
   (count-it :c-value-ensure-current)
