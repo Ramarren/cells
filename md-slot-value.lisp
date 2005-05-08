@@ -22,19 +22,34 @@
 
 (in-package :cells)
 
+(defparameter *ide-app-hard-to-kill* nil)
 
 (defun md-slot-value (self slot-name &aux (c (md-slot-cell self slot-name)))
-  (when *stop*
-    (princ #\.)
-    (return-from md-slot-value))
-  ;; (count-it :md-slot-value slot-name)
-  (if c
-      (prog1
-          (with-integrity (:md-slot-value)
-            (c-value-ensure-current c))
-        (when (car *c-calculators*)
-          (c-link-ex c)))
-    (values (bd-slot-value self slot-name) nil)))
+  (tagbody
+    retry
+    (when *stop*
+      (if *ide-app-hard-to-kill*
+          (progn
+            (princ #\.)
+            (return-from md-slot-value))
+        (restart-case
+            (error "Cells is stopped due to a prior error.")
+          (continue ()
+            :report "Return a slot value of nil."
+            (return-from md-slot-value nil))
+          (reset-cells ()
+            :report "Reset cells and retry getting the slot value."
+            (cell-reset)
+            (go retry)))))
+
+    ;; (count-it :md-slot-value slot-name)
+    (if c
+        (prog1
+            (with-integrity (:md-slot-value)
+              (c-value-ensure-current c))
+          (when (car *c-calculators*)
+            (c-link-ex c)))
+      (values (bd-slot-value self slot-name) nil))))
   
 (defun c-value-ensure-current (c)
   (count-it :c-value-ensure-current)
@@ -123,10 +138,8 @@
      (when (eql '.kids (c-slot-name c))
        (md-kids-change (c-model c) nil prior-value :makunbound))
 
-     (let ((causation *causation*))
-       (with-integrity (:makunbound :makunbound c)
-         (let ((*causation* causation))
-           (c-propagate c prior-value t)))))))
+     (with-integrity (:makunbound :makunbound c)
+         (c-propagate c prior-value t)))))
 
 
 (defun (setf md-slot-value) (new-value self slot-name
@@ -137,26 +150,13 @@
   (when *c-debug*
     (c-setting-debug self slot-name c new-value))
   
-  (if c
-      (when (find c *causation*)
-        (case (c-cyclicp c)
-          (:run-on (trc "cyclicity running on" c))
-          ((t)
-            (progn
-              (trc "cyclicity handled gracefully" c)
-              (c-pulse-update c :cyclicity-1)
-              (return-from md-slot-value new-value)))
-          (otherwise
-           (c-break "(setf md-slot-value) setf looping ~a ~a" c *causation*))))
-    (progn
-      (c-break "(setf md-slot-value)> cellular slot ~a of ~a cannot be setf unless initialized as inputp"
-        slot-name self)))
+  (unless c
+    (c-break "(setf md-slot-value)> cellular slot ~a of ~a cannot be setf unless initialized as inputp"
+      slot-name self))
   
-  (let ((causation *causation*))
-    (with-integrity (:setf :setf c new-value)
-      (let ((*causation* causation))
-        (trc nil "(setf md-slot-value) calling assume" c new-value)
-        (md-slot-value-assume c new-value))))
+  (with-integrity (:setf :setf c new-value)
+    (trc nil "(setf md-slot-value) calling assume" c new-value)
+    (md-slot-value-assume c new-value))
 
   new-value)
 
@@ -164,13 +164,6 @@
                     
 (defmethod md-slot-value-assume (c raw-value)
   (assert c)
-  (bif (c-pos (position c *causation*))
-    (bif (cyclic-pos (position-if 'c-cyclicp *causation* :end c-pos))
-      (progn
-        (c-pulse-update c :cyclicity-0)
-        (return-from md-slot-value-assume raw-value))
-      (c-break "md-slot-value-assume looping ~a ~a" c *causation*)))
-
   (without-c-dependency
    (let ((prior-state (c-value-state c))
          (prior-value (c-value c))

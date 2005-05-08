@@ -54,6 +54,7 @@ subclass for them?)
   `(progn
      (pushnew ',name *cell-tests*)
      (defun ,name ()
+       (cell-reset)
        ,@body)))
 
 (defmacro ct-assert (form &rest stuff)
@@ -100,6 +101,56 @@ subclass for them?)
       (ct-assert (null (m-ephem-b m)))
       (ct-assert (eql 6 (m-test-b m)))
       ))
+
+(defmodel m-cyc ()
+  ((m-cyc-a :initform (c-in nil) :initarg :m-cyc-a :accessor m-cyc-a)
+   (m-cyc-b :initform (c-in nil) :initarg :m-cyc-b :accessor m-cyc-b)))
+
+(def-c-output m-cyc-a ()
+  (print `(output m-cyc-a ,self ,new-value ,old-value))
+  (setf (m-cyc-b self) new-value))
+
+(def-c-output m-cyc-b ()
+  (print `(output m-cyc-b ,self ,new-value ,old-value))
+  (setf (m-cyc-a self) new-value))
+
+(defun m-cyc () ;;def-cell-test m-cyc
+    (let ((m (make-be 'm-cyc)))
+      (print `(start ,(m-cyc-a m)))
+      (setf (m-cyc-a m) 42)
+      (assert (= (m-cyc-a m) 42))
+      (assert (= (m-cyc-b m) 42))))
+
+#+test
+(m-cyc)
+
+(defmodel m-cyc2 ()
+  ((m-cyc2-a :initform (c-in 0) :initarg :m-cyc2-a :accessor m-cyc2-a)
+   (m-cyc2-b :initform (c? (1+ (^m-cyc2-a)))
+     :initarg :m-cyc2-b :accessor m-cyc2-b)))
+
+(def-c-output m-cyc2-a ()
+  (print `(output m-cyc2-a ,self ,new-value ,old-value))
+  #+not (when (< new-value 45)
+    (setf (m-cyc2-b self) (1+ new-value))))
+
+(def-c-output m-cyc2-b ()
+  (print `(output m-cyc2-b ,self ,new-value ,old-value))
+  (when (< new-value 45)
+    (setf (m-cyc2-a self) (1+ new-value))))
+
+(def-cell-test m-cyc2
+    (cell-reset)
+    (let ((m (make-be 'm-cyc2)))
+      (print '(start))
+      (setf (m-cyc2-a m) 42)
+      (describe m)
+      (assert (= (m-cyc2-a m) 44))
+      (assert (= (m-cyc2-b m) 45))
+      ))
+
+#+test
+(m-cyc2)
 
 (defmodel m-var ()
   ((m-var-a :initform nil :initarg :m-var-a :accessor m-var-a)

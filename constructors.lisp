@@ -62,7 +62,7 @@
     :lazy t
     :rule (c-lambda ,@body)))
 
-(defmacro c?? ((&key (tagp nil) (in nil) (trigger nil) (out t))&body body)
+(defmacro c?? ((&key (tagp nil) (in nil) (out t))&body body)
   (let ((result (copy-symbol 'result))
         (thetag (gensym)))
      `(make-c-dependent
@@ -75,7 +75,6 @@
                 (declare (ignorable self ,thetag))
                 ,(when in
                    `(trc "c??> entry" (c-slot-name c) (c-model c) (when ,tagp ,thetag)))
-                ,(when trigger `(trc "c??> trigger" .cause c))
                 (count-it :c?? (c-slot-name c) (md-name (c-model c)))
                 (let ((,result (progn ,@body)))
                   ,(when out `(trc "c?? result:" ,result (c-slot-name c) (when ,tagp ,thetag)))

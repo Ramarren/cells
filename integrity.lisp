@@ -106,7 +106,7 @@ to avoid warning that setf is being deferred"
 
 
 
-(defun finish-business (&aux task some-output setfs (setf-ct 0))
+(defun finish-business (&aux task some-output setfs)
   (declare (ignorable setfs))
   (assert (ufb-queue :user-notify))
   (assert (consp (ufb-queue :user-notify)))
@@ -141,16 +141,11 @@ to avoid warning that setf is being deferred"
     ; --- do deferred setfs ------------------------
     (setf task (fifo-pop (ufb-queue :setf)))
     (when task
-      (incf setf-ct)
       (destructuring-bind ((c new-value) . task-fn) task
         (trc nil "finbiz: deferred setf" c new-value)
-        (if (find c *causation*)
-            (break "setf looping setting ~a to ~a with history ~a" 
-              c new-value *causation*)
-          (progn
-            (push c setfs)
-            (data-pulse-next (list :finbiz c new-value))
-            (funcall task-fn))))
+        (push c setfs)
+        (data-pulse-next (list :finbiz c new-value))
+        (funcall task-fn))
       (go notify-users))
 
     ; --- do finalizations ------------------------

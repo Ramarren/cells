@@ -47,7 +47,7 @@
   (:export #:cell #:c-input #:c-in #:c-in8
     #:c-formula #:c? #:c?8 #:c?_ #:c??
     #:with-integrity #:with-deference #:without-c-dependency #:self
-    #:.cache #:c-lambda #:.cause
+    #:.cache #:c-lambda
     #:defmodel #:c-awaken #:def-c-output #:def-c-unchanged-test
     #:new-value #:old-value #:old-value-boundp #:c...
     #:make-be
