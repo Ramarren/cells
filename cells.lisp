@@ -57,7 +57,8 @@
   *stop*)
 
 (defmacro c-assert (assertion &optional places fmt$ &rest fmt-args)
-  (declare (ignore places))
+  (declare (ignorable assertion places fmt$ fmt-args))
+  `(progn) #+not 
   `(unless *stop*
      (unless ,assertion
        ,(if fmt$

@@ -22,9 +22,6 @@
 
 (in-package :cells)
 
-
-
-
 (defun c-link-ex (used &aux (user (car *c-calculators*)))
   (c-assert user)
   (assert used)
@@ -46,21 +43,53 @@
   (c-assert (not (eq :eternal-rest (md-state (c-model used)))))
   (count-it :c-link-entry)
 
-     
-  (unless (find used (c-useds user))
-    (trc nil "c-link > new user,used " user used)
-    (c-add-user used user)
-    (c-add-used user used))
+;;;  (loop for ku in (c-usesds user)
+;;;        for posn upfrom 0
+;;;        wh
 
-  (let ((mapn (- *cd-usagect*
-                (- (length (cd-useds user))
-                  (or (position used (cd-useds user)) 0)))))      
+;;;  (loop with prior-used = 0
+;;;        and found = nil
+;;;        for known-used in (c-useds user)
+;;;        when (eq known-used used)
+;;;        do (progn
+;;;             (setf found t)
+;;;             (loop-finish))
+;;;        finally (return (- *cd-usagect*
+;;;                (- (length (cd-useds user))
+;;;                  (or (position used (cd-useds user)) 0)))))
+        
+  (if (find used (c-useds user))
+      (count-it :known-used)
+    (progn
+      (trc nil "c-link > new user,used " user used)
+      (count-it :new-used)
+      (push user (c-users used))
+      (push used (cd-useds user))))
+
+  (let ((mapn (get-mapn used (cd-useds user))
+          #+not (- *cd-usagect*
+                  (- (length (cd-useds user))
+                    (or (position used (cd-useds user)) 0)))))
     ;; (trc user "c-link> setting usage bit" user mapn used)
     (if (minusp mapn)
         (c-break "whoa. more than ~d used by ~a? i see ~d"
           *cd-usagect* user (length (cd-useds user)))
       (cd-usage-set user mapn)))
   used)
+
+#+TEST
+(dotimes (n 3)
+  (trc "mapn" n (get-mapn n '(0 1 2))))
+
+(defun get-mapn (seek map)
+  (- *cd-usagect*
+    (loop with seek-pos = nil
+          for m in map
+          for pos upfrom 0
+          counting m into m-len
+          when (eql seek m)
+          do (setf seek-pos pos)
+          finally (return (- m-len seek-pos)))))
 
 ;--- c-unlink-unused --------------------------------
 
@@ -74,14 +103,10 @@
         (c-assert (< mapn *cd-usagect*))
 
         (trc nil "dropping unused" used :mapn-usage mapn usage)
+        (count-it :unlink-unused)
         (c-unlink-user used c)
         (rplaca useds nil))
   (setf (cd-useds c) (delete-if #'null (cd-useds c))))
-
-(defun c-add-user (used user)
-  (count-it :c-adduser)
-  (pushnew user (c-users used))
-  used)
 
 (defun c-user-path-exists-p (from-used to-user)
   (count-it :user-path-exists-p)
@@ -89,18 +114,6 @@
     (find-if (lambda (from-used-user)
                (c-user-path-exists-p from-used-user to-user))
       (c-users from-used))))
-
-; -----------
-
-(defun c-add-used (user used)
-  (count-it :c-used)
-  #+ucount (unless (member used (cd-useds user))
-             (incf *cd-useds*)
-             (when (zerop (mod *cd-useds* 100))
-               (trc "useds count = " *cd-useds*)))
-  (pushnew used (cd-useds user))
-  (trc nil "c-add-used>  user <= used" user used (length (cd-useds user)))
-  (cd-useds user))
 
 ; ---------------------------------------------
 

@@ -52,6 +52,7 @@
       (push (cons slot-name new-type) (get class-name :cell-types)))))
 
 (defmethod md-slot-value-store ((self model-object) slot-name new-value)
+  (trc nil "md-slot-value-store" slot-name new-value)
   (setf (slot-value self slot-name) new-value))
 
 (defun md-slot-cell-flushed (self slot-name)
@@ -73,6 +74,7 @@
 (defun (setf md-slot-cell) (new-cell self slot-name)
   (bif (entry (assoc slot-name (cells self)))
     (let ((old (cdr entry))) ;; s/b being supplanted by kid-slotter
+      (declare (ignorable old))
       (c-assert (null (c-users old)))
       (c-assert (null (cd-useds old)))
       (trc nil "replacing in model .cells" old new-cell self)

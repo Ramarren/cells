@@ -33,6 +33,12 @@
      (declare (ignorable .cache self))
      ,@body))
 
+(defmacro with-c-cache ((fn) &body body)
+  (let ((new (gensym)))
+    `(or (bwhen (,new (progn ,@body))
+           (funcall ,fn ,new .cache))
+       .cache)))
+
 ;-----------------------------------------
 
 (defmacro c? (&body body)
@@ -41,12 +47,6 @@
     :value-state :unevaluated
     :rule (c-lambda ,@body)))
 
-(defmacro c?8 (&body body)
-  `(make-c-dependent
-    :code ',body
-    :cyclicp t
-    :value-state :unevaluated
-    :rule (c-lambda ,@body)))
 
 (defmacro c?dbg (&body body)
   `(make-c-dependent
@@ -98,13 +98,6 @@
 (defmacro c-in (value)
   `(make-cell
     :inputp t
-    :value-state :valid
-    :value ,value))
-
-(defmacro c-in8 (value)
-  `(make-cell
-    :inputp t
-    :cyclicp t
     :value-state :valid
     :value ,value))
 

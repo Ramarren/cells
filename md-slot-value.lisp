@@ -139,8 +139,7 @@
        (md-kids-change (c-model c) nil prior-value :makunbound))
 
      (with-integrity (:makunbound :makunbound c)
-         (c-propagate c prior-value t)))))
-
+       (c-propagate c prior-value t)))))
 
 (defun (setf md-slot-value) (new-value self slot-name
                               &aux (c (md-slot-cell self slot-name)))
@@ -186,11 +185,12 @@
      
      ; --- data flow propagation -----------
      ;
+     (trc nil "md-sv comparing" c prior-state absorbed-value prior-value)
      (if (and (eql prior-state :valid)
            (c-no-news c absorbed-value prior-value))
          (progn
-           (trc nil "(setf md-slot-value) >no-news" prior-state (c-no-news c absorbed-value prior-value))
-           (count-it :no-news))
+           (trc nil "(setf md-slot-value) >no news" prior-state (c-no-news c absorbed-value prior-value))
+           (count-it :nonews))
        (progn
          (setf (c-changed c) t)
          (trc nil "sv-assume: flagging as changed" c absorbed-value prior-value prior-state)

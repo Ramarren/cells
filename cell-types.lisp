@@ -28,7 +28,6 @@
   value
   
   inputp ;; t for old c-variable class
-  cyclicp ;; t if OK for setf to cycle back (ending cycle)
   synaptic
   changed
   (users nil :type list)
@@ -73,7 +72,7 @@
 (defstruct (c-dependent
             (:include c-ruled)
             (:conc-name cd-))
-  (synapses nil :type list)
+  ;; chop (synapses nil :type list)
   (useds nil :type list)
   (usage (make-array *cd-usagect* :element-type 'bit
                         :initial-element 0) :type vector))
@@ -99,10 +98,10 @@
 (defmethod md-slot-value-assume :around ((c c-stream) (s streamer))
   (bif (to (streamer-to s))
     (loop for slot-value = (streamer-from s)
-          then (bIf (stepper (streamer-stepper s))
+          then (bif (stepper (streamer-stepper s))
                  (funcall stepper c)
                  (incf slot-value))
-          until (bIf (to (streamer-to s))
+          until (bif (to (streamer-to s))
                   (> slot-value to)
                   (bwhen (donep-test (streamer-donep s))
                     (funcall donep-test c)))

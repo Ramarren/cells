@@ -34,7 +34,7 @@
            (not (c-optimized-away-p c)) ;; c-streams come this way repeatedly even if optimized away
            (c-validp c)
            (not (c-synaptic c)) ;; no slot to cache invariant result, so they have to stay around)
-           (every (lambda (lbl-syn) (null (cd-useds (cdr lbl-syn)))) (cd-synapses c))
+           ;; chop (every (lambda (lbl-syn) (null (cd-useds (cdr lbl-syn)))) (cd-synapses c))
            (null (cd-useds c)))
          
          (progn
@@ -50,9 +50,8 @@
            
            (dolist (user (c-users c))
              (setf (cd-useds user) (delete c (cd-useds user)))
-             (trc nil "checking opti2" c :user> user)
-             (when (c-optimize-away?! user)
-               (trc "Wow!!! optimizing chain reaction, first:" c :then user)))
+             (c-optimize-away?! user) ;; rare but it happens when rule says (or .cache ...)
+             )
            t)
        
        (progn

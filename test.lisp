@@ -20,6 +20,35 @@
 ;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
 ;;; IN THE SOFTWARE.
 
+#| Synapse Cell Unification Notes
+
+- start by making Cells synapse-y
+
+- make sure outputs show right old and new values
+- make sure outputs fire when they should
+
+- wow: test the Cells II dictates: no output callback sees stale data, no rule
+sees stale data, etc etc
+
+- test a lot of different synapses
+
+- make sure they fire when they should, and do not when they should not
+
+- make sure they survive an evaluation by the user which does not branch to
+them (ie, does not access them)
+
+- make sure they optimize away
+
+- test with forms which access multiple other cells
+
+- look at direct alteration of a user
+
+- does SETF honor not propagating, as well as a c-ruled after re-calcing
+
+- do diff unchanged tests such as string-equal work
+
+|#
+
 #| do list
 
 -- can we lose the special handling of the .kids slot?
@@ -35,6 +64,7 @@ subclass for them?)
 (in-package :cells)
 
 (defparameter *cell-tests* nil)
+
 
 #+go
 (test-cells)
@@ -69,88 +99,22 @@ subclass for them?)
     (let ((m (make-be 'm-null :aa 42)))
       (ct-assert (= 42 (aa m)))
       (ct-assert (= 21 (decf (aa m) 21)))
-      (ct-assert (= 21 (aa m)))
       :okay-m-null))
 
-(defmodel m-ephem ()
-  ((m-ephem-a :cell :ephemeral :initform nil :initarg :m-ephem-a :accessor m-ephem-a)
-   (m-test-a :cell nil :initform nil :initarg :m-test-a :accessor m-test-a)
-   (m-ephem-b :cell :ephemeral :initform nil :initarg :m-ephem-b :accessor m-ephem-b)
-   (m-test-b :cell nil :initform nil :initarg :m-test-b :accessor m-test-b)))
+(defmodel m-solo ()
+  ((m-solo-a :initform nil :initarg :m-solo-a :accessor m-solo-a)
+   (m-solo-b :initform nil :initarg :m-solo-b :accessor m-solo-b)))
 
-(def-c-output m-ephem-a ()
-  (setf (m-test-a self) new-value))
-
-(def-c-output m-ephem-b ()
-  (setf (m-test-b self) new-value))
-
-(def-cell-test m-ephem
-    (let ((m (make-be 'm-ephem :m-ephem-a (c-in nil) :m-ephem-b (c? (* 2 (or (^m-ephem-a) 0))))))
-      (ct-assert (null (slot-value m 'm-ephem-a)))
-      (ct-assert (null (m-ephem-a m)))
-      (ct-assert (null (m-test-a m)))
-      (ct-assert (null (slot-value m 'm-ephem-b)))
-      (ct-assert (null (m-ephem-b m)))
-      (ct-assert (zerop (m-test-b m)))
-      (setf (m-ephem-a m) 3)
-      (ct-assert (null (slot-value m 'm-ephem-a)))
-      (ct-assert (null (m-ephem-a m)))
-      (ct-assert (eql 3 (m-test-a m)))
-      ;
-      (ct-assert (null (slot-value m 'm-ephem-b)))
-      (ct-assert (null (m-ephem-b m)))
-      (ct-assert (eql 6 (m-test-b m)))
-      ))
-
-(defmodel m-cyc ()
-  ((m-cyc-a :initform (c-in nil) :initarg :m-cyc-a :accessor m-cyc-a)
-   (m-cyc-b :initform (c-in nil) :initarg :m-cyc-b :accessor m-cyc-b)))
-
-(def-c-output m-cyc-a ()
-  (print `(output m-cyc-a ,self ,new-value ,old-value))
-  (setf (m-cyc-b self) new-value))
-
-(def-c-output m-cyc-b ()
-  (print `(output m-cyc-b ,self ,new-value ,old-value))
-  (setf (m-cyc-a self) new-value))
-
-(defun m-cyc () ;;def-cell-test m-cyc
-    (let ((m (make-be 'm-cyc)))
-      (print `(start ,(m-cyc-a m)))
-      (setf (m-cyc-a m) 42)
-      (assert (= (m-cyc-a m) 42))
-      (assert (= (m-cyc-b m) 42))))
-
-#+test
-(m-cyc)
-
-(defmodel m-cyc2 ()
-  ((m-cyc2-a :initform (c-in 0) :initarg :m-cyc2-a :accessor m-cyc2-a)
-   (m-cyc2-b :initform (c? (1+ (^m-cyc2-a)))
-     :initarg :m-cyc2-b :accessor m-cyc2-b)))
-
-(def-c-output m-cyc2-a ()
-  (print `(output m-cyc2-a ,self ,new-value ,old-value))
-  #+not (when (< new-value 45)
-    (setf (m-cyc2-b self) (1+ new-value))))
-
-(def-c-output m-cyc2-b ()
-  (print `(output m-cyc2-b ,self ,new-value ,old-value))
-  (when (< new-value 45)
-    (setf (m-cyc2-a self) (1+ new-value))))
-
-(def-cell-test m-cyc2
-    (cell-reset)
-    (let ((m (make-be 'm-cyc2)))
-      (print '(start))
-      (setf (m-cyc2-a m) 42)
-      (describe m)
-      (assert (= (m-cyc2-a m) 44))
-      (assert (= (m-cyc2-b m) 45))
-      ))
-
-#+test
-(m-cyc2)
+(def-cell-test m-solo
+    (let ((m (make-be 'm-solo
+               :m-solo-a (c-in 42)
+               :m-solo-b (c? (* 2 (^m-solo-a))))))
+      (ct-assert (= 42 (m-solo-a m)))
+      (ct-assert (= 84 (m-solo-b m)))
+      (decf (m-solo-a m))
+      (ct-assert (= 41 (m-solo-a m)))
+      (ct-assert (= 82 (m-solo-b m)))
+      :okay-m-null))
 
 (defmodel m-var ()
   ((m-var-a :initform nil :initarg :m-var-a :accessor m-var-a)

@@ -59,13 +59,13 @@
 (defun c-propagate-to-users (c)
   (trc nil "c-propagate-to-users > queueing" c)
   (with-integrity (:user-notify :user-notify c)
-      (assert (null *c-calculators*))
       (progn
         (trc nil "c-propagate-to-users > notifying users of" c)
         (dolist (user (c-users c))
           (bwhen (dead (catch :mdead
                          (trc nil "c-propagate-to-users> *data-pulse-id*, user, c:" *data-pulse-id* user c)
                          (when (c-user-cares user)
+                           (trc nil "c=prop updating" user :used c)
                            (c-value-ensure-current user))
                          nil))
             (when (eq dead (c-model c))
@@ -83,7 +83,7 @@
 (defun c-output-slot (c slot-name self new-value prior-value prior-value-supplied)
   (with-integrity (:c-output-slot :output c)
     (trc nil "c-output-slot > now!!" self slot-name new-value prior-value)
-    (count-it :output slot-name)
+    ;; (count-it :output slot-name)
     (c-output-slot-name slot-name
       self
       new-value

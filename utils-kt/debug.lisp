@@ -157,6 +157,8 @@
   (setf *count* nil))
 
 (defmacro count-it (&rest keys)
+  (declare (ignorable keys))
+  #+not `(progn)
   `(when *counting*
      (call-count-it ,@keys)))
 

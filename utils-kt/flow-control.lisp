@@ -67,7 +67,7 @@
      ,@body))
 
 (defun intern$ (&rest strings)
-  (intern  (apply #'concatenate 'string (mapcar #'string-upcase strings))))
+  (intern  (apply #'concatenate 'string strings)))
 
 #-allegro
 (defmacro until (test &body body)

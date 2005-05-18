@@ -28,15 +28,19 @@
 (defmacro with-synapse (((&rest closure-vars) &key trcp fire-p fire-value) &body body)
   (declare (ignorable trcp))
   (let ((lex-loc-key (gensym "synapse-id")))
-    `(let ((synapse (or (cdr (assoc ',lex-loc-key (cd-synapses
-                                                  (car *c-calculators*))))
+    `(let ((synapse (or (cdr (assoc ',lex-loc-key
+                               (cd-useds (car *c-calculators*))))
                       (cdar (push (cons ',lex-loc-key
                                    (let (,@closure-vars)
                                      (make-synaptic-ruled slot-c (,fire-p ,fire-value)
                                        ,@body)))
-                             (cd-synapses
+                             (cd-useds
                               (car *c-calculators*)))))))
-       (c-value-ensure-current synapse))))
+       (prog1
+          (with-integrity (:with-synapse)
+            (c-value-ensure-current synapse))
+        (when (car *c-calculators*)
+          (c-link-ex synapse))))))
 
 (defmacro make-synaptic-ruled (syn-user (fire-p fire-value) &body body)
   (let ((new-value (gensym))

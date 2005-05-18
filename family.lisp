@@ -67,18 +67,7 @@
    ))
 
 (defmacro the-kids (&rest kids)
-  `(packed-flat! ,@(mapcar (lambda (kid)
-                             (typecase kid
-                               (keyword  `(make-instance ',(intern$ (symbol-name kid))))
-                               (t `,kid)))
-                     kids)))
-
-(defmacro the-kids-2 (&rest kids)
-  `(packed-flat! ,@(mapcar (lambda (kid)
-                             (typecase kid
-                               (keyword  `(make-instance ',(intern$ (symbol-name kid))))
-                               (t `,kid)))
-                           kids)))
+  `(packed-flat! ,@kids))
 
 (defun kid1 (self) (car (kids self)))
 (defun last-kid (self) (last1 (kids self)))
@@ -120,6 +109,7 @@
   
   (let ((curr-parent (fm-parent self))
         (selftype (type-of self)))
+    (declare (ignorable curr-parent))
     (c-assert (or (null curr-parent)
                 (eql fm-parent curr-parent)))
     (when (plusp (adopt-ct self))

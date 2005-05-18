@@ -118,7 +118,7 @@ to avoid warning that setf is being deferred"
        (when user-q-item
          (destructuring-bind (defer-info . task) user-q-item
            (declare (ignorable defer-info))
-           (trc nil "finbiz notifying users of cell" (car defer-info))
+           (trc nil "finbiz notifying users of cell" (car defer-info) (cd-users (car defer-info)))
            (funcall task)
            (go notify-users))))
     
@@ -127,13 +127,13 @@ to avoid warning that setf is being deferred"
     next-output
     (when *stop* (return-from finish-business))
     ;--- do c-output-slot-name -----------------------
-    (setf task (cdr (fifo-pop (ufb-queue :output))))
+    (setf task (fifo-pop (ufb-queue :output)))
     
     (cond
      (task
       (setf some-output t)
-      (trc nil "finish-business outputting------------------------")
-      (funcall task)
+      (trc nil "finish-business outputting--------" (car task))
+      (funcall (cdr task))
       (go next-output))
      (some-output
       (go notify-users)))
