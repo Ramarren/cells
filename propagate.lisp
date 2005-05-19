@@ -42,7 +42,7 @@
     (when *stop*
       (princ #\.)(princ #\!)
       (return-from c-propagate))    
-    (trc nil "c-propagate> propping" c (c-value c) (length (c-users c)) c)
+    (trc nil "c-propagate> propping" c (c-value c) :user-ct (length (c-users c)) c)
     
     (when *c-debug*
       (when (> *c-prop-depth* 250)

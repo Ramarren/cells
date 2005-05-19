@@ -25,41 +25,31 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (export '(mk-synapse f-delta f-sensitivity f-plusp f-zerop fdifferent)))
 
-(defmacro with-synapse (((&rest closure-vars) &key trcp fire-p fire-value) &body body)
+(defmacro with-synapse (synapse-id (&rest closure-vars) &body body)
   (declare (ignorable trcp))
-  (let ((lex-loc-key (gensym "synapse-id")))
-    `(let ((synapse (or (cdr (assoc ',lex-loc-key
-                               (cd-useds (car *c-calculators*))))
-                      (cdar (push (cons ',lex-loc-key
-                                   (let (,@closure-vars)
-                                     (make-synaptic-ruled slot-c (,fire-p ,fire-value)
-                                       ,@body)))
-                             (cd-useds
-                              (car *c-calculators*)))))))
-       (prog1
-          (with-integrity (:with-synapse)
-            (c-value-ensure-current synapse))
-        (when (car *c-calculators*)
-          (c-link-ex synapse))))))
+  `(let* ((synapse-user (car *c-calculators*))
+          (synapse (or (bIf (ku (find ,synapse-id (cd-useds synapse-user) :key 'c-slot-name))
+                         (progn
+                           (trc "withsyn reusing known" ,synapse-id ku)
+                           ku))
+                     (let ((new-syn
+                            (let (,@closure-vars)
+                              (trc "withsyn making new syn" ,synapse-id)
+                              (make-synaptic-ruled ,synapse-id synapse-user ,@body))))
+                       (c-link-ex new-syn)
+                       new-syn))))
+     (prog1
+         (with-integrity (:with-synapse)
+           (c-value-ensure-current synapse))
+       (c-link-ex synapse))))
 
-(defmacro make-synaptic-ruled (syn-user (fire-p fire-value) &body body)
-  (let ((new-value (gensym))
-        (c-var (gensym)))
-    `(make-c-dependent
-      :model (c-model ,syn-user)
-      :slot-name (intern (conc$ "syn-" (string (c-slot-name ,syn-user))))
-      :code ',body
-      :synaptic t
-      :rule (c-lambda-var (,c-var)
-              (let ((,new-value (progn ,@body)))
-                (trc "generic synaptic rule sees body value" ,c-var ,new-value)
-                (if ,(if fire-p `(funcall ,fire-p ,c-var ,new-value) t)
-                  (progn
-                    (trc "Synapse fire YES!!" ,c-var)
-                    (funcall ,fire-value ,c-var ,new-value))
-                  (progn
-                    (trc "Synapse fire NO!! use cache" .cache)
-                    .cache)))))))
+(defmacro make-synaptic-ruled (syn-pseudo-slot syn-user &body body)
+  `(make-c-dependent
+    :model (c-model ,syn-user)
+    :slot-name ',syn-pseudo-slot
+    :code ',body
+    :synaptic t
+    :rule (c-lambda ,@body)))
 
 ;__________________________________________________________________________________
 ;

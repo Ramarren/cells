@@ -140,7 +140,7 @@
 ;----------------------------------------------------------
 
 (defun c-unlink-user (used user)
-  #+dfdbg (trc user "user unlinking from used" user used)
+  (trc nil "user unlinking from used" user used)
   (setf (c-users used) (delete user (c-users used)))
   (c-unlink-used user used))
 

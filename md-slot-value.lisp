@@ -96,19 +96,18 @@
     
            (cd-usage-clear-all c)
     
-           (let ((raw-value
-                  (progn
-                    (let ((*c-calculators* (cons c *c-calculators*)))
-                      (trc nil "c-calculate-and-set> new *c-calculators*:"
-                        *c-calculators*)
-                      (c-assert (c-model c))
-                      (funcall (cr-rule c) c)))))
+           (multiple-value-bind (raw-value propagation-code)
+               (let ((*c-calculators* (cons c *c-calculators*)))
+                 (trc nil "c-calculate-and-set> new *c-calculators*:"
+                   *c-calculators*)
+                 (c-assert (c-model c))
+                 (funcall (cr-rule c) c))
              (when (and *c-debug* (typep raw-value 'cell))
                (c-break "new value for cell ~s is itself a cell: ~s. probably nested (c? ... (c? ))"
                  c raw-value))
         
              (c-unlink-unused c)
-             (md-slot-value-assume c raw-value))))
+             (md-slot-value-assume c raw-value propagation-code))))
     (if nil ;; *dbg*
         (ukt::wtrc (0 100 "calcnset" c) (body))(body))))
 
@@ -155,13 +154,13 @@
   
   (with-integrity (:setf :setf c new-value)
     (trc nil "(setf md-slot-value) calling assume" c new-value)
-    (md-slot-value-assume c new-value))
+    (md-slot-value-assume c new-value nil))
 
   new-value)
 
 
                     
-(defmethod md-slot-value-assume (c raw-value)
+(defmethod md-slot-value-assume (c raw-value propagation-code)
   (assert c)
   (without-c-dependency
    (let ((prior-state (c-value-state c))
@@ -179,15 +178,17 @@
       (c-value-state c) :valid
       (c-state c) :awake)
 
-     (unless (typep c 'c-stream) ;; c-stream needs to run out first stream at least
-       (c-optimize-away?! c)) ;;; put optimize test here to avoid needless linking
+;;;     (unless (typep c 'c-stream) ;; c-stream needs to run out first stream at least
+;;;       (c-optimize-away?! c)) ;;; put optimize test here to avoid needless linking
      
      
      ; --- data flow propagation -----------
      ;
      (trc nil "md-sv comparing" c prior-state absorbed-value prior-value)
-     (if (and (eql prior-state :valid)
-           (c-no-news c absorbed-value prior-value))
+     (if (or (eq propagation-code :no-propagate)
+           (and (null propagation-code)
+             (eql prior-state :valid)
+             (c-no-news c absorbed-value prior-value)))
          (progn
            (trc nil "(setf md-slot-value) >no news" prior-state (c-no-news c absorbed-value prior-value))
            (count-it :nonews))

@@ -63,7 +63,7 @@ subclass for them?)
 
 (in-package :cells)
 
-(defparameter *cell-tests* nil)
+(defvar *cell-tests* nil)
 
 
 #+go
@@ -90,7 +90,7 @@ subclass for them?)
 (defmacro ct-assert (form &rest stuff)
   `(progn
      (print `(attempting ,',form))
-    (assert ,form () "Error stuff ~a" (list ,@stuff))))
+    (assert ,form () "Error with ~a >> ~a" ',form (list ,@stuff))))
 
 (defmodel m-null ()
   ((aa :initform nil :cell nil :initarg :aa :accessor aa)))

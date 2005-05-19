@@ -24,7 +24,10 @@
                  (make-instance 'module :name "family.lisp")
                  (make-instance 'module :name "fm-utilities.lisp")
                  (make-instance 'module :name "family-values.lisp")
-                 (make-instance 'module :name "test.lisp"))
+                 (make-instance 'module :name "test.lisp")
+                 (make-instance 'module :name "test-ephemeral.lisp")
+                 (make-instance 'module :name "test-cycle.lisp")
+                 (make-instance 'module :name "test-synapse.lisp"))
   :projects (list (make-instance 'project-module :name
                                  "utils-kt\\utils-kt"))
   :libraries nil

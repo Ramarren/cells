@@ -22,50 +22,72 @@
 
 (in-package :cells)
 
-(defmacro f-sensitivity ((sensitivity &optional subtypename) &body body)
-  `(with-synapse ((prior-fire-value)
-                  :fire-p (lambda (syn new-value)
-                            (declare (ignorable syn))
-                            (trc nil "f-sensitivity fire-p decides" prior-fire-value ,sensitivity)
-                            (or (xor prior-fire-value new-value)
-                              (eko (nil "fire-p decides" new-value prior-fire-value ,sensitivity)
-                                (delta-greater-or-equal
-                                 (delta-abs (delta-diff new-value prior-fire-value ,subtypename)
-                                   ,subtypename)
-                                 (delta-abs ,sensitivity ,subtypename) 
-                                 ,subtypename))))
-                  
-                  :fire-value (lambda (syn new-value)
-                                (declare (ignorable syn))
-                                (eko (nil "fsensitivity relays")
-                                  (setf prior-fire-value new-value))))
-     ,@body))
+(defmacro f-sensitivity (synapse-id (sensitivity &optional subtypename) &body body)
+  `(call-f-sensitivity ,synapse-id ,sensitivity ,subtypename (lambda () ,@body)))
 
-(defmacro f-delta ((&key sensitivity (type 'number)) &body body)
-  (let ((threshold (gensym)) (tdelta (gensym)))
-    `(with-synapse ((last-relay-basis last-bound-p delta-cum)
-                    :fire-p (lambda (syn new-basis)
-                              (declare (ignorable syn))
-                              (let ((,threshold ,sensitivity)
-                                    (,tdelta (delta-diff new-basis
-                                               (if last-bound-p
-                                                   last-relay-basis
-                                                 (delta-identity new-basis ',type))
-                                               ',type)))
-                                (trc "tdelta, threshhold" ,tdelta ,threshold)
-                                (setf delta-cum ,tdelta)
-                                (eko ("delta fire-p")
-                                  (or (null ,threshold)
-                                    (delta-exceeds ,tdelta ,threshold ',type)))))
-                    
-                    :fire-value (lambda (syn new-basis)
-                                  (declare (ignorable syn))
-                                  (trc "f-delta fire-value gets" delta-cum new-basis syn)
-                                  (trc "fdelta > new lastrelay" syn last-relay-basis)
-                                  (setf last-bound-p t)
-                                  (setf last-relay-basis new-basis)
-                                  delta-cum))
-       ,@body)))
+(defun call-f-sensitivity (synapse-id sensitivity subtypename body-fn)
+  (with-synapse synapse-id (prior-fire-value)
+    (let ((new-value (funcall body-fn)))
+      (trc nil "f-sensitivity fire-p decides" prior-fire-value sensitivity)
+      (let ((prop-code (if (or (xor prior-fire-value new-value)
+                             (eko ("sens fire-p decides" new-value prior-fire-value sensitivity)
+                                (delta-greater-or-equal
+                                 (delta-abs (delta-diff new-value prior-fire-value subtypename)
+                                   subtypename)
+                                 (delta-abs sensitivity subtypename) 
+                                 subtypename)))
+                            :propagate
+                          :no-propagate)))
+        (values (if (eq prop-code :propagate)
+                    (progn
+                      (trc "sense prior fire value now" new-value)
+                      (setf prior-fire-value new-value))
+                  new-value) prop-code)))))
+
+(defmacro f-delta (synapse-id (&key sensitivity (type 'number)) &body body)
+  `(call-f-delta ,synapse-id ,sensitivity ',type (lambda () ,@body)))
+
+(defun call-f-delta (synapse-id sensitivity type body-fn)
+  (with-synapse synapse-id (last-relay-basis last-bound-p delta-cum)
+       (let* ((new-basis (funcall body-fn))
+              (threshold sensitivity)
+              (tdelta (delta-diff new-basis
+                         (if last-bound-p
+                             last-relay-basis
+                           (delta-identity new-basis type))
+                         type)))
+         (trc nil "tdelta, threshhold" tdelta threshold)
+         (setf delta-cum tdelta)
+         (let ((propagation-code
+                (when threshold
+                  (if (delta-exceeds tdelta threshold type)
+                      (progn
+                        (setf last-bound-p t)
+                        (setf last-relay-basis new-basis)
+                        :propagate)
+                    :no-propagate))))
+           (trc nil "f-delta returns values" delta-cum propagation-code)
+           (values delta-cum propagation-code)))))
+
+(defmacro f-plusp (key &rest body)
+  `(with-synapse ,key (prior-fire-value) 
+     (let ((new-basis (progn ,@body)))
+       (values new-basis (if (xor prior-fire-value (plusp new-basis))
+                             (progn
+                               (setf prior-fire-value (plusp new-basis))
+                               :propagate)
+                           :no-propagate)))))
+
+(defmacro f-zerop (key &rest body)
+  `(with-synapse ,key (prior-fire-value) 
+     (let ((new-basis (progn ,@body)))
+       (values new-basis (if (xor prior-fire-value (zerop new-basis))
+                             (progn
+                               (setf prior-fire-value (zerop new-basis))
+                               :propagate)
+                           :no-propagate)))))
+
+
 
 ;;;(defun f-delta-list (&key (test #'true))
 ;;;  (with-synapse (prior-list)
@@ -101,32 +123,6 @@
 ;;;                                    (and (not bingobound) ;; don't bother if fire? already looked
 ;;;                                         (find-if finder-fn new-list))))))
                                 
-;;;(defun f-plusp ()
-;;;  (mk-synapse (prior-fire-value)
-;;;    :fire-p (lambda (syn new-basis)
-;;;              (declare (ignorable syn))
-;;;              (eko (nil "fPlusp fire-p decides" prior-fire-value sensitivity)
-;;;                (xor prior-fire-value (plusp new-basis))))
-;;;    
-;;;    :fire-value (lambda (syn new-basis)
-;;;                   (declare (ignorable syn))
-;;;                   (eko (nil "fPlusp relays")
-;;;                     (setf prior-fire-value (plusp new-basis))) ;; no modulation of value, but do record for next time
-;;;                   )))
-
-;;;(defun f-zerop ()
-;;;  (mk-synapse (prior-fire-value)
-;;;    :fire-p (lambda (syn new-basis)
-;;;              (declare (ignorable syn))
-;;;              (eko (nil "fZerop fire-p decides")
-;;;                (xor prior-fire-value (zerop new-basis))))
-;;;    
-;;;    :fire-value (lambda (syn new-basis)
-;;;                   (declare (ignorable syn))
-;;;                   (eko (nil "fZerop relays")
-;;;                     (setf prior-fire-value (zerop new-basis)))
-;;;                   )))
-
 ;;;(defun fdifferent ()
 ;;;  (mk-synapse (prior-object)
 ;;;    :fire-p (lambda (syn new-object)
