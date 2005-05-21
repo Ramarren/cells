@@ -123,26 +123,25 @@
 
 (defun fm-traverse (family applied-fn &key skip-node skip-tree global-search (opaque nil))
    ;;(when *fmdbg* (trc "fm-traverse" family skipTree skipNode global-search))
+  (without-c-dependency
    (when family
-      (labels ((tv-family (fm)
-                 (when (and (typep fm 'model-object)
-                            (not (eql fm skip-tree)))
-                    (let ((outcome (and (not (eql skip-node fm)) ;; skipnode new 990310 kt
-                                        (funcall applied-fn fm))))
-                       (unless (and outcome opaque)
-                          (dolist (kid (kids fm))
-                             (tv-family kid))
-                          ;(tv-family (mdValue fm))
-                          )))))
-        (tv-family family)
-        (when global-search
-           (fm-traverse (fm-parent family) applied-fn 
-             :global-search t
-             :skip-tree family
-             :skip-node skip-node)
-           )
-        )
-      nil))              
+     (labels ((tv-family (fm)
+                (when (and (typep fm 'model-object)
+                        (not (eql fm skip-tree)))
+                  (let ((outcome (and (not (eql skip-node fm)) ;; skipnode new 990310 kt
+                                   (funcall applied-fn fm))))
+                    (unless (and outcome opaque)
+                      (dolist (kid (kids fm))
+                        (tv-family kid))
+                      ;(tv-family (mdValue fm))
+                      )))))
+       (tv-family family)
+       (when global-search
+         (fm-traverse (fm-parent family) applied-fn 
+           :global-search t
+           :skip-tree family
+           :skip-node skip-node))))
+   nil))
 
 (defmethod sub-nodes (other)
   (declare (ignore other)))
@@ -423,10 +422,11 @@
     :global-search global-search))
 
 (defmacro fm^ (md-name &key (skip-tree 'self))
-  `(fm-find-one (fm-parent self) ,md-name
-     :skip-tree ,skip-tree
-     :must-find t
-     :global-search t))
+  `(without-c-dependency
+    (fm-find-one (fm-parent self) ,md-name
+      :skip-tree ,skip-tree
+      :must-find t
+      :global-search t)))
 
 (defmacro fm? (md-name &optional (starting 'self) (global-search t))
     `(fm-find-one ,starting ,(if (consp md-name)

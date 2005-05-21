@@ -38,6 +38,10 @@
   debug
   md-info)
 
+(defmethod trcp ((c cell))
+  nil #+not (and (typep (c-model c) 'index)
+              (eql 'state (c-slot-name c))))
+
 (defun c-unboundp (c)
   (eql :unbound (c-value-state c)))
 

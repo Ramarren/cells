@@ -4,7 +4,7 @@
 
 (defpackage :CELLS)
 
-(define-project :name :gplisper-exchange
+(define-project :name :dow-jones
   :modules (list (make-instance 'module :name "stock-exchange.lisp"))
   :projects (list (make-instance 'project-module :name
                                  "..\\..\\cells"))

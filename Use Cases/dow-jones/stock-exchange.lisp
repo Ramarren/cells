@@ -42,7 +42,6 @@ For the index, we want to track the minute of the last trade affecting the index
 weighted index value, and the last move of each index entry.
 
 |#
-
 (defparameter *trc-trades* t)
 
 #+test
@@ -68,7 +67,7 @@ weighted index value, and the last move of each index entry.
     
     (with-open-file (t-data (make-pathname
                              :directory '(:absolute "0dev" "cells" "Use Cases" "dow-jones")
-                             :name "stock-exchange" :type "lisp"))
+                             :name "stock-exchange-50" :type "lisp"))
       (with-metrics (nil t "run-trading-day")
         (loop with in-data = nil
             do (if (not in-data)
@@ -127,6 +126,7 @@ weighted index value, and the last move of each index entry.
 
 (def-c-output trade ((self trading-day) trade) ;; FN def-c-output
   (when trade ;; FN trade setf optimization
+    (count-it :raw-trades)
     (push trade (trades (ensure-ticker self (trade-ticker-sym trade))))))
 
 (defun trading-day-ticker (day sym)
@@ -146,29 +146,39 @@ weighted index value, and the last move of each index entry.
 (defmodel ticker (model)
   ((ticker-sym :cell nil :initarg :ticker-sym :reader ticker-sym)
    (trades :initarg :trades :accessor trades :initform (c-in nil))
-   (last-move :reader last-move
-     :initform (c? (bwhen (penult-trade (second (^trades)))
-                     (let ((last (trade-price (first (^trades))))
-                           (penult (trade-price penult-trade)))
-                       (cond
-                        ((< last penult) -1)
-                        ((= last penult) 0)
-                        (t 1)))))
-     :documentation "Price up, down, or unchanged as 1, -1, or zero")))
+   (last-trade-info :reader last-trade-info
+     :initform (c? (bwhen (trade (first (^trades)))
+                     (bif (penult-trade (second (^trades)))
+                       (let* ((last (trade-price trade))
+                              (penult (trade-price penult-trade))
+                              (move (cond
+                                     ((< last penult) -1)
+                                     ((= last penult) 0)
+                                     (t 1))))
+                         (values
+                          (cons penult-trade move)
+                          (if (zerop move) :no-propagate :propagate)))
+                       (values (cons trade 0) :propagate)))))))
+
+(defun last-trade (ticker)
+  (car (last-trade-info ticker)))
+(defun last-move (ticker)
+  (cdr (last-trade-info ticker)))
 
 (defun ticker-price (ticker)
-  (bwhen (trade (car (trades ticker)))
+  (bwhen (trade (last-trade ticker))
     (trade-price trade)))
 
 (defun ticker-trade-minute (ticker)
-  (bwhen (trade (car (trades ticker)))
+  (bwhen (trade (last-trade ticker))
     (trade-minute trade)))
 
 (def-c-output trades ((self ticker)) ;; FN trades def-c-output
     (when *trc-trades*
       (loop for trade in (set-difference new-value old-value)
             do (format t "~&at ~a min, ~a at ~a, change ~a"
-                 (trade-minute trade) (ticker-sym self) (trade-price trade) (or (^last-move) "")))))
+                 (trade-minute trade) (ticker-sym self) (trade-price trade)
+                 (or (last-move self) "")))))
 
 ;; --- index ---------------------------------------------------
 
@@ -183,7 +193,7 @@ weighted index value, and the last move of each index entry.
 
    (state :reader state
      :initform (let ((moves (make-hash-table :size 50))) 
-                 (c-formula (:lazy t) ;; do not re-compute on every trade (see FN lazy)
+                 (c-formula (:lazy nil) ;; do not re-compute on every trade (see FN lazy)
                    (count-it :index-state-calc)
                    (clrhash moves) ;; Re-use OK since fresh cons triggers dataflow (FN state rule)
                    (let ((minutes (loop for (ticker . nil) in (ticker-weights self)
@@ -198,6 +208,7 @@ weighted index value, and the last move of each index entry.
    ;;
    ;; allows dependency on just value, which will not change on unchanged trades (FN value cell)
    ))
+
 
 (defun index-minutes (index) (first (state index)))
 (defun index-moves (index) (third (state index)))

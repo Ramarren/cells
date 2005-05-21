@@ -184,7 +184,7 @@
      
      ; --- data flow propagation -----------
      ;
-     (trc nil "md-sv comparing" c prior-state absorbed-value prior-value)
+     (trc nil "md-sv comparing no-prop" c prior-state absorbed-value prior-value)
      (if (or (eq propagation-code :no-propagate)
            (and (null propagation-code)
              (eql prior-state :valid)
@@ -194,7 +194,7 @@
            (count-it :nonews))
        (progn
          (setf (c-changed c) t)
-         (trc nil "sv-assume: flagging as changed" c absorbed-value prior-value prior-state)
+         (trc nil "sv-assume: propagating changed as changed" c) ;; absorbed-value prior-value prior-state)
          (when (eql '.kids (c-slot-name c))
            (md-kids-change (c-model c) absorbed-value prior-value :mdslotvalueassume))
 
