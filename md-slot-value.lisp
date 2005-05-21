@@ -58,7 +58,13 @@
    ((c-inputp c))
    ((c-currentp c))
    ((or (not (c-validp c)) 
-      (c-influenced-by-pulse c))
+      (some (lambda (used)
+              (c-value-ensure-current used)
+              (when (and (c-changed used) (> (c-pulse used)(c-pulse c)))
+                #+chya (trc nil "used changed" used :asker c
+                         :inpulse ip :pulse *data-pulse-id*)
+                t))
+        (cd-useds c)))
     (c-calculate-and-set c))
    (t (c-pulse-update c :valid-uninfluenced)))
 
@@ -67,18 +73,7 @@
     (error 'unbound-cell :instance (c-model c) :name (c-slot-name c)))
 
   (c-value c))
-
-(defun c-influenced-by-pulse (c); &aux (ip *data-pulse-id*))
-  (unless (c-currentp c)
-    (count-it :c-influenced-by-pulse)
-    (trc nil "c-influenced-by-pulse> " c (c-useds c))
-    (some (lambda (used)
-            (c-value-ensure-current used)
-            (when (and (c-changed used) (> (c-pulse used)(c-pulse c)))
-              #+chya (trc nil "used changed" used :asker c
-                :inpulse ip :pulse *data-pulse-id*)
-              t))
-      (c-useds c))))
+ ;; 2005-05-21 was c-useds, but I think these are c-dependents
 
 (defun c-calculate-and-set (c)
   (flet ((body ()

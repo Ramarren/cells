@@ -22,11 +22,14 @@
 
 (in-package :cells)
 
+(eval-when (compile load)
+ (proclaim '(optimize (speed 3) (safety 0) (space 0) (debug 0))))
+
+
 (defun c-link-ex (used &aux (user (car *c-calculators*)))
   (c-assert user)
-  (assert used)
-  (when (or (c-optimized-away-p used)
-          (not (typep used 'cell)))
+  (c-assert used)
+  (when (c-optimized-away-p used) ;; 2005-05-21 removed slow type check that used is cell
     (return-from c-link-ex nil))
 
 
@@ -43,51 +46,55 @@
   (c-assert (not (eq :eternal-rest (md-state (c-model used)))))
   (count-it :c-link-entry)
 
-;;;  (loop for ku in (c-usesds user)
-;;;        for posn upfrom 0
-;;;        wh
+  (multiple-value-bind (used-pos useds-len)
+      (loop with u-pos
+          for known in (cd-useds user)
+          counting known into length
+            ;; do (print (list :data known length))
+          when (eq used known)
+          do
+            (count-it :known-used)
+            (setf u-pos (1- length))
+          finally (return (values u-pos length)))
 
-;;;  (loop with prior-used = 0
-;;;        and found = nil
-;;;        for known-used in (c-useds user)
-;;;        when (eq known-used used)
-;;;        do (progn
-;;;             (setf found t)
-;;;             (loop-finish))
-;;;        finally (return (- *cd-usagect*
-;;;                (- (length (cd-useds user))
-;;;                  (or (position used (cd-useds user)) 0)))))
-        
-  (if (find used (c-useds user))
-      (count-it :known-used)
-    (progn
+    (when (null used-pos)
       (trc nil "c-link > new user,used " user used)
       (count-it :new-used)
+      (incf useds-len)
+      (setf used-pos 0)
       (push user (c-users used))
-      (push used (cd-useds user))))
+      (push used (cd-useds user)))
 
-  (let ((mapn (get-mapn used (cd-useds user))
-          #+not (- *cd-usagect*
-                  (- (length (cd-useds user))
-                    (or (position used (cd-useds user)) 0)))))
-    ;; (trc user "c-link> setting usage bit" user mapn used)
-    (if (minusp mapn)
-        (c-break "whoa. more than ~d used by ~a? i see ~d"
-          *cd-usagect* user (length (cd-useds user)))
-      (cd-usage-set user mapn)))
+    (let ((mapn (- *cd-usagect*
+                  (- useds-len used-pos))))
+      ;; (trc user "c-link> setting usage bit" user mapn used)
+      (if (minusp mapn)
+          (c-break "whoa. more than ~d used by ~a? i see ~d"
+            *cd-usagect* user (length (cd-useds user)))
+        (cd-usage-set user mapn))))
   used)
-
+#+test
+(dotimes (used 3)
+  (print (multiple-value-bind (p l)
+             (loop with u-pos
+                 for known in '(0 2)
+                 counting known into length
+                   ;; do (print (list :data known length))
+                 when (eql used known) do (setf u-pos (1- length))
+                 finally (return (values u-pos length)))
+           (list p l))))
 #+TEST
 (dotimes (n 3)
   (trc "mapn" n (get-mapn n '(0 1 2))))
 
 (defun get-mapn (seek map)
+  (declare (fixnum *cd-usagect*))
   (- *cd-usagect*
     (loop with seek-pos = nil
           for m in map
-          for pos upfrom 0
-          counting m into m-len
-          when (eql seek m)
+          for pos fixnum upfrom 0
+          counting m into m-len fixnum
+          when (eq seek m)
           do (setf seek-pos pos)
           finally (return (- m-len seek-pos)))))
 
