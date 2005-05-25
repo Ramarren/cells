@@ -40,7 +40,7 @@
                           :no-propagate)))
         (values (if (eq prop-code :propagate)
                     (progn
-                      (trc "sense prior fire value now" new-value)
+                      (trc nil "sense prior fire value now" new-value)
                       (setf prior-fire-value new-value))
                   new-value) prop-code)))))
 

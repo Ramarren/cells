@@ -65,7 +65,7 @@
           (bwhen (dead (catch :mdead
                          (trc nil "c-propagate-to-users> *data-pulse-id*, user, c:" *data-pulse-id* user c)
                          (when (c-user-cares user)
-                           (trc user "propagating to user is (used,user):" c user)
+                           (trc nil "propagating to user is (used,user):" c user)
                            (c-value-ensure-current user))
                          nil))
             (when (eq dead (c-model c))

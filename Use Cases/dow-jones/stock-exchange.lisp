@@ -55,20 +55,21 @@ weighted index value, and the last move of each index entry.
     ;; - always call CELLS-RESET when starting a test run
     ;; - (make-be ...) -> (to-be (make-instance ...))
     ;; - TO-BE jumpstarts a Cells instance into the flow. (FN to-be)
-    
-    #+not (with-open-file (t-data (make-pathname
+    #+not
+    (with-open-file (t-data (make-pathname
                                    :directory '(:absolute "0dev" "cells" "Use Cases" "dow-jones")
-                                   :name "stock-exchange" :type "lisp"))
-            (with-metrics (nil nil "run-trading-day")
+                                   :name "trades0504" :type "txt"))
+            (with-metrics (nil t "run-trading-day")
               (loop for message = (read t-data nil :eof)
                   until (eq message :eof)
-                  do (setf (message t-day) message)))
+                  do (count-it :dow-message)
+                    (setf (message t-day) message)))
             )
     
     (with-open-file (t-data (make-pathname
                              :directory '(:absolute "0dev" "cells" "Use Cases" "dow-jones")
                              :name "stock-exchange" :type "lisp"))
-      (with-metrics (nil nil "run-trading-day")
+      (with-metrics (nil t "run-trading-day")
         (loop with in-data = nil
             do (if (not in-data)
                    (setf in-data (msg-start (read-line t-data nil :eof)))

@@ -27,26 +27,29 @@
 
 (defmacro with-synapse (synapse-id (&rest closure-vars) &body body)
   (declare (ignorable trcp))
-  `(let* ((synapse-user (car *c-calculators*))
-          (synapse (or (bIf (ku (find ,synapse-id (cd-useds synapse-user) :key 'c-slot-name))
-                         (progn
-                           (trc "withsyn reusing known" ,synapse-id ku)
-                           ku))
-                     (let ((new-syn
-                            (let (,@closure-vars)
-                              (trc "withsyn making new syn" ,synapse-id)
-                              (make-synaptic-ruled ,synapse-id synapse-user ,@body))))
-                       (c-link-ex new-syn)
-                       new-syn))))
-     (prog1
-         (with-integrity (:with-synapse)
-           (c-value-ensure-current synapse))
-       (c-link-ex synapse))))
+  (let ((syn-id (gensym)))
+    `(let* ((,syn-id (eko ("!!! syn-id =") ,synapse-id))
+            (synapse-user (car *c-calculators*))
+            (synapse (or (bIf (ku (find ,syn-id (cd-useds synapse-user) :key 'c-slot-name))
+                           (progn
+                             (trc "withsyn reusing known" ,syn-id ku)
+                             ku))
+                       (let ((new-syn
+                              (let (,@closure-vars)
+                                (trc "withsyn making new syn" ,syn-id
+                                  :known (mapcar 'c-slot-name (cd-useds synapse-user)))
+                                (make-synaptic-ruled ,syn-id synapse-user ,@body))))
+                         (c-link-ex new-syn)
+                         new-syn))))
+       (prog1
+           (with-integrity (:with-synapse)
+             (c-value-ensure-current synapse))
+         (c-link-ex synapse)))))
 
 (defmacro make-synaptic-ruled (syn-pseudo-slot syn-user &body body)
   `(make-c-dependent
     :model (c-model ,syn-user)
-    :slot-name ',syn-pseudo-slot
+    :slot-name ,syn-pseudo-slot
     :code ',body
     :synaptic t
     :rule (c-lambda ,@body)))

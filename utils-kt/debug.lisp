@@ -55,7 +55,7 @@
                   (assert (stringp ,(car os)))
                   (call-trc t ,@os)) ;;,(car os) ,tgt ,@(cdr os)))
               (progn
-                ;;(break "trcfailed")
+                (break "trcfailed")
                 (count-it :trcfailed)))
             (count-it :tgtnileval)))))))
 
