@@ -69,7 +69,7 @@ weighted index value, and the last move of each index entry.
     (with-open-file (t-data (make-pathname
                              :directory '(:absolute "0dev" "cells" "Use Cases" "dow-jones")
                              :name "stock-exchange" :type "lisp"))
-      (with-metrics (nil t "run-trading-day")
+      (with-metrics (nil nil "run-trading-day")
         (loop with in-data = nil
             do (if (not in-data)
                    (setf in-data (msg-start (read-line t-data nil :eof)))

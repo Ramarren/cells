@@ -132,8 +132,10 @@
      (when (eql '.kids (c-slot-name c))
        (md-kids-change (c-model c) nil prior-value :makunbound))
 
-     (with-integrity (:makunbound :makunbound c)
-       (c-propagate c prior-value t)))))
+     (let ((causation *causation*))
+       (with-integrity (:makunbound :makunbound c)
+         (let ((*causation* causation))
+           (c-propagate c prior-value t)))))))
 
 (defun (setf md-slot-value) (new-value self slot-name
                               &aux (c (md-slot-cell self slot-name)))
@@ -147,11 +149,13 @@
     (c-break "(setf md-slot-value)> cellular slot ~a of ~a cannot be setf unless initialized as inputp"
       slot-name self))
   
-  (with-integrity (:setf :setf c new-value)
-    (trc nil "(setf md-slot-value) calling assume" c new-value)
-    (md-slot-value-assume c new-value nil))
+  (let ((causation *causation*))
+    (with-integrity (:setf :setf c new-value)
+      (let ((*causation* causation))
+        (trc nil "(setf md-slot-value) calling assume" c new-value)
+        (md-slot-value-assume c new-value nil))
 
-  new-value)
+      new-value)))
 
 
                     

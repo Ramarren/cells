@@ -27,18 +27,20 @@
 
 (defmacro with-synapse (synapse-id (&rest closure-vars) &body body)
   (declare (ignorable trcp))
-  (let ((syn-id (gensym)))
+  (let ((syn-id (gensym))(syn-user (gensym)))
     `(let* ((,syn-id (eko ("!!! syn-id =") ,synapse-id))
-            (synapse-user (car *c-calculators*))
-            (synapse (or (bIf (ku (find ,syn-id (cd-useds synapse-user) :key 'c-slot-name))
-                           (progn
-                             (trc "withsyn reusing known" ,syn-id ku)
-                             ku))
+            (,syn-user (car *c-calculators*))
+            (synapse (or (find ,syn-id (cd-useds ,syn-user) :key 'c-slot-name)
                        (let ((new-syn
                               (let (,@closure-vars)
                                 (trc "withsyn making new syn" ,syn-id
-                                  :known (mapcar 'c-slot-name (cd-useds synapse-user)))
-                                (make-synaptic-ruled ,syn-id synapse-user ,@body))))
+                                  :known (mapcar 'c-slot-name (cd-useds ,syn-user)))
+                                (make-c-dependent
+                                 :model (c-model ,syn-user)
+                                 :slot-name ,syn-id
+                                 :code ',body
+                                 :synaptic t
+                                 :rule (c-lambda ,@body)))))
                          (c-link-ex new-syn)
                          new-syn))))
        (prog1

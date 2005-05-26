@@ -30,6 +30,7 @@
 
 (define-constant *c-optimizep* t)
 (defparameter *c-prop-depth* 0)
+(defparameter *causation* nil)
 
 (defparameter *data-pulse-id* 0)
 (defparameter *data-pulses* nil)
@@ -88,6 +89,9 @@
 
 (defmacro without-c-dependency (&body body)
   `(let (*c-calculators*) ,@body))
+
+(define-symbol-macro .cause
+    (car *causation*))
 
 (define-condition unbound-cell (unbound-slot) ())
 

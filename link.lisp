@@ -62,7 +62,7 @@
       (count-it :new-used)
       (incf useds-len)
       (setf used-pos 0)
-      (push user (c-users used))
+      ;; 050525kt - wait till eval completes (push user (c-users used))
       (push used (cd-useds user)))
 
     (let ((mapn (- *cd-usagect*
@@ -104,7 +104,7 @@
   (loop for useds on (cd-useds c)
         for used = (car useds)
         for mapn upfrom (- *cd-usagect* (length (cd-useds c)))
-        when (zerop (sbit usage mapn))
+        if (zerop (sbit usage mapn))
         do
         (c-assert (not (minusp mapn)))
         (c-assert (< mapn *cd-usagect*))
@@ -112,7 +112,9 @@
         (trc nil "dropping unused" used :mapn-usage mapn usage)
         (count-it :unlink-unused)
         (c-unlink-user used c)
-        (rplaca useds nil))
+        (rplaca useds nil)
+        else do (pushnew c (c-users used)) ;; 050525 deferred from c-link-ex
+        )
   (setf (cd-useds c) (delete-if #'null (cd-useds c))))
 
 (defun c-user-path-exists-p (from-used to-user)

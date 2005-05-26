@@ -58,8 +58,10 @@
 
 (defun c-propagate-to-users (c)
   (trc nil "c-propagate-to-users > queueing" c)
-  (with-integrity (:user-notify :user-notify c)
-      (progn
+  (let ((causation (cons c *causation*))) ;; in case deferred
+    (with-integrity (:user-notify :user-notify c)
+      (assert (null *c-calculators*))
+      (let ((*causation* causation))
         (trc nil "c-propagate-to-users > notifying users of" c)
         (dolist (user (c-users c))
           (bwhen (dead (catch :mdead
@@ -71,7 +73,7 @@
             (when (eq dead (c-model c))
               (trc nil "!!! aborting further user prop of dead" dead)
               (return-from c-propagate-to-users))
-            (trc nil "!!! continuing user prop following: user => dead" user dead))))))
+            (trc nil "!!! continuing user prop following: user => dead" user dead)))))))
 
 (defun c-user-cares (c)
   (not (or (c-currentp c)
@@ -81,15 +83,17 @@
   (getf (symbol-plist slot-name) :output-defined))
 
 (defun c-output-slot (c slot-name self new-value prior-value prior-value-supplied)
-  (with-integrity (:c-output-slot :output c)
-    (trc nil "c-output-slot > now!!" self slot-name new-value prior-value)
-    ;; (count-it :output slot-name)
-    (c-output-slot-name slot-name
-      self
-      new-value
-      prior-value
-      prior-value-supplied)
-    (c-ephemeral-reset c)))
+  (let ((causation *causation*)) ;; in case deferred
+    (with-integrity (:c-output-slot :output c)
+      (let ((*causation* causation))
+        (trc nil "c-output-slot > now!!" self slot-name new-value prior-value)
+        ;; (count-it :output slot-name)
+        (c-output-slot-name slot-name
+          self
+          new-value
+          prior-value
+          prior-value-supplied)
+        (c-ephemeral-reset c)))))
 
 (defun c-ephemeral-reset (c)
     (when c
