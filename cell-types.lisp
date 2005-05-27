@@ -78,8 +78,9 @@
             (:conc-name cd-))
   ;; chop (synapses nil :type list)
   (useds nil :type list)
-  (usage (make-array *cd-usagect* :element-type 'bit
-                        :initial-element 0) :type vector))
+  (usage (make-array 16 :element-type 'bit
+                        :initial-element 0) :type simple-bit-vector))
+
 
 (defstruct (c-stream
             (:include c-dependent)

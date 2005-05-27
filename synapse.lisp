@@ -48,13 +48,6 @@
              (c-value-ensure-current synapse))
          (c-link-ex synapse)))))
 
-(defmacro make-synaptic-ruled (syn-pseudo-slot syn-user &body body)
-  `(make-c-dependent
-    :model (c-model ,syn-user)
-    :slot-name ,syn-pseudo-slot
-    :code ',body
-    :synaptic t
-    :rule (c-lambda ,@body)))
 
 ;__________________________________________________________________________________
 ;

@@ -22,6 +22,7 @@
 
 (in-package :cells)
 
+#+not
 (eval-when (compile load)
  (proclaim '(optimize (speed 3) (safety 0) (space 0) (debug 0))))
 
@@ -54,68 +55,47 @@
           when (eq used known)
           do
             (count-it :known-used)
-            (setf u-pos (1- length))
-          finally (return (values u-pos length)))
+            (setf u-pos length)
+          finally (return (values (when u-pos (- length u-pos)) length)))
 
     (when (null used-pos)
       (trc nil "c-link > new user,used " user used)
       (count-it :new-used)
-      (incf useds-len)
-      (setf used-pos 0)
+      (setf used-pos useds-len)
       ;; 050525kt - wait till eval completes (push user (c-users used))
       (push used (cd-useds user)))
 
-    (let ((mapn (- *cd-usagect*
-                  (- useds-len used-pos))))
-      ;; (trc user "c-link> setting usage bit" user mapn used)
-      (if (minusp mapn)
-          (c-break "whoa. more than ~d used by ~a? i see ~d"
-            *cd-usagect* user (length (cd-useds user)))
-        (cd-usage-set user mapn))))
+    (handler-case
+        (setf (sbit (cd-usage user) used-pos) 1)
+      (type-error (error)
+        (declare (ignorable error))
+        (setf (cd-usage user)
+          (adjust-array (cd-usage user) (+ used-pos 16) :initial-element 0))
+        (setf (sbit (cd-usage user) used-pos) 1))))
   used)
-#+test
-(dotimes (used 3)
-  (print (multiple-value-bind (p l)
-             (loop with u-pos
-                 for known in '(0 2)
-                 counting known into length
-                   ;; do (print (list :data known length))
-                 when (eql used known) do (setf u-pos (1- length))
-                 finally (return (values u-pos length)))
-           (list p l))))
-#+TEST
-(dotimes (n 3)
-  (trc "mapn" n (get-mapn n '(0 1 2))))
 
-(defun get-mapn (seek map)
-  (declare (fixnum *cd-usagect*))
-  (- *cd-usagect*
-    (loop with seek-pos = nil
-          for m in map
-          for pos fixnum upfrom 0
-          counting m into m-len fixnum
-          when (eq seek m)
-          do (setf seek-pos pos)
-          finally (return (- m-len seek-pos)))))
+
 
 ;--- c-unlink-unused --------------------------------
 
 (defun c-unlink-unused (c &aux (usage (cd-usage c)))
-  (loop for useds on (cd-useds c)
-        for used = (car useds)
-        for mapn upfrom (- *cd-usagect* (length (cd-useds c)))
-        if (zerop (sbit usage mapn))
-        do
-        (c-assert (not (minusp mapn)))
-        (c-assert (< mapn *cd-usagect*))
-
-        (trc nil "dropping unused" used :mapn-usage mapn usage)
-        (count-it :unlink-unused)
-        (c-unlink-user used c)
-        (rplaca useds nil)
-        else do (pushnew c (c-users used)) ;; 050525 deferred from c-link-ex
-        )
-  (setf (cd-useds c) (delete-if #'null (cd-useds c))))
+  (when (cd-useds c)
+    (let (rev-pos)
+      (labels ((nail-unused (useds)
+                 (flet ((handle-used (rpos)
+                          (if (zerop (sbit usage rpos))
+                              (progn
+                                (count-it :unlink-unused)
+                                (c-unlink-user (car useds) c)
+                                (rplaca useds nil))
+                            (pushnew c (c-users (car useds))))))
+                   (if (cdr useds)
+                       (progn
+                         (nail-unused (cdr useds))
+                         (handle-used (incf rev-pos)))
+                     (handle-used (setf rev-pos 0))))))
+        (nail-unused (cd-useds c))
+        (setf (cd-useds c) (delete-if #'null (cd-useds c)))))))
 
 (defun c-user-path-exists-p (from-used to-user)
   (count-it :user-path-exists-p)
@@ -126,13 +106,12 @@
 
 ; ---------------------------------------------
 
-(defun cd-usage-set (c mapn)
-  (setf (sbit (cd-usage c) mapn) 1))
 
 (defun cd-usage-clear-all (c)
-  (bit-and (cd-usage c)
-           #*0000000000000000000000000000000000000000000000000000000000000000
-           t))
+  (loop with a = (cd-usage c)
+        for bitn below (array-dimension a 0)
+        do (setf (sbit a bitn) 0)))
+
 
 ;--- unlink from used ----------------------
                      
