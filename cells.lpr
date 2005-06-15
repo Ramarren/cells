@@ -27,7 +27,8 @@
                  (make-instance 'module :name "test.lisp")
                  (make-instance 'module :name "test-ephemeral.lisp")
                  (make-instance 'module :name "test-cycle.lisp")
-                 (make-instance 'module :name "test-synapse.lisp"))
+                 (make-instance 'module :name "test-synapse.lisp")
+                 (make-instance 'module :name "ipcells.lisp"))
   :projects (list (make-instance 'project-module :name
                                  "utils-kt\\utils-kt"))
   :libraries nil

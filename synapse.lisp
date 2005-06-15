@@ -28,13 +28,11 @@
 (defmacro with-synapse (synapse-id (&rest closure-vars) &body body)
   (declare (ignorable trcp))
   (let ((syn-id (gensym))(syn-user (gensym)))
-    `(let* ((,syn-id (eko ("!!! syn-id =") ,synapse-id))
+    `(let* ((,syn-id ,synapse-id)
             (,syn-user (car *c-calculators*))
             (synapse (or (find ,syn-id (cd-useds ,syn-user) :key 'c-slot-name)
                        (let ((new-syn
                               (let (,@closure-vars)
-                                (trc "withsyn making new syn" ,syn-id
-                                  :known (mapcar 'c-slot-name (cd-useds ,syn-user)))
                                 (make-c-dependent
                                  :model (c-model ,syn-user)
                                  :slot-name ,syn-id
