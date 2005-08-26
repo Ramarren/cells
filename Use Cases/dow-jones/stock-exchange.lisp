@@ -149,7 +149,8 @@ weighted index value, and the last move of each index entry.
    (trades :initarg :trades :accessor trades :initform (c-in nil))
    (last-trade-info :reader last-trade-info
      :initform (c? (bwhen (trade (first (^trades)))
-                     (bif (penult-trade (second (^trades)))
+                     (bif (penult-trade (and (trade-price trade)
+                                          (find-if 'trade-price (rest (^trades)))))
                        (let* ((last (trade-price trade))
                               (penult (trade-price penult-trade))
                               (move (cond
@@ -785,7 +786,7 @@ weighted index value, and the last move of each index entry.
 (:trade HON     0.888886 :last  35.48)
 (:trade INTC    0.891420 :last  23.81)
 (:trade CAT     0.895715 :last  87.86)
-(:trade MO      0.898111 :last  66.19)
+(:trade MO      0.898111 :last  nil) ;; 66.19)
 (:trade XOM     0.898111 :last  56.87)
 (:trade IBM     0.899775 :last  76.78)
 (:trade BA      0.899775 :last  59.83)

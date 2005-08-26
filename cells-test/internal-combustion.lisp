@@ -225,14 +225,16 @@
        (cell-reset)
        t))) ;; something non-nil to satisfy assert
   
-  (cv-assert
-   (handler-case
-       (let ((e (make-be 'engine :cylinders (c? (+ 2 2)))))
-         (setf (cylinders e) 6)
-         nil) ;; bad to reach here
-     (t (error) (trc "error correctly is" error)
-       (setf *stop* nil)
-       t)))
+  (let ((e (make-be 'engine :cylinders (c? (+ 2 2)))))
+    (assert *c-debug*)
+    (cv-assert
+     (handler-case
+         (progn
+           (setf (cylinders e) 6)
+           nil) ;; bad to reach here
+       (t (error) (trc "error correctly is" error)
+         (setf *stop* nil)
+         t))))
   (when *stop* (break "stopped! 1"))
   (cv-test-propagation-on-slot-write)
   (cv-test-no-prop-unchanged)

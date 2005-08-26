@@ -177,8 +177,8 @@
       (c-value-state c) :valid
       (c-state c) :awake)
 
-;;;     (unless (typep c 'c-stream) ;; c-stream needs to run out first stream at least
-;;;       (c-optimize-away?! c)) ;;; put optimize test here to avoid needless linking
+     (unless (typep c 'c-stream) ;; c-stream needs to run out first stream at least
+       (c-optimize-away?! c)) ;;; put optimize test here to avoid needless linking
      
      
      ; --- data flow propagation -----------

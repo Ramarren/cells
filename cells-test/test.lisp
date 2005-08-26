@@ -52,26 +52,26 @@
 	       (length *failed-tests*) ',(length tests) *failed-tests*))))
 
 (defun cv-test ()
-  (let ((*c-debug* t))
-    (with-testing
-        (cell-reset)
-      (test-cells)
+  (with-testing
       (cell-reset)
-      (hello-world) ;; non-assertive
+      (let ((*c-debug* t))
+        (test-cells)
+        (cell-reset)
+        (hello-world) ;; non-assertive
     
-      (cv-test-engine)
-      (cv-test-person)
-      (df-test)
-      (cv-test-family)
-      (cv-family-values)
-      (cv-kid-slotting)
-      (boiler-1)
-      (boiler-2)
-      (boiler-3) ;; non-assertive
-      (boiler-4) ;; non-assertive
-      (cv-laziness)
-      (cv-output-setf)
-      (cv-test-lazy))))
+        (cv-test-engine)
+        (cv-test-person)
+        (df-test)
+        (cv-test-family)
+        (cv-family-values)
+        (cv-kid-slotting)
+        (boiler-1)
+        (boiler-2)
+        (boiler-3) ;; non-assertive
+        (boiler-4) ;; non-assertive
+        (cv-laziness)
+        (cv-output-setf)
+        (cv-test-lazy))))
 
 
 #+test

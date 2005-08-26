@@ -33,7 +33,7 @@
     (let ((self (make-be 'counter-10
                   :ct (c-in 0)
                   :ct10 (c? (count-it :ct10-rule)
-                          (f-sensitivity (10)
+                          (f-sensitivity :dummy-id (10)
                             (^ct))))))
       (cv-assert (zerop (^ct10)))
       (loop for n below 30
@@ -48,7 +48,7 @@
                   :ct (c-in 0)
                   :ct10 (c? (count-it :ct10-rule)
                           (trc "runnning ct10-rule 1")
-                          (f-delta ()
+                          (f-delta :dummy ()
                             (^ct))))))
       (cv-assert (zerop (^ct10)))
       (cv-assert (zerop (^ct)))
@@ -62,7 +62,7 @@
     (let ((self (make-be 'counter-10
                   :ct (c-in 0)
                   :ct10 (c? (count-it :ct10-rule)
-                          (f-delta (:sensitivity 4)
+                          (f-delta :xxx (:sensitivity 4)
                             (^ct))))))
       (cv-assert (null (^ct10)))
       (cv-assert (zerop (^ct)))

@@ -40,7 +40,6 @@
 (defun cell-reset ()
   (utils-kt-reset)
   (setf 
-   *c-debug* nil
    *c-prop-depth* 0
    *data-pulse-id* 0
    *data-pulses* nil
