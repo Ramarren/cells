@@ -39,7 +39,7 @@
   md-info)
 
 (defmethod trcp ((c cell))
-  nil #+not (and (typep (c-model c) 'index)
+  nil #+(or) (and (typep (c-model c) 'index)
               (eql 'state (c-slot-name c))))
 
 (defun c-unboundp (c)
@@ -89,7 +89,7 @@
 
 (defstruct streamer from stepper donep to)
 
-#+notyet
+#+(or)
 (defmacro c~~~ (&key (from 0)
                  stepper
                  (donep (c-lambda (> .cache (streamer-to slot-c))))
@@ -114,20 +114,6 @@
 ;;;               (print `(assume doing ,slot-value))
 ;;;               (call-next-method c slot-value))))
 ;;;  (c-optimize-away?! c))
-
-#+test
-(progn
-  (defmodel streamertest ()
-    ((val :accessor val :initform (c~~~ :from 0 :to (^oval)))
-     (oval :initarg :oval :accessor oval :initform (c-in 0))))
-  
-  (def-c-output val ((self streamertest))
-    (print `(streamertest old ,old-value new ,new-value)))
-  
-  (cell-reset)
-  (let ((it (make-be 'streamertest :oval 5)))
-    ;;(setf (oval it) 5)
-    it))
 
 (defstruct (c-drifter
             (:include c-dependent)))

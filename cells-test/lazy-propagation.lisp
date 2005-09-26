@@ -35,7 +35,7 @@
                         (/ 1000 (^area))) :initarg :density :accessor density)))
 
 
-#+test
+#+(or)
 (cv-laziness)
 
 (defun cv-laziness ()
@@ -73,7 +73,7 @@
         (chk 4 1)
         it))))
 
-#+test
+#+(or)
 (cv-laziness)
 
 (def-c-output area ()

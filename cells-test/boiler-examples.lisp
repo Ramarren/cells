@@ -60,7 +60,7 @@
     (cv-assert (eql :closed (vent b)))
     ))
 
-#+test
+#+(or)
 (boiler-1)
 
 ;
@@ -157,7 +157,7 @@
     (cv-assert (eql :closed (vent b)))
     ))
 
-#+test
+#+(or)
 (boiler-2)
 
 ;;; ***********************************************
@@ -242,10 +242,10 @@
 ;;
 ;; de-comment 'trc statements above to see what is happening
 ;;
-#+test
+#+(or)
 (boiler-3)
 
-#+test
+#+(or)
 (boiler-4)
 
 (defun boiler-5 ()
@@ -267,7 +267,7 @@
         (incf (temp (thermometer b))))
       (setf (status b) (case (status b) (:on :off)(:off :on))))))
 
-#+test
+#+(or)
 
 (boiler-5)
 

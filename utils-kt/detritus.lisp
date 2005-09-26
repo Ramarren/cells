@@ -71,7 +71,7 @@
   (loop until (fifo-empty q)
       do (funcall fn (fifo-pop q))))
 
-#+test
+#+(or)
 (let ((*print-circle* t))
   (let ((q (make-fifo-queue)))
     (loop for n below 3

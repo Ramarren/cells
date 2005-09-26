@@ -58,7 +58,7 @@
     (setf (happen dell) :world)
     (values)))
 
-#+test
+#+(or)
 (hello-world)
 
 

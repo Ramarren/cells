@@ -83,7 +83,7 @@
       (pop (kids mom))
       (nat-age 40))))
 
-#+test
+#+(or)
 
 (cv-test-family)
     
@@ -119,7 +119,7 @@
 (defmodel bottle (model)
   ((label :initarg :label :initform "unlabeled" :accessor label)))
 
-#+test
+#+(or)
 (cv-family-values)
 
 (defun cv-family-values ()
@@ -154,5 +154,5 @@
 
     ))
 
-#+test
+#+(or)
 (cv-family-values)

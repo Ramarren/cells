@@ -143,7 +143,7 @@
    (or (null s)
        (if (stringp s)
           (string-equal "" (trim$ s))
-          #+not (trc nil "empty$> sees non-string" (type-of s)))
+          #+(or) (trc nil "empty$> sees non-string" (type-of s)))
        ))
 
 (defmacro find$ (it where &rest args)

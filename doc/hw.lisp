@@ -54,7 +54,7 @@
     (setf (salutation system) "hiya")
     (values)))
 
-#+test
+#+(or)
 (hello-world)
 
 #| output

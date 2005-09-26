@@ -116,4 +116,4 @@
 	      (unbound-error-p (md-slot-makunbound self 'val2))))
   2 nil nil)
 
-#+test (do-tests)
+#+(or) (do-tests)

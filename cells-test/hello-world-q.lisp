@@ -58,10 +58,10 @@
     (setf (happen dell) :world)
     (values)))
 
-#+test
+#+(or)
 (hello-world)
 
-#+test
+#+(or)
 (traceo sm-echo)
 
 

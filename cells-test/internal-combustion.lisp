@@ -100,7 +100,7 @@
    (eql :diesel (setf (fuel (make-be 'engine :fuel :gas)) :diesel)))
   ;;
   ;;
-  #+noterror ;; Cloucell needed to hold a Cell in a non cellular slot. duh.
+  #+(or) ;; not an error: Cloucell needed to hold a Cell in a non cellular slot. duh.
   (cv-assert
    (handler-case
        (progn
@@ -246,7 +246,7 @@
   ;;
   
   ;;
-  #+not (let ((e (make-be 'engine
+  #+(or) (let ((e (make-be 'engine
                    :mod3 (c-in 3)
                    :mod3ek (c-in 3)
                    :cylinders (c? (* 4 (mod3 self))))))
@@ -357,6 +357,6 @@
     (cv-assert (not valves-fired))
     (cv-assert (valves e))(cv-assert valves-fired)))
 
-#+test
+#+(or)
 
 (cv-test-engine)

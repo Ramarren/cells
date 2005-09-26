@@ -85,7 +85,7 @@ to avoid warning that setf is being deferred"
               (ufb-add opcode (cons (cdr defer-info) action))
               (when (and (not *deference-acknowledged*)
                       (member opcode '(:setf :makunbound)))
-                #+not (error 'c-opcode-deferred
+                #+(or) (error 'c-opcode-deferred
                   :defer-info defer-info)
                 (trc nil "!!! New pulse, event" *data-pulse-id* defer-info)))
           (funcall action))

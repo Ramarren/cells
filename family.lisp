@@ -159,7 +159,7 @@
   (c-assert (not (member nil new-kids)))
 
   (trc nil "md-kids-change > entry" usage new-kids old-kids)
-  #+not (when (and (trcp self)
+  #+(or) (when (and (trcp self)
           (eql usage :mdslotvalueassume))
     (c-break "how here? ~a" self))
 

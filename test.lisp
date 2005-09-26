@@ -108,21 +108,6 @@ subclass for them?)
                  (kids i)))
       (trc "index total" (md-value i))))
 
-#+test
-(let* ((a (make-array 16 :element-type 'bit
-            ;;:adjustable t
-            :initial-element 0))
-       (asz (array-dimension a 0)))
-  (DESCRIBE A)
-  (inspect a)
-  (print a)
-  (dotimes (n 20)
-    (print n)
-    #+not (unless (< n asz)
-      (adjust-array a (incf asz 16) :initial-element 0))
-    (setf (sbit a n) 1))
-  a)
-
 (defmodel m-null ()
   ((aa :initform nil :cell nil :initarg :aa :accessor aa)))
 

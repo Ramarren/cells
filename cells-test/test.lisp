@@ -74,7 +74,7 @@
         (cv-test-lazy))))
 
 
-#+test
+#+(or)
 (progn
   (let ((*c-debug* t))
     (cell-reset)

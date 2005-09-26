@@ -55,7 +55,7 @@ weighted index value, and the last move of each index entry.
     ;; - always call CELLS-RESET when starting a test run
     ;; - (make-be ...) -> (to-be (make-instance ...))
     ;; - TO-BE jumpstarts a Cells instance into the flow. (FN to-be)
-    #+not
+    #+(or)
     (with-open-file (t-data (make-pathname
                                    :directory '(:absolute "0dev" "cells" "Use Cases" "dow-jones")
                                    :name "trades0504" :type "txt"))

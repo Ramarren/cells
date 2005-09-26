@@ -159,7 +159,7 @@
 
 (defmacro count-it (&rest keys)
   (declare (ignorable keys))
-  #+not `(progn)
+  #+(or) `(progn)
   `(when *counting*
      (call-count-it ,@keys)))
 

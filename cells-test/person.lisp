@@ -286,7 +286,7 @@
   
   (trc "start guarded cyclic")
   
-  #+not (cv-assert-error
+  #+(or) (cv-assert-error
          (let ((tk (make-be 'talker)))
            (setf (idea tk) "yes")
            (cv-assert (string-equal "yes" (words tk)))
@@ -298,7 +298,7 @@
   ;; is being given the same value it already has, and propagation stops.
   ;;
   (make-be 'talker8)
-  #+not (let ((tk (make-be 'talker8)))
+  #+(or) (let ((tk (make-be 'talker8)))
           (setf (idea8 tk) "yes")
           (string-equal "yes" (words8 tk))
           (setf (words8 tk) "no")

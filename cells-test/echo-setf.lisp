@@ -43,5 +43,5 @@
                :kids (c-in nil))))
     (push (make-instance 'bings) (kids top))))
 
-#+test
+#+(or)
 (cv-echo-setf)

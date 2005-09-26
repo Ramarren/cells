@@ -32,7 +32,7 @@
   (bwhen (p .parent)
     (with-deference
         (setf (bang p) new-value)))
-  #+not (dolist (k (^kids))
+  #+(or) (dolist (k (^kids))
     (setf (bang k) (if (numberp new-value)
                        (1+ new-value)
                      0))))
@@ -53,5 +53,5 @@
     (dolist (k (kids (car (kids top))))
       (setf (bang k) (kid-no k)))))
 
-#+test
+#+(or)
 (cv-output-setf)

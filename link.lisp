@@ -22,7 +22,7 @@
 
 (in-package :cells)
 
-#+not
+#+(or)
 (eval-when (compile load)
  (proclaim '(optimize (speed 3) (safety 0) (space 0) (debug 0))))
 
