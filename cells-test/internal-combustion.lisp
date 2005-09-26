@@ -100,7 +100,7 @@
    (eql :diesel (setf (fuel (make-be 'engine :fuel :gas)) :diesel)))
   ;;
   ;;
-  #+(or) ;; not an error: Cloucell needed to hold a Cell in a non cellular slot. duh.
+  #+(or)error ;; Cloucell needed to hold a Cell in a non cellular slot. duh.
   (cv-assert
    (handler-case
        (progn
