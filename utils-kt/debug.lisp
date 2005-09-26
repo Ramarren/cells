@@ -61,23 +61,24 @@
 
 (defun call-trc (stream s &rest os)
   (if #+cormanlisp nil #-cormanlisp (and (boundp '*trcdepth*)
-          *trcdepth*)
-        (format stream "~&~v,,,'.<~d~>> " (mod *trcdepth* 100) *trcdepth*)
-      (format stream "~&"))
-    
-    (format stream "~a" s)
-    (let (pkwp)
-      (dolist (o os)
-        (format stream (if pkwp " ~s" " | ~s") o)
-        (setf pkwp (keywordp o))))
-    (values))
-
+                                      *trcdepth*)
+    (format stream "~&~v,,,'.<~d~>> " (mod *trcdepth* 100) *trcdepth*)
+    (format stream "~&"))
+  
+  (format stream "~a" s)
+  (let (pkwp)
+    (dolist (o os)
+      (format stream (if pkwp " ~s" " | ~s") o)
+      (setf pkwp (keywordp o))))
+  (force-output stream)
+  (values))
+  
 (defun call-trc-to-string (fmt$ &rest fmt-args)
-  (let ((o$ (make-array '(0) :element-type 'base-char
-              :fill-pointer 0 :adjustable t)))
-    (with-output-to-string (os-stream o$)
-      (apply 'call-trc os-stream fmt$ fmt-args))
-    o$))
+    (let ((o$ (make-array '(0) :element-type 'base-char
+                :fill-pointer 0 :adjustable t)))
+      (with-output-to-string (os-stream o$)
+        (apply 'call-trc os-stream fmt$ fmt-args))
+      o$))
 
 #+findtrcevalnils
 (defmethod trcp :around (other)

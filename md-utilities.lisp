@@ -104,3 +104,18 @@
 (defun make-be (class &rest initargs)
   (to-be (apply 'make-instance class initargs)))
 
+(defmacro defparts (partName (partClass &rest partDefArgs)
+                   &optional customArgs customValuesList
+                   &rest commonArgPairs)
+  (assert (null partDefArgs))
+  (let ((part-no (gensym))
+        (cvls (gensym)))
+    `(loop with ,cvls = (list ,@customValuesList)
+           for ,part-no below ,(max 1 (length customValuesList))
+           for custom-values = (elt ,part-no cvs)
+           collecting (make-instance ',partClass
+                      :md-name ',partName
+                      ,@(loop for arg in customargs
+                              for n below (length customargs)
+                              nconcing (list arg `(elt ,n custom-values)))
+                      ,@commonArgPairs))))

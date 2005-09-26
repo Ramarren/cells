@@ -25,9 +25,10 @@
 (defparameter *fmdbg* nil)
 
 (eval-when (compile eval load)
-  (export '(make-part mk-part fm-other fm-other? fm-traverse fm-descendant-typed do-like-fm-parts
+  (export '(make-part mk-part fm-other fm-other? fm-traverse fm-descendant-typed
+             do-like-fm-parts
              container-typed *fmdbg* fm-other-v fm! fm^ fm-find-one fm-kid-named
-             
+             fm-prior-sib
              fm-value-dictionary fm-otherv?)))
 
 (defun make-part (partname part-class &rest initargs)
