@@ -1,16 +1,8 @@
-;; -*- mode: Lisp; Syntax: Common-Lisp; Package: cellsS -*-
+;; -*- mode: Lisp; Syntax: Common-Lisp; Package: cells -*-
 ;;;
 ;;; Copyright (c) 1995,2003 by Kenneth William Tilton.
 ;;;
-;;; Permission is hereby granted, free of charge, to any person obtaining a copy 
-;;; of this software and associated documentation files (the "Software"), to deal 
-;;; in the Software without restriction, including without limitation the rights 
-;;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
-;;; copies of the Software, and to permit persons to whom the Software is furnished 
-;;; to do so, subject to the following conditions:
-;;;
-;;; The above copyright notice and this permission notice shall be included in 
-;;; all copies or substantial portions of the Software.
+;;; All rights reserved. 
 ;;;
 ;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
 ;;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
@@ -25,18 +17,7 @@
 
 #|
 
-here is a minimal primer on cells, just enough for you to
-keep up with the next tutorial. that will be a substantial project
-in which we develop a clos object inspector.
-
-the inspector project will give you a feel for what it is like to 
-program with cells and cello /after/ you are fluent in the
-technology. the intent is not to teach you cello, rather to
-motivate your learning it.
-
-so why the primer on cells? if things like c? and cv and def-c-output 
-do not mean anything to you, the hunh? factor will be overwhelming.
-
+[A minimal primer on cells, last tested on march 13, 2006 against cells3]
 
 cells
 -----
@@ -130,6 +111,9 @@ square of the time falling.
 
 (in-package :cells)
 
+(cells-reset)
+
+
 (defmodel stone ()
   ((accel :cell t :initarg :accel :initform 0 :accessor accel)
    (time-elapsed :cell t :initarg :time-elapsed
@@ -141,14 +125,14 @@ square of the time falling.
                          (expt (time-elapsed self) 2))
                       2))))
 
-(def-c-output accel ((self stone) new old old-bound-p)
-  (trc "echo accel" :new new :old old :oldp old-bound-p)) ;; TRC provides print diagnostics
+(defobserver accel ((self stone) new old old-bound-p)
+  (trc "observer sees accel" :new new :old old :oldp old-bound-p)) ;; TRC provides print diagnostics
 
-(def-c-output time-elapsed ((self stone)) ;; short form (I'm lazy)
-  (trc "echo time-elapsed" :new new-value :old old-value :oldp old-value-boundp))
+(defobserver time-elapsed ((self stone)) ;; short form (I'm lazy)
+  (trc "observer sees time-elapsed" :new new-value :old old-value :oldp old-value-boundp))
 
-(def-c-output distance ((self stone))
-  (format t "~&echo distance fallen: ~d feet" new-value))
+(defobserver distance ((self stone))
+  (format t "~&observer sees distance fallen: ~d feet" new-value))
 
 
 #|
@@ -202,47 +186,29 @@ in cv or c?) cannot be changed by client code (ok, (setf slot-value) is a backdo
 cell internals enforce this, simply to make possible the optimization
 of leaving off the overhead of recording a pointless dependency.
 
-next: (def-c-output...
+next: (defobserver...
 
-here is the signature for the def-c-output macro:
+here is the signature for the defobserver macro:
 
-   (defmacro def-c-output (slotname (&optional (self-arg 'self)
+   (defmacro defobserver (slotname (&optional (self-arg 'self)
                                     (new-varg 'new-value)
                                     (oldvarg 'old-value)
                                     (oldvargboundp 'old-value-boundp))
-                      &body echo-body) ....)
+                      &body observer-body) ....)
 
-def-c-output defines a generic method one can specialize on any of the four
+defobserver defines a generic method with method-combination progn,
+which one can specialize on any of the four
 parameters. the method gets called when the slot value changes, and during 
-initial processing by:
+initial processing by shared-initialize (part of make-instance).
 
-    (to-be....)
-
-to-be brings a new model instance to life, including calling
-any echos defined for cellular slots. 
-
-why not just do this in initialize-instance? we build complex 
-models in the form of a tree of many model instances, any of 
-which may depend on some other model instance to calculate 
-some part of its state. models find the one they are curious 
-about by searching the tree.
-
-this means we cannot just bring a model instance to life at
-make-instance time; some cell rule may go looking for another
-model instance. we must wait until the instance is 
-embedded in the larger model tree, then we can kick off to-be.
-
-likewise, when we yank an instance from the larger model we
-will call not-to-be on it.
-
-the good news is that unless i am doing little tutorial examples
-i never think about calling to-be. trees are implemented in part
-by a "kids" (short for "children") cell. the echo on that cell
-calls to-be on new kids and not-to-be on kids no longer in the list.
+shared-initialize brings a new model instance to life, including calling
+any observers defined for cellular slots. 
 
 now evaluate the following:
 
 |#
+
+#+evaluatethis
 
 (defparameter *s2* (make-instance 'stone
                      :accel 32 ;; (constant) feet per second per second
@@ -251,16 +217,15 @@ now evaluate the following:
 #|
 
 ...and observe:
-0> echo accel :new 32 :old nil :oldp nil
-0> echo time-elapsed :new 0 :old nil :oldp nil
-echo distance fallen: 0 feet
+0> observer sees accel :new 32 :old nil :oldp nil
+0> observer sees time-elapsed :new 0 :old nil :oldp nil
+observer sees distance fallen: 0 feet
 
 
-getting back to the output shown above, why echo output on a new instance?
-
-when we call to-be we want the instance to come to life. that means 
+getting back to the output shown above, why observer output on a new instance? we want 
+any new instance to come fully to life. that means 
 evaluating every rule so the dependencies get established, and 
-propagating cell values outside the model (by calling the echo
+propagating cell values outside the model (by calling the observer
 methods) to make sure the model and outside world (if only the
 system display) are consistent.
 
@@ -269,16 +234,18 @@ now let's get moving:
 
 |#
 
+#+evaluatethis
+
 (setf (time-elapsed *s2*) 1)
 
 #|
 ...and observe:
-0> echo time-elapsed :new 1 :old 0 :oldp t
-echo distance fallen: 16 feet
+0> observer sees time-elapsed :new 1 :old 0 :oldp t
+observer sees distance fallen: 16 feet
 
 behind the scenes:
 - the slot value time-elapsed got changed from 0 to 1
-- the time-elapsed echo was called
+- the time-elapsed observer was called
 - dependents on time-elapsed (here just distance) were recalculated
 - go to the first step, this time for the distance slot
 
@@ -287,7 +254,9 @@ to see some optimizations at work, set the cell time-elapsed to
 the same value it already has:
 |# 
 
-(setf (time-elapsed *s2*) 1) 
+#+evaluatethis
+
+(setf (time-elapsed *s2*) 1)
 
 #| observe:
 nothing, since the slot-value did not in fact change.
@@ -297,30 +266,42 @@ to test the enforcement of the cell stricture against
 modifying cells holding naked values:
 |#
 
-(handler-case
-    (setf (accel *s2*) 10)
-  (t (error) (trc "error is" error)
-    error))
+#+evaluatethis
+
+(let ((*c-debug* t))
+  (handler-case
+      (setf (accel *s2*) 10)
+    (t (error)
+      (cells-reset) ;; clear a *stop* flag used to bring down a runaway  model :)
+      (trc "error is" error)
+      error)))
 
 #| observe:
 c-setting-debug > constant  accel in stone may not be altered..init to (c-in nil)
 0> error is #<simple-error @ #x210925f2>
 
+Without turning on *c-debug* one just gets the runtime error, not the explanation to standard output.
+
 ;-----------------------------------------------------------
 nor may ruled cells be modified arbitrarily:
 |#
 
-(handler-case
+#+evaluatethis
+
+(let ((*c-debug* t))
+  (handler-case
     (setf (distance *s2*) 42)
-  (t (error) (trc "error is" error)
-    error))
+  (t (error)
+    (cells-reset)
+    (trc "error is" error)
+    error)))
 
 #| observe:
 c-setting-debug > ruled  distance in stone may not be setf'ed
 0> error is #<simple-error @ #x2123e392>
 
 ;-----------------------------------------------------------
-aside from c?, cv, and def-c-output, another thing you will see
+aside from c?, cv, and defobserver, another thing you will see
 in cello code is how complex views are constructed using
 the family class and its slot kids. every model-object has a 
 parent slot, which gets used along with a family's kids slot to
@@ -337,10 +318,10 @@ now let's see family in action, using code from the handbook of
 silly examples. all i want to get across is that a lot happens
 when one changes the kids slot. it happens automatically, and
 it happens transparently, following the dataflow implicit in the
-rules we write, and the side-effects we specify via echo functions.
+rules we write, and the side-effects we specify via observer functions.
 
 the silly example below just shows the summer (that which sums) getting
-a new md-value as the kids change, along with some echo output. in real-world 
+a new md-value as the kids change, along with some observer output. in real-world 
 applications, where kids represent gui elements often dependent on
 each other, vastly more can transpire before a simple push into a kids
 slot has run its course.
@@ -356,16 +337,18 @@ evaluate:
                    :initial-value 0
                    :key #'md-value))))
 
-(def-c-output .md-value ((self summer))
+(defobserver md-value ((self summer))
   (trc "the sum of the values of the kids is" new-value))
 
-(def-c-output .kids ((self summer))
+(defobserver .kids ((self summer))
   (trc "the values of the kids are" (mapcar #'md-value new-value)))
 
 ;-----------------------------------------------------------
 ; now just evaluate each of the following forms one by one,
 ; checking results after each to see what is going on
 ;
+#+evaluatethis
+
 (defparameter *f1* (make-instance 'summer))
 
 #|
@@ -375,7 +358,11 @@ observe:
 
 ;----------------------------------------------------------|#
 
-(push (make-instance 'model :md-value 1) (kids *f1*))
+#+evaluatethis
+
+(push (make-instance 'model
+        :fm-parent *f1*
+        :md-value 1) (kids *f1*))
 
 #| observe:
 0> the values of the kids are (1)
@@ -383,13 +370,19 @@ observe:
 
 ;----------------------------------------------------------|#
 
-(push (make-instance 'model :md-value 2) (kids *f1*))
+#+evaluatethis
+
+(push (make-instance 'model
+        :fm-parent *f1*
+        :md-value 2) (kids *f1*))
 
 #| observe:
 0> the values of the kids are (2 1)
 0> the sum of the values of the kids is 3
 
 ;----------------------------------------------------------|#
+
+#+evaluatethis
 
 (setf (kids *f1*) nil)
 
@@ -402,6 +395,8 @@ introduction to the semantics of ^slot-x macros generated
 by the defmodel macro. here is another way to define our stone:
 
 |#
+
+#+evaluatethis
 
 (setq *s2* (make-instance 'stone
                     :accel 2
