@@ -1,9 +1,9 @@
-;; -*- lisp-version: "7.0 [Windows] (Sep 4, 2005 16:25)"; cg: "1.54.2.17"; -*-
+;; -*- lisp-version: "8.0 [Windows] (Mar 7, 2006 20:04)"; cg: "1.81"; -*-
 
 (in-package :cg-user)
 
 (defpackage :COMMON-LISP
-    (:export #:list
+  (:export #:list
              #:make-instance
              #:t
              #:nil
@@ -12,9 +12,10 @@
 (define-project :name :utils-kt
   :modules (list (make-instance 'module :name "defpackage.lisp")
                  (make-instance 'module :name "debug.lisp")
-                 (make-instance 'module :name "detritus.lisp")
                  (make-instance 'module :name "flow-control.lisp")
-                 (make-instance 'module :name "strings.lisp"))
+                 (make-instance 'module :name "detritus.lisp")
+                 (make-instance 'module :name "strings.lisp")
+                 (make-instance 'module :name "datetime.lisp"))
   :projects nil
   :libraries nil
   :distributed-files nil

@@ -159,7 +159,7 @@
    (down$ s))
 
 (defun down$ (s)
-   (typecase s
+   (etypecase s
      (null "")
      (string (string-downcase s))
      (number (format nil "~a" s))

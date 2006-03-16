@@ -38,9 +38,11 @@
     #:intern$
     #:define-constant #:*count* #:*stop*
     #:*dbg* #:*trcdepth*
-    #:make-fifo-queue #:fifo-add #:fifo-empty #:fifo-pop #:mapfifo
+    #:make-fifo-queue #:fifo-queue #:fifo-add #:fifo-delete
+    #:fifo-empty #:fifo-pop #:fifo-clear
+    #:fifo-map #:fifo-peek #:fifo-data #:with-fifo-map #:fifo-length
 
-    #-mcl #:true
+    #-(or lispworks mcl) #:true
     #+clisp #:slot-definition-name
     #+(and mcl (not openmcl-partial-mop)) #:class-slots
-))
+    ))
