@@ -22,7 +22,6 @@
 
 (in-package :common-lisp-user)
 
-
 (defpackage :cells
     (:use #:common-lisp #:utils-kt)
     (:import-from
@@ -44,18 +43,19 @@
      #-(and mcl (not openmcl-partial-mop)) #:class-slots
      #-clisp #:slot-definition-name
      )
-  (:export #:cell #:c-input #:c-in #:c-in8
+  (:export #:cell #:.md-name 
+    #:c-input #:c-in #:c-in8
     #:c-formula #:c? #:c?8 #:c?_ #:c??
-    #:with-integrity #:with-deference #:without-c-dependency #:self
+    #:with-integrity #:without-c-dependency #:self #:*parent*
     #:.cache #:.with-c-cache #:c-lambda
-    #:defmodel #:c-awaken #:def-c-output #:def-c-unchanged-test
+    #:defmodel #:defobserver #:slot-value-observe #:def-c-unchanged-test
     #:new-value #:old-value #:old-value-boundp #:c...
-    #:make-be
+    #:md-awaken
     #:mkpart #:the-kids #:nsib #:md-value #:^md-value #:.md-value #:kids #:^kids #:.kids
-    #:cell-reset #:upper #:fm-max #:nearest #:fm-min-kid #:fm-max-kid #:mk-kid-slot 
+    #:cells-reset #:upper #:fm-max #:nearest #:fm-min-kid #:fm-max-kid #:mk-kid-slot 
     #:def-kid-slots #:find-prior #:fm-pos #:kid-no #:fm-includes #:fm-ascendant-common 
     #:fm-kid-containing #:fm-find-if #:fm-ascendant-if #:c-abs #:fm-collect-if #:psib
-    #:to-be #:not-to-be #:ssibno #:md-awaken
+    #:not-to-be #:ssibno
     #:c-debug #:c-break #:c-assert #:c-stop #:c-stopped #:c-assert #:.stop    #:delta-diff
     )
   #+allegro (:shadowing-import-from #:excl #:fasl-write #:fasl-read #:gc)

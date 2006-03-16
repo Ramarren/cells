@@ -22,6 +22,38 @@
 
 (in-package :cells) 
 
+;----------------- change detection ---------------------------------
+
+(defun c-no-news (c new-value old-value)
+  ;;; (trc nil "c-no-news > checking news between" newvalue oldvalue)
+  (bif (test (c-unchanged-test (c-model c) (c-slot-name c)))
+      (funcall test new-value old-value)
+      (eql new-value old-value)))
+
+(defmacro def-c-unchanged-test ((class slotname) &body test)
+  `(defmethod c-unchanged-test ((self ,class) (slotname (eql ',slotname)))
+     ,@test))
+     
+(defmethod c-unchanged-test (self slotname)
+  (declare (ignore self slotname))
+  nil)
+
+; --- data pulse (change ID) management -------------------------------------
+
+(defun data-pulse-next (pulse-info)
+  (declare (ignorable pulse-info))
+  (trc nil "data-pulse-next > " (1+ *data-pulse-id*) pulse-info)
+  (incf *data-pulse-id*))
+
+(defun c-currentp (c)
+  (eql (c-pulse c) *data-pulse-id*))
+
+(defun c-pulse-update (c key)
+  (declare (ignorable key))
+  (trc nil  "c-pulse-update updating" *data-pulse-id* c key)
+  (setf (c-changed c) nil
+      (c-pulse c) *data-pulse-id*))
+
 ;--------------- propagate  ----------------------------
 
 
@@ -34,7 +66,8 @@
   (count-it :c-propagate)
   
   (let (*c-calculators* 
-        (*c-prop-depth*  (1+ *c-prop-depth*)))
+        (*c-prop-depth*  (1+ *c-prop-depth*))
+        (*defer-changes* t))
     (trc nil "c-propagate clearing *c-calculators*" c)
 
     ;------ debug stuff ---------
@@ -52,108 +85,52 @@
     
     ; --- manifest new value as needed ---
     ;
+    ; propagation to users jumps back in front of client slot-change handling in cells3
+    ; because model adopting (once done by the kids change handler) can now be done in
+    ; shared-initialize (since one is now forced to supply the parent to make-instance).
+    ;
+    ; we wnat it here to support (eventually) state change rollback. change handlers are
+    ; expected to have side-effects, so we want to propagate fully and be sure no rule
+    ; wants a rollback before starting with the side effects.
+    ; 
     (c-propagate-to-users c)
-    (c-output-slot c (c-slot-name c) (c-model c)
-      (c-value c) prior-value prior-value-supplied)))
 
-(defun c-propagate-to-users (c)
-  (trc nil "c-propagate-to-users > queueing" c)
-  (let ((causation (cons c *causation*))) ;; in case deferred
-    (with-integrity (:user-notify :user-notify c)
-      (assert (null *c-calculators*))
-      (let ((*causation* causation))
-        (trc nil "c-propagate-to-users > notifying users of" c)
-        (dolist (user (c-users c))
-          (bwhen (dead (catch :mdead
-                         (trc nil "c-propagate-to-users> *data-pulse-id*, user, c:" *data-pulse-id* user c)
-                         (when (c-user-cares user)
-                           (trc nil "propagating to user is (used,user):" c user)
-                           (c-value-ensure-current user))
-                         nil))
-            (when (eq dead (c-model c))
-              (trc nil "!!! aborting further user prop of dead" dead)
-              (return-from c-propagate-to-users))
-            (trc nil "!!! continuing user prop following: user => dead" user dead)))))))
+    (slot-change (c-slot-name c) (c-model c)
+      (c-value c) prior-value prior-value-supplied)
+    ;
+    ; with propagation done, ephemerals can be reset. we also do this in c-awaken, so
+    ; let the fn decide if C really is ephemeral. Note that it might be possible to leave
+    ; this out and use the datapulse to identify obsolete ephemerals and clear them
+    ; when read. That would avoid ever making again bug I had in which I had the reset inside slot-change,
+    ; thinking that that always followed propagation to users. It would also make
+    ; debugging easier in that I could find the last ephemeral value in the inspector.
+    ; would this be bad for persistent CLOS, in which a DB would think there was still a link
+    ; between two records until the value actually got cleared?
+    ;
+    (c-ephemeral-reset c)
+    ))
 
-(defun c-user-cares (c)
-  (not (or (c-currentp c)
-         (member (cr-lazy c) '(t :always :once-asked)))))
+; --- slot change -----------------------------------------------------------
 
-(defun c-output-defined (slot-name)
-  (getf (symbol-plist slot-name) :output-defined))
+(defun slot-change (slot-name self new-value prior-value prior-value-supplied)
+  (trc nil "slot-change > now!!" self slot-name new-value prior-value)
+  ;; (count-it :output slot-name)
+  ;
+  ; this next guy is a GF with progn method combo, which is why we cannot just use slot-change
+  ;
+  (slot-value-observe slot-name self new-value prior-value prior-value-supplied))
 
-(defun c-output-slot (c slot-name self new-value prior-value prior-value-supplied)
-  (let ((causation *causation*)) ;; in case deferred
-    (with-integrity (:c-output-slot :output c)
-      (let ((*causation* causation))
-        (trc nil "c-output-slot > now!!" self slot-name new-value prior-value)
-        ;; (count-it :output slot-name)
-        (c-output-slot-name slot-name
-          self
-          new-value
-          prior-value
-          prior-value-supplied)
-        (c-ephemeral-reset c)))))
-
-(defun c-ephemeral-reset (c)
-    (when c
-      (when (c-ephemeral-p c)
-        (trc nil "!!!!!!!!!!!!!! c-ephemeral-reset resetting:" c)
-        (md-slot-value-store (c-model c) (c-slot-name c) nil)
-        (setf (c-value c) nil)))) ;; good q: what does (setf <ephem> 'x) return? historically nil, but...?
-
-;----------------- change detection ---------------------------------
-
-(defun c-no-news (c new-value old-value)
-  ;;; (trc nil "c-no-news > checking news between" newvalue oldvalue)
-  (bif (test (c-unchanged-test (c-model c) (c-slot-name c)))
-      (funcall test new-value old-value)
-      (eql new-value old-value)))
-
-(defmacro def-c-unchanged-test ((class slotname) &body test)
-  `(defmethod c-unchanged-test ((self ,class) (slotname (eql ',slotname)))
-     ,@test))
-     
-(defmethod c-unchanged-test (self slotname)
-  (declare (ignore self slotname))
-  nil)
-
-(defmethod c-identity-p ((value null)) t)
-(defmethod c-identity-p ((value number)) (zerop value))
-(defmethod c-identity-p ((value cons))
-  ;; this def a little suspect?
-  (and (c-identity-p (car value))
-       (c-identity-p (cdr value))))
-
-
-;------------------- re think ---------------------------------
-
-(defmethod cmdead (c)
-;  (count-it :cmdead)
-  (if (or (null (c-model c)) (consp (c-model c)))
-      (not (c-optimized-away-p c)) ;; the other way above condition can be met
-    (mdead (c-model c))))
-
-(defmethod cmdead :around (c )
-  (when (call-next-method)
-    (break "still reaching dead cells ~a" c)))
-
-(defun mdead (m) 
-  (when (eq :eternal-rest (md-state m))
-    (throw :mdead m)))
-
-(defmacro def-c-output (slotname
+(defmacro defobserver (slotname
                       (&optional (self-arg 'self) (new-varg 'new-value)
                                  (oldvarg 'old-value) (oldvargboundp 'old-value-boundp))
                       &body output-body)
-  ;;;(trc nil "output body" outputbody)
   `(progn
      (eval-when (:compile-toplevel :load-toplevel :execute)
        (setf (get ',slotname :output-defined) t))
      ,(if (eql (last1 output-body) :test)
           (let ((temp1 (gensym))
                 (loc-self (gensym)))
-            `(defmethod c-output-slot-name #-(or clisp cormanlisp) progn ((slotname (eql ',slotname)) ,self-arg ,new-varg ,oldvarg ,oldvargboundp)
+            `(defmethod slot-value-observe #-(or clisp cormanlisp) progn ((slotname (eql ',slotname)) ,self-arg ,new-varg ,oldvarg ,oldvargboundp)
                (let ((,temp1 (bump-output-count ,slotname))
                      (,loc-self ,(if (listp self-arg)
                                      (car self-arg)
@@ -161,7 +138,7 @@
                  (when (and ,oldvargboundp ,oldvarg)
                    (format t "~&output ~d (~a ~a) old: ~a" ,temp1 ',slotname ,loc-self ,oldvarg))
                  (format t "~&output ~d (~a ~a) new: ~a" ,temp1 ',slotname ,loc-self ,new-varg))))
-        `(defmethod c-output-slot-name
+        `(defmethod slot-value-observe
              #-(or clisp cormanlisp) progn ;;broke cells-gtk #+(or clisp cormanlisp) :around
            ((slotname (eql ',slotname)) ,self-arg ,new-varg ,oldvarg ,oldvargboundp)
            (declare (ignorable
@@ -179,4 +156,32 @@
   `(if (get ',slotname :outputs)
        (incf (get ',slotname :outputs))
      (setf (get ',slotname :outputs) 1)))
+
+; --- recalculate dependents ----------------------------------------------------
+
+(defun c-propagate-to-users (c)
+  ;
+  ;  We must defer propagation to users because of an edge case in which:
+  ;    - X tells A to recalculate
+  ;    - A asks B for its current value
+  ;    - B must recalculate because it too uses X
+  ;    - if B propagates to its users after recalculating instead of deferring it
+  ;       - B might tell H to reclaculate, where H decides this time to use A
+  ;       - but A is in the midst of recalculating, and cannot complete until B returns.
+  ;         but B is busy eagerly propagating. "This time" is important because it means
+  ;         there is no way one can reliably be sure H will not ask for A
+  ;
+  (trc nil "c-propagate-to-users > queueing" c)
+  (let ((causation (cons c *causation*))) ;; in case deferred
+    (with-integrity (:tell-dependents c)
+      (assert (null *c-calculators*))
+      (let ((*causation* causation))
+        (trc nil "c-propagate-to-users > notifying users of" c)
+        (dolist (user (c-users c))
+          (unless (member (cr-lazy user) '(t :always :once-asked))
+            (trc nil "propagating to user is (used,user):" c user)
+            (c-value-ensure-current user :user-propagation)))))))
+
+
+
 

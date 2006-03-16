@@ -30,7 +30,7 @@
   inputp ;; t for old c-variable class
   synaptic
   changed
-  (users nil :type list)
+  (users-store (make-fifo-queue) :type cons) ;; (C3) probably better to notify users FIFO
   
   (state :nascent :type symbol) ;; :nascent, :awake, :optimized-away
   (value-state :unbound :type symbol) ;; {:unbound | :unevaluated | :valid}
@@ -38,12 +38,40 @@
   debug
   md-info)
 
+(defun c-users (c)
+  "Make it easier to change implementation"
+  (fifo-data (c-users-store c)))
+
+(defun user-ensure (used new-user)
+  (unless (find new-user (c-users used))
+    (fifo-add (c-users-store used) new-user)))
+
+(defun user-drop (used user)
+  (fifo-delete (c-users-store used) user))
+
 (defmethod trcp ((c cell))
   nil #+(or) (and (typep (c-model c) 'index)
               (eql 'state (c-slot-name c))))
 
-(defun c-unboundp (c)
-  (eql :unbound (c-value-state c)))
+; --- ephemerality --------------------------------------------------
+; 
+; Not a type, but an option to the :cell parameter of defmodel
+;
+(defun c-ephemeral-p (c)
+  (eql :ephemeral (md-slot-cell-type (type-of (c-model c)) (c-slot-name c))))
+
+(defun c-ephemeral-reset (c)
+  (when (c-ephemeral-p c) ;; so caller does not need to worry about this
+    ;
+    ; as of Cells3 we defer resetting ephemerals because everything
+    ; else gets deferred and we cannot /really/ reset it until
+    ; within finish-business we are sure all users have been recalculated
+    ; and all outputs completed.
+    ;
+    (with-integrity (:ephemeral-reset c)
+      (trc nil "!!!!!!!!!!!!!! c-ephemeral-reset resetting:" c)
+      (md-slot-value-store (c-model c) (c-slot-name c) nil)
+      (setf (c-value c) nil)))) ;; good q: what does (setf <ephem> 'x) return? historically nil, but...?
 
 ; -----------------------------------------------------
 
@@ -70,8 +98,6 @@
 
 (defmethod trcp-slot (self slot-name)
   (declare (ignore self slot-name)))
-
-(define-constant *cd-usagect* 64)
 
 (defstruct (c-dependent
             (:include c-ruled)
@@ -128,6 +154,9 @@
 
 (defun c-validp (c)
   (eql (c-value-state c) :valid))
+
+(defun c-unboundp (c)
+  (eql :unbound (c-value-state c)))
 
 ;_____________________ print __________________________________
 

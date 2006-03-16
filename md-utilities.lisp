@@ -22,26 +22,7 @@
 
 (in-package :cells)
 
-;;;(defmethod update-instance-for-redefined-class ((self model-object) added lost plist &key)
-;;;  (declare (ignorable added lost plist))
-;;;  (when (slot-boundp self '.md-state) (call-next-method)))
-
-(defmethod occurence ((self model-object))
-  ;
-  ; whether multiply occuring or not, return index of self
-  ; within list of likenamed siblings, perhaps mixed amongst others
-  ; of diff names
-  ;
-  (let ((self-index -1))
-     (dolist (kid (kids (fm-parent self)))
-       (when (eql (md-name kid) (md-name self))
-         (incf self-index)
-         (when (eql self kid)
-           (return-from occurence self-index))))))
-
-
 (defun md-awake (self) (eql :awake (md-state self)))
-
 
 (defun fm-grandparent (md)
   (fm-parent (fm-parent md)))
@@ -64,13 +45,7 @@
 
 (defmethod not-to-be ((self model-object))
   (trc nil "not to be!!!" self)
-  (if (md-untouchable self)
-      (trc "not-to-be not quiescing untouchable" self)
-    (md-quiesce self)))
-
-(defmethod md-untouchable (self) ;; would be t for closed-stream under acl
-  (declare (ignore self))
-  nil)
+  (md-quiesce self))
 
 (defun md-quiesce (self)
   (trc nil "md-quiesce doing" self (type-of self))
@@ -78,7 +53,6 @@
                            (trc nil "quiescing" c)
                            (c-assert (not (find c *c-calculators*)))
                            (c-quiesce c))))
-
 
 (defun c-quiesce (c)
   (typecase c
@@ -95,27 +69,8 @@
 
 (defparameter *to-be-dbg* nil)
 
-(defun to-be (self)
-  (trc nil "to-be> entry" self (md-state self))
-  (when (eql :nascent (md-state self))
-      (md-awaken self))
-  self)
+(defmacro make-kid (class &rest initargs)
+  `(make-instance ,class
+     :fm-parent self
+     ,@initargs))
 
-(defun make-be (class &rest initargs)
-  (to-be (apply 'make-instance class initargs)))
-
-(defmacro defparts (partName (partClass &rest partDefArgs)
-                   &optional customArgs customValuesList
-                   &rest commonArgPairs)
-  (assert (null partDefArgs))
-  (let ((part-no (gensym))
-        (cvls (gensym)))
-    `(loop with ,cvls = (list ,@customValuesList)
-           for ,part-no below ,(max 1 (length customValuesList))
-           for custom-values = (elt ,part-no cvs)
-           collecting (make-instance ',partClass
-                      :md-name ',partName
-                      ,@(loop for arg in customargs
-                              for n below (length customargs)
-                              nconcing (list arg `(elt ,n custom-values)))
-                      ,@commonArgPairs))))

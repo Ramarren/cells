@@ -1,4 +1,4 @@
-;; -*- lisp-version: "7.0 [Windows] (Sep 4, 2005 16:25)"; cg: "1.54.2.17"; -*-
+;; -*- lisp-version: "8.0 [Windows] (Mar 7, 2006 20:04)"; cg: "1.81"; -*-
 
 (in-package :cg-user)
 
@@ -7,8 +7,8 @@
 (define-project :name :cells
   :modules (list (make-instance 'module :name "defpackage.lisp")
                  (make-instance 'module :name "cells.lisp")
-                 (make-instance 'module :name "cell-types.lisp")
                  (make-instance 'module :name "integrity.lisp")
+                 (make-instance 'module :name "cell-types.lisp")
                  (make-instance 'module :name "constructors.lisp")
                  (make-instance 'module :name "initialize.lisp")
                  (make-instance 'module :name "md-slot-value.lisp")
@@ -24,11 +24,10 @@
                  (make-instance 'module :name "family.lisp")
                  (make-instance 'module :name "fm-utilities.lisp")
                  (make-instance 'module :name "family-values.lisp")
-                 (make-instance 'module :name "test.lisp")
-                 (make-instance 'module :name "test-ephemeral.lisp")
-                 (make-instance 'module :name "test-cycle.lisp")
-                 (make-instance 'module :name "test-synapse.lisp")
-                 (make-instance 'module :name "ipcells.lisp"))
+                 (make-instance 'module :name
+                                "doc\\01-Cell-basics.lisp")
+                 (make-instance 'module :name
+                                "doc\\motor-control.lisp"))
   :projects (list (make-instance 'project-module :name
                                  "utils-kt\\utils-kt"))
   :libraries nil

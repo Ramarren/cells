@@ -24,13 +24,15 @@
 
 (defun c-setting-debug (self slot-name c new-value)
   (declare (ignorable new-value))
-  (if (null c)
-      (progn
-        (format t "c-setting-debug > constant  ~a in ~a may not be altered..init to (c-in nil)"
-              slot-name self)
+  (cond
+   ((null c)
+    (format t "c-setting-debug > constant  ~a in ~a may not be altered..init to (c-in nil)"
+      slot-name self)
         
-        (c-break "setting-const-cell")
-        (error "setting-const-cell"))
+    (c-break "setting-const-cell")
+    (error "setting-const-cell"))
+   ((c-inputp c))
+   (t
     (let ((self (c-model c))
           (slot-name (c-slot-name c)))
       ;(trc "c-setting-debug sees" c newvalue self slot-name)
@@ -46,7 +48,7 @@
          
          (c-break "setting-ruled-cell")
          (error "setting-ruled-cell"))
-        ))))
+        )))))
 
 (defun c-absorb-value (c value)
   (typecase c

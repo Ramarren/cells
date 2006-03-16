@@ -27,8 +27,8 @@
 (eval-when (compile eval load)
   (export '(make-part mk-part fm-other fm-other? fm-traverse fm-descendant-typed
              do-like-fm-parts
-             container-typed *fmdbg* fm-other-v fm! fm^ fm-find-one fm-kid-named
-             fm-prior-sib
+             container-typed *fmdbg* fm-other-v fm! fm!v fm^ fm^v fm-find-one fm-kid-named
+             fm-prior-sib fm-ascendant-p fm-ordered-p
              fm-value-dictionary fm-otherv?)))
 
 (defun make-part (partname part-class &rest initargs)
@@ -122,7 +122,7 @@
     max))
 
 
-(defun fm-traverse (family applied-fn &key skip-node skip-tree global-search (opaque nil))
+(defun fm-traverse (family applied-fn &key skip-node skip-tree global-search opaque)
    ;;(when *fmdbg* (trc "fm-traverse" family skipTree skipNode global-search))
   (without-c-dependency
    (when family
@@ -143,6 +143,14 @@
            :skip-tree family
            :skip-node skip-node))))
    nil))
+
+(defun fm-ordered-p (n1 n2 &aux (top (fm-ascendant-common n1 n2)))
+  (assert top)
+  (fm-traverse top (lambda (n)
+                     (cond
+                      ((eq n n1)(return-from fm-ordered-p t))
+                      ((eq n n2)(return-from fm-ordered-p nil))))))
+  
 
 (defmethod sub-nodes (other)
   (declare (ignore other)))
@@ -334,10 +342,7 @@
 (defun fm-quiesce-all (md)
   (md-quiesce md)
   (dolist (kid (kids md))
-    (when (and kid (not (md-untouchable kid)))
-      (fm-quiesce-all kid)))
-  md)
-
+    (fm-quiesce-all kid)))
 
 (defun fm-kid-replace (old-kid new-kid &aux (fm-parent (fm-parent old-kid)))
      (c-assert (member old-kid (kids fm-parent)) ()
@@ -355,19 +360,8 @@
 ;; h i g h  -  o r d e r   f a m i l y   o p s
 ;;
 ;; currently not in use...someday?
-(defmacro ^fm-min-max-kid (min-max slot-name &key (default 0) test (fm-parent 'self))
-   (let ((best (copy-symbol 'best))
-         (kid (copy-symbol 'kid))
-         )
-      `(let ((,best ,default))
-          (dolist (,kid (kids ,fm-parent) ,best)
-            ,(if test
-                `(when (funcall ,test ,kid)
-                   (setf ,best (funcall ,min-max ,best (,slot-name ,kid))))
-                `(bif (slotvalue (,slot-name ,kid))
-                    (setf ,best (funcall ,min-max ,best slotvalue))
-                    (break "nil slotvalue ~a in kid ~a of parent ~a"
-                           ',slot-name ,kid ,fm-parent)))))))
+;;
+
 
 (defun fm-min-kid (self slot-name)
   (or (loop for k in (^kids)
@@ -429,6 +423,9 @@
       :must-find t
       :global-search t)))
 
+(defmacro fm^v (id)
+  `(md-value (fm^ ,id)))
+
 (defmacro fm? (md-name &optional (starting 'self) (global-search t))
     `(fm-find-one ,starting ,(if (consp md-name)
                                                `(list ',(car md-name) ,(cadr md-name))
@@ -443,6 +440,9 @@
                                 `',md-name)
         :must-find t
         :global-search nil)))
+
+(defmacro fm!v (id)
+  `(md-value (fm! ,id)))
 
 (defmacro fm-other?! (md-name &optional (starting 'self))
    `(fm-find-one ,starting ,(if (consp md-name)
@@ -499,6 +499,14 @@
 (defun fm-kid-containing (fm-parent descendant)
    (with-dynamic-fn (finder (node) (not (eql fm-parent node)))
      (fm-top descendant finder)))
+
+;;; above looks confused, let's try again
+
+(defun fm-ascendant-p (older younger)
+  (cond
+   ((null (fm-parent younger)) nil)
+   ((eq older (fm-parent younger)) t)
+   (t (fm-ascendant-p older (fm-parent younger)))))
 
 (defun make-name (root &optional subscript)
    (if subscript (list root subscript) root))

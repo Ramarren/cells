@@ -5,41 +5,41 @@
 (declaim (optimize (debug 3) (speed 3) (safety 1) (compilation-speed 0)))
 
 (asdf:defsystem :cells
-  :name "cells"
+    :name "cells"
   :author "Kenny Tilton <ktilton@nyc.rr.com>"
   :version "2.0"
   :maintainer "Kenny Tilton <ktilton@nyc.rr.com>"
   :licence "MIT Style"
   :description "Cells"
   :long-description "The Cells dataflow extension to CLOS."
+  :serial t
   :components ((:module "utils-kt"
-			:serial t
-			:components ((:file "defpackage")
-				     (:file "debug")
-				     (:file "detritus")
-				     (:file "flow-control")
-				     (:file "strings")))
-               (:file "defpackage" :depends-on ("utils-kt"))
-               (:file "cells" :depends-on ("defpackage"))
-               (:file "cell-types" :depends-on ("defpackage"))
-               (:file "integrity" :depends-on ("cell-types" "cells"))
-               (:file "constructors" :depends-on ("integrity" "cells"))
-               (:file "initialize" :depends-on ("cells" "cell-types"))
-               (:file "md-slot-value" :depends-on ("integrity" "cell-types"))
-               (:file "slot-utilities" :depends-on ("cells"))
-               (:file "optimization" :depends-on ("cells"))
-               (:file "link" :depends-on ("cells"))
-               (:file "propagate" :depends-on ("cells" "integrity"))
-               (:file "synapse" :depends-on ("cells"))
-               (:file "synapse-types" :depends-on ("cells"))
-               (:file "model-object" :depends-on ("defpackage"))
-               (:file "defmodel" :depends-on ("model-object" "propagate" "constructors"))
-               (:file "md-utilities" :depends-on ("cells"))
-               (:file "family" :depends-on ("defmodel"))
-               (:file "fm-utilities" :depends-on ("cells" "family"))
-               (:file "family-values" :depends-on ("family" "propagate" "defmodel" ))
-               (:file "test" :depends-on ("family"))
-               ))
+                 :serial t
+                 :components ((:file "defpackage")
+                              (:file "debug")
+                              (:file "flow-control")
+                              (:file "detritus")
+                              (:file "strings")
+                              (:file "datetime")))
+               (:file "defpackage")
+               (:file "cells")
+               (:file "integrity")
+               (:file "cell-types")
+               (:file "synapse")
+               (:file "synapse-types")
+               (:file "constructors")
+               (:file "initialize")
+               (:file "md-slot-value")
+               (:file "slot-utilities")
+               (:file "optimization")
+               (:file "link")
+               (:file "propagate")
+               (:file "model-object")
+               (:file "defmodel")
+               (:file "md-utilities")
+               (:file "family")
+               (:file "fm-utilities")
+               (:file "family-values")))
 
 (defmethod perform ((o load-op) (c (eql (find-system :cells))))
   (pushnew :cells *features*))

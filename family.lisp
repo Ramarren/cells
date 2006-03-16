@@ -30,6 +30,7 @@
    (.fm-parent :cell nil :initform nil :initarg :fm-parent :accessor fm-parent)
    (.md-value :initform nil :accessor md-value :initarg :md-value)))
 
+
 (defmethod fm-parent (other)
   (declare (ignore other))
   nil)
@@ -39,20 +40,22 @@
 
 (define-symbol-macro .parent (fm-parent self))
 
-(defmethod md-initialize :around ((self model))
+(defmethod shared-initialize :around ((self model) slotnames &rest initargs &key fm-parent)
+  (declare (ignorable initargs slotnames fm-parent))
+
+  (call-next-method)
+
   (when (slot-boundp self '.md-name)
     (unless (md-name self)
-      (setf (md-name self) (c-class-name (class-of self)))))
-      
+      (setf (md-name self) (gentemp (string (c-class-name (class-of self)))))))
+ 
   (when (fm-parent self)
-    (md-adopt (fm-parent self) self))
-
-  (call-next-method))
+    (md-be-adopted self)))
 
 (defmodel perishable ()
   ((expiration :initform nil :accessor expiration :initarg :expiration)))
 
-(def-c-output expiration ()
+(defobserver expiration ()
   (when new-value
     (not-to-be self)))
 
@@ -66,8 +69,21 @@
          :initarg :kids)
    ))
 
+(defvar *parent*)
+
 (defmacro the-kids (&rest kids)
-  `(packed-flat! ,@kids))
+  `(let ((*parent* self))
+     (packed-flat! ,@kids)))
+
+(defmacro s-sib-no () `(position self (kids .parent)))
+
+(defmacro gpar ()
+  `(fm-grandparent self))
+
+(defmacro nearest (self-form type)
+   (let ((self (gensym)))
+   `(bwhen (,self ,self-form)
+       (if (typep ,self ',type) ,self (upper ,self ,type)))))
 
 (defun kid1 (self) (car (kids self)))
 (defun last-kid (self) (last1 (kids self)))
@@ -84,123 +100,64 @@
     `(bwhen (,self ,self-form)
         (cadr (member ,self (kids (fm-parent ,self)))))))
 
-(defmacro ^prior-sib (self)
+(defun prior-sib (self)
    (let ((kid (gensym)))
-      `(let* ((,kid ,self))
+      `(let ((,kid ,self))
           (find-prior ,kid (kids (fm-parent ,kid))))))
 
-(defmacro ^first-kid-p (self)
-   (let ((kid (gensym)))
-      `(let ((,kid ,self))
-          (eql ,kid (car (kids (fm-parent ,kid)))))))
 
-(defmacro ^last-kid-p (self)
-   (let ((kid (gensym)))
-      `(let ((,kid ,self))
-          (null (cdr (member ,kid (kids (fm-parent ,kid))))))))
-
-(defun md-adopt (fm-parent self)
+(defun md-be-adopted (self &aux (fm-parent (fm-parent self)) (selftype (type-of self)))
+    
   (c-assert self)
   (c-assert fm-parent)
   (c-assert (typep fm-parent 'family))
   
 
-  (trc nil "md-adopt >" :kid self (adopt-ct self) :by fm-parent)
+  (trc nil "md be adopted >" :kid self (adopt-ct self) :by fm-parent)
   
-  (let ((curr-parent (fm-parent self))
-        (selftype (type-of self)))
-    (declare (ignorable curr-parent))
-    (c-assert (or (null curr-parent)
-                (eql fm-parent curr-parent)))
-    (when (plusp (adopt-ct self))
-      (c-break "2nd adopt ~a, by ~a" self fm-parent))
-    (unless (plusp (adopt-ct self))
-      (incf (adopt-ct self))
-      (setf (fm-parent self) fm-parent)
+  (when (plusp (adopt-ct self))
+    (c-break "2nd adopt ~a, by ~a" self fm-parent))
 
-      (bwhen (kid-slots-fn (kid-slots (fm-parent self)))
-        (dolist (ks-def (funcall kid-slots-fn self) self)
-          (let ((slot-name (ks-name ks-def)))
-            (trc nil "got ksdef " slot-name)
-            (when (md-slot-cell-type selftype slot-name)
-              (trc nil "got cell type " slot-name)
-              (when (or (not (ks-if-missing ks-def))
-                      
-                      (and (null (c-slot-value self slot-name))
-                        (null (md-slot-cell self slot-name))))
-                (trc nil "ks missing ok " slot-name)
-                (multiple-value-bind (c-or-value suppressp)
-                    (funcall (ks-rule ks-def) self)
-                  (unless suppressp
-                    (trc nil "c-install " slot-name c-or-value)
-                    (c-install self slot-name c-or-value))))))))
+  (incf (adopt-ct self))
 
-      ; new for 12/02...
-      (md-adopt-kids self)))
-  self)
+  (bwhen (kid-slots-fn (kid-slots (fm-parent self)))
+    (dolist (ks-def (funcall kid-slots-fn self) self)
+      (let ((slot-name (ks-name ks-def)))
+        (trc nil "got ksdef " slot-name)
+        (when (md-slot-cell-type selftype slot-name)
+          (trc nil "got cell type " slot-name)
+          (when (or (not (ks-if-missing ks-def))
+                  (and (null (c-slot-value self slot-name))
+                    (null (md-slot-cell self slot-name))))
+            (trc nil "ks missing ok " slot-name)
+            (multiple-value-bind (c-or-value suppressp)
+                (funcall (ks-rule ks-def) self)
+              (unless suppressp
+                (trc nil "c-install " slot-name c-or-value)
+                (c-install self slot-name c-or-value)))))))))
 
-(defmethod md-adopt-kids (self) (declare (ignorable self)))
-(defmethod md-adopt-kids ((self family))
-  (when (slot-boundp self '.kids)
-    (dolist (k (slot-value self '.kids))
-      (unless (fm-parent k)
-        (md-adopt self k)))))
-
-
-
-
-(defmethod c-slot-value ((self model-object) slot)
-  (slot-value self slot))
-
-(defun md-kids-change (self new-kids old-kids usage)
+(defobserver .kids ((self family) new-kids old-kids)
+  (declare (ignorable usage))
   (c-assert (listp new-kids))
   (c-assert (listp old-kids))
   (c-assert (not (member nil old-kids)))
   (c-assert (not (member nil new-kids)))
+  (c-assert (every 'fm-parent new-kids) ()
+    "New for Cells3: parent must be supplied to make-instance of kid ~a"
+    (find-if-not 'fm-parent new-kids))
+  (trc nil ".kids output > entry" new-kids (mapcar 'fm-parent new-kids))
 
-  (trc nil "md-kids-change > entry" usage new-kids old-kids)
-  #+(or) (when (and (trcp self)
-          (eql usage :mdslotvalueassume))
-    (c-break "how here? ~a" self))
-
-  (dolist (k old-kids)
-     (unless (member k new-kids)
-       (trc nil "kids change nailing lost kid" k)
-       (not-to-be k)
-       (setf (fm-parent k) nil) ;; 020302kt unnecessary? anyway, after not-to-be since that might require fm-parent
-       ))
-
-  (when (find-if 'zerop new-kids :key 'adopt-ct)
-    (dolist (k new-kids)
-      (trc nil "kids change sees new kid" self k)
-      (unless (member k old-kids)       
-        (if (eql :nascent (md-state k))
-            (progn
-              #+dfdbg (trc k "adopting par,k:" self k)
-              (md-adopt self k))
-          (unless (eql self (fm-parent k))
-            ;; 230126 recent changes to kids handling leads to dup kids-change calls
-            (trc "feature not yet implemented: adopting previously adopted: parent, kid" self (fm-parent k) (md-state k) (type-of k))
-            (trc "old" old-kids)
-            (trc "new" new-kids)
-            (break "bad state extant nkid ~a ~a ~a" usage k (md-state k))
-            ))))))
-
-(def-c-output .kids ((self family))
-  (dolist (k new-value)
-    (to-be k)))
+  (dolist (k (set-difference old-kids new-kids))
+    (trc nil "kids change nailing lost kid" k)
+    (not-to-be k)))
 
 (defmethod kids ((other model-object))  nil)
 
 (defmethod not-to-be :before ((fm family))
-  (unless (md-untouchable fm)
-    ;; use backdoor so if kids not yet ruled into
-    ;; existence they won't be now just to not-to-be them
-    (let ((sv-kids (slot-value fm '.kids)))
-      (when (listp sv-kids)
-        (dolist ( kid sv-kids)
-          (not-to-be kid))))))
-
+  (let ((sv-kids (slot-value fm '.kids)))
+    (when (listp sv-kids)
+      (dolist ( kid sv-kids)
+        (not-to-be kid)))))
 
 ;------------------  kid slotting ----------------------------
 ;

@@ -78,7 +78,7 @@
                     '("chya")))
                (:default-initargs ;; nil ok and needed: acl oddity in re not clearing d-i's sans this
                    ,@(cdr (find :default-initargs options :key #'car)))
-               (:metaclass ,(or (find :metaclass options :key #'car)
+               (:metaclass ,(or (cadr (find :metaclass options :key #'car))
                               'standard-class)))
 
        (defmethod shared-initialize :after ((self ,class) slot-names &rest iargs &key)

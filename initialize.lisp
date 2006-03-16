@@ -26,29 +26,8 @@
   (export '(c-envalue)))
 
 (defstruct (c-envaluer (:conc-name nil))
-  envalue-rule
-  )
+  envalue-rule)
 
-
-(defun c-awaken (c)
-  (when *stop*
-    (princ #\.)
-    (return-from c-awaken))
-
-  (c-assert (c-model c) () "c-awaken sees uninstalled cell" c)
-  
-  (assert (eq :nascent (c-state c)))
-  (trc nil "c-awaken > awakening" c)
-  (count-it :c-awaken)
-  
-  (with-integrity (:c-awaken)
-      (setf (c-state c) :awake)
-      (c-awaken-cell c))
-
-  c)
-
-(defun c-ephemeral-p (c)
-  (eql :ephemeral (md-slot-cell-type (type-of (c-model c)) (c-slot-name c))))
 
 (defmethod c-awaken-cell (c)
   (declare (ignorable c)))
@@ -62,22 +41,15 @@
   ;
   ; nothing to calculate, but every cellular slot should be output
   ;
-  (let ((v (c-value c)))
-    ;;(trc (c-model c) "c-awaken > calling output" c v (slot-value (c-model c)(c-slot-name c)))
-    (when (eql '.kids (c-slot-name c))
-      (md-kids-change (c-model c) v nil :c-awaken-variable))
-    (c-output-slot c (c-slot-name c) (c-model c) v nil nil)
-    (c-ephemeral-reset c)))
+  (slot-change (c-slot-name c) (c-model c) (c-value c) nil nil)
+  (c-ephemeral-reset c))
 
 (defmethod c-awaken-cell ((c c-ruled))
   (let (*c-calculators*)
-    (trc  "c-awaken-cell c-ruled clearing *c-calculators*" c)
     (c-calculate-and-set c)))
 
+#+cormanlisp ; satisfy CormanCL bug
 (defmethod c-awaken-cell ((c c-dependent))
-  ;
-  ; satisfy CormanCL bug
-  ;
   (let (*c-calculators*)
     (trc nil "c-awaken-cell c-dependent clearing *c-calculators*" c)
     (c-calculate-and-set c)))

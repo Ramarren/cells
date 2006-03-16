@@ -39,8 +39,6 @@
   (c-assert user)
   (c-assert (c-model user))
   (c-assert (c-model used))
-  (c-assert (not (cmdead user)) () "dead user in link-ex ~a, used being ~a" user used)
-  (c-assert (not (cmdead used)) () "dead used in link-ex ~a, user being ~a" used user)
 
   #+dfdbg (trc user "c-link > user, used" user used)
   (c-assert (not (eq :eternal-rest (md-state (c-model user)))))
@@ -62,7 +60,6 @@
       (trc nil "c-link > new user,used " user used)
       (count-it :new-used)
       (setf used-pos useds-len)
-      ;; 050525kt - wait till eval completes (push user (c-users used))
       (push used (cd-useds user)))
 
     (handler-case
@@ -88,7 +85,7 @@
                                 (count-it :unlink-unused)
                                 (c-unlink-user (car useds) c)
                                 (rplaca useds nil))
-                            (pushnew c (c-users (car useds))))))
+                            (user-ensure (car useds) c))))
                    (if (cdr useds)
                        (progn
                          (nail-unused (cdr useds))
@@ -129,7 +126,7 @@
 
 (defun c-unlink-user (used user)
   (trc nil "user unlinking from used" user used)
-  (setf (c-users used) (delete user (c-users used)))
+  (user-drop used user)
   (c-unlink-used user used))
 
 (defun c-unlink-used (user used)

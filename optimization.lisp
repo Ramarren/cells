@@ -35,6 +35,7 @@
            (c-validp c)
            (not (c-synaptic c)) ;; no slot to cache invariant result, so they have to stay around)
            ;; chop (every (lambda (lbl-syn) (null (cd-useds (cdr lbl-syn)))) (cd-synapses c))
+           (not (c-inputp c))
            (null (cd-useds c)))
          
          (progn
@@ -56,10 +57,6 @@
        
        (progn
          (trc nil "not optimizing away" *c-optimizep* (car (cd-useds c)) (c-validp c))
-         #+no (dolist (used (cd-useds c))
-                (c-assert (member c (c-users used)))
-                ;;; (trc nil "found as user of" used)
-                )
          ;  (count-it :c-not-optimize)
          ;  (count-it (intern-keyword "noopti-" #+nah (c-model c) "-" (symbol-name (c-slot-name c))))
          )))))

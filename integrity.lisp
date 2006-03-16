@@ -22,136 +22,87 @@
 
 (in-package :cells)
 
-(defun data-pulse-next (pulse-info)
-  (declare (ignorable pulse-info))
-  (trc nil "data-pulse-next > " (1+ *data-pulse-id*) pulse-info)
-  (if (< *data-pulse-id* most-positive-fixnum)
-      (incf *data-pulse-id*)
-    (progn
-      (c-break "BINGO!!! gotta handle wrap on *data-pulse-id* ~a" *data-pulse-id*)
-      (setf *data-pulse-id* 1)))) ;; nah, this is gonna take some work
+(define-constant *ufb-opcodes* '(:tell-dependents
+                                 :awaken
+                                 :client
+                                 :ephemeral-reset
+                                 :change))
 
-(defun c-currentp (c)
-  (eql (c-pulse c) *data-pulse-id*))
+(defmacro with-integrity ((&optional opcode defer-info) &rest body)
+  (when opcode
+    (assert (find opcode *ufb-opcodes*) ()
+            "Invalid second value to with-integrity: ~a" opcode))
+  `(call-with-integrity ,opcode ,defer-info (lambda () ,@body)))
 
-(defun c-pulse-update (c key)
-  (declare (ignorable key))
-  (trc nil  "c-pulse-update updating" *data-pulse-id* c key)
-  (setf (c-changed c) nil
-      (c-pulse c) *data-pulse-id*))
+(defun integrity-managed-p ()
+  *within-integrity*)
 
-
-;-----------------------------------------
-
-(defparameter *deference-acknowledged* nil)
-
-(defmacro with-deference (&body body)
-  "Wrap around any setf in c-output-slot-name (aka def-c-output) 
-to avoid warning that setf is being deferred"
-  `(let ((*deference-acknowledged* t))
-     ,@body))
-
-(defmacro with-integrity ((debug-key &rest defer-info) &rest body)
-  `(call-with-integrity ,debug-key (list ,@defer-info)
-     (lambda () ,@body)))
-
-(defun ufb-queue (opcode)
-  (cdr (assoc opcode *unfinished-business*)))
-
-(defun ufb-add (opcode continuation)
-  (fifo-add (ufb-queue opcode) continuation))
-
-(define-constant *ufb-opcodes* '(:user-notify :output :setf :makunbound :finalize))
-
-(define-condition c-opcode-deferred (c-enabling)
-   ((defer-info :initarg :defer-info :reader defer-info))
-   (:report
-    (lambda (condition stream)
-      (format stream "~&Operation ~a deferred till pending business finished"
-        (defer-info condition)))))
-
-(defparameter *ufb-needed* nil)
-
-(defun call-with-integrity (debug-key defer-info action &aux (opcode (car defer-info)))
-  (declare (ignorable debug-key))
-  (assert (or (null opcode) (member opcode *ufb-opcodes*)))
-  (trc nil "call-with-integrity entry *unfinished-business*" *unfinished-business*)
+(defun call-with-integrity (opcode defer-info action)
   (when *stop*
     (return-from call-with-integrity))
-  (if *unfinished-business*
-        (if defer-info
-            (progn
-              (trc nil "call-with-integrity deferring" defer-info)
-              (ufb-add opcode (cons (cdr defer-info) action))
-              (when (and (not *deference-acknowledged*)
-                      (member opcode '(:setf :makunbound)))
-                #+(or) (error 'c-opcode-deferred
-                  :defer-info defer-info)
-                (trc nil "!!! New pulse, event" *data-pulse-id* defer-info)))
+  (if *within-integrity*
+        (if opcode
+            (ufb-add opcode (cons defer-info action))
           (funcall action))
-    (let ((*unfinished-business*
-           (mapcar (lambda (opcode)
-                     (cons opcode (make-fifo-queue)))
-             *ufb-opcodes*)))
-      (trc nil "!!!!!!!!!! started new *unfinished-business*" debug-key defer-info)
+    (let ((*within-integrity* t)
+          *unfinished-business*)
       (when (or (zerop *data-pulse-id*)
-              (member opcode '(:setf :makunbound)))
-        (data-pulse-next (cons opcode defer-info))
-        (trc nil "!!! New pulse, event" *data-pulse-id* defer-info))
+              (eq opcode :change))
+        (eko (nil "!!! New pulse, event" *data-pulse-id* defer-info)
+          (data-pulse-next (cons opcode defer-info))))
       (prog1
           (funcall action)
-        (unless (find-if-not 'fifo-empty *unfinished-business*)
-          (count-it :ufb-wasted))
         (finish-business)))))
 
+(defun ufb-queue (opcode)
+  (assert (find opcode *ufb-opcodes*))
+  (cdr (assoc opcode *unfinished-business*)))
 
+(defun ufb-queue-ensure (opcode)
+  (assert (find opcode *ufb-opcodes*))
+  (or (ufb-queue opcode)
+    (cdr (car (push (cons opcode (make-fifo-queue)) *unfinished-business*)))))
 
-(defun finish-business (&aux task some-output setfs)
-  (declare (ignorable setfs))
-  (assert (ufb-queue :user-notify))
-  (assert (consp (ufb-queue :user-notify)))
+(defun ufb-add (opcode continuation)
+  (assert (find opcode *ufb-opcodes*))
+  (fifo-add (ufb-queue-ensure opcode) continuation))
+
+(defun just-do-it (op-or-q &aux (q (if (keywordp op-or-q)
+                                       (ufb-queue op-or-q)
+                                     op-or-q)))
+  (loop for (nil . task) = (fifo-pop q)
+        while task
+        do (trc nil "unfin task is" opcode task)
+          (funcall task)))
+
+(defun finish-business ()
+  (when *stop* (return-from finish-business))
   (tagbody
-    notify-users
-    ;--- notify users ------------------------------
-    (when *stop* (return-from finish-business))
-    (let ((user-q-item (fifo-pop (ufb-queue :user-notify))))
-       (when user-q-item
-         (destructuring-bind (defer-info . task) user-q-item
-           (declare (ignorable defer-info))
-           (trc nil "finbiz notifying users of cell" (car defer-info) (cd-users (car defer-info)))
-           (funcall task)
-           (go notify-users))))
-    
-    (setf some-output nil)
-    
-    next-output
-    (when *stop* (return-from finish-business))
-    ;--- do c-output-slot-name -----------------------
-    (setf task (fifo-pop (ufb-queue :output)))
-    
-    (cond
-     (task
-      (setf some-output t)
-      (trc nil "finish-business outputting--------" (car task))
-      (funcall (cdr task))
-      (go next-output))
-     (some-output
-      (go notify-users)))
-    
-    ; --- do deferred setfs ------------------------
-    (setf task (fifo-pop (ufb-queue :setf)))
-    (when task
-      (destructuring-bind ((c new-value) . task-fn) task
-        (trc nil "finbiz: deferred setf" c new-value)
-        (push c setfs)
-        (data-pulse-next (list :finbiz c new-value))
-        (funcall task-fn))
-      (go notify-users))
+    tell-dependents
+    (just-do-it :tell-dependents)
 
-    ; --- do finalizations ------------------------
-    (setf task (fifo-pop (ufb-queue :finalize)))
-    (when task
-      (destructuring-bind ((self) . task-fn) task
-        (trc "finbiz: deferred finalize!!!!" self)
-        (funcall task-fn))
-      (go notify-users))))
+    (just-do-it :awaken) ;--- awaken new instances ---
+
+    ;--- process client queue ------------------------------
+    ;
+    (when *stop* (return-from finish-business))
+    (trc (fifo-peek (ufb-queue :client)) "!!! finbiz --- USER --- length" (fifo-length (ufb-queue :client)))
+
+    (bwhen (clientq (ufb-queue :client))
+      (if *client-queue-handler*
+          (funcall *client-queue-handler* clientq) ;; might be empty/not exist
+        (just-do-it clientq)))
+
+    ;--- now we can reset ephemerals --------------------
+    (just-do-it :ephemeral-reset)
+    
+    ;--- do deferred state changes -----------------------
+    ;
+    (bwhen (task-info (fifo-pop (ufb-queue :change))) ;; it would be odd, but nils can legally inhabit queues, so be safe...
+      (trc nil "!!!!!!!!!!!!!!!!!!! finbiz --- CHANGE ---- (first of)" (fifo-length (ufb-queue :change)))
+      (destructuring-bind (defer-info . task-fn) task-info
+        (trc nil "finbiz: deferred state change" defer-info)
+        (data-pulse-next (list :finbiz defer-info))
+        (funcall task-fn)
+        (go tell-dependents)))))
+

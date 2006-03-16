@@ -42,8 +42,11 @@
                          (c-link-ex new-syn)
                          new-syn))))
        (prog1
-           (with-integrity (:with-synapse)
-             (c-value-ensure-current synapse))
+           (multiple-value-bind (v p)
+               (with-integrity ()
+                 (c-value-ensure-current synapse))
+             (trc nil "with-synapse: synapse, v, prop" synapse v p)
+             (values v p))
          (c-link-ex synapse)))))
 
 

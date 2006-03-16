@@ -22,6 +22,9 @@
 
 (in-package :cells)
 
+(eval-when (compile load eval)
+  (export '(c?n)))
+
 ;___________________ constructors _______________________________
 
 (defmacro c-lambda (&body body)
@@ -47,6 +50,15 @@
     :value-state :unevaluated
     :rule (c-lambda ,@body)))
 
+(defmacro c?n (&body body)
+  `(make-c-dependent
+    :code nil ;; `(without-c-dependency ,@,body)
+    :inputp t
+    :value-state :unevaluated
+    :rule (c-lambda (without-c-dependency ,@body))))
+
+
+    
 
 (defmacro c?dbg (&body body)
   `(make-c-dependent

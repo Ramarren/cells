@@ -30,7 +30,7 @@
     (let ((new-value (funcall body-fn)))
       (trc nil "f-sensitivity fire-p decides" prior-fire-value sensitivity)
       (let ((prop-code (if (or (xor prior-fire-value new-value)
-                             (eko ("sens fire-p decides" new-value prior-fire-value sensitivity)
+                             (eko (nil "sens fire-p decides" new-value prior-fire-value sensitivity)
                                 (delta-greater-or-equal
                                  (delta-abs (delta-diff new-value prior-fire-value subtypename)
                                    subtypename)

@@ -34,15 +34,21 @@
 
 (defparameter *data-pulse-id* 0)
 (defparameter *data-pulses* nil)
-(defparameter *unfinished-business* nil)
-(defparameter *c-debug* nil)
 
-(defun cell-reset ()
+(defparameter *c-debug* nil)
+(defparameter *defer-changes* nil)
+(defparameter *within-integrity* nil)
+(defparameter *client-queue-handler* NIL)
+(defparameter *unfinished-business* nil)
+(defun cells-reset (&optional client-queue-handler)
   (utils-kt-reset)
   (setf 
    *c-prop-depth* 0
    *data-pulse-id* 0
    *data-pulses* nil
+   *defer-changes* nil ;; should not be necessary, but cannot be wrong
+   *client-queue-handler* client-queue-handler
+   *within-integrity* nil
    *unfinished-business* nil)
   (trc nil "------ cell reset ----------------------------"))
 
@@ -58,7 +64,7 @@
 
 (defmacro c-assert (assertion &optional places fmt$ &rest fmt-args)
   (declare (ignorable assertion places fmt$ fmt-args))
-  `(progn) #+(or) 
+   #+(or)`(progn) 
   `(unless *stop*
      (unless ,assertion
        ,(if fmt$
@@ -66,16 +72,6 @@
           `(c-break "failed assertion: ~a" ',assertion)))))
 
 (defvar *c-calculators* nil)
-
-(defmacro s-sib-no () `(position self (kids .parent)))
-
-(defmacro gpar ()
-  `(fm-grandparent self))
-
-(defmacro nearest (self-form type)
-   (let ((self (gensym)))
-   `(bwhen (,self ,self-form)
-       (if (typep ,self ',type) ,self (upper ,self ,type)))))
 
 (defmacro def-c-trace (model-type &optional slot cell-type)
   `(defmethod trcp ((self ,(case cell-type
@@ -94,12 +90,12 @@
 
 (define-condition unbound-cell (unbound-slot) ())
 
-(defgeneric c-output-slot-name (slotname self new old old-boundp)
+(defgeneric slot-value-observe (slotname self new old old-boundp)
   #-(or cormanlisp clisp)
   (:method-combination progn))
 
 #-cells-testing
-(defmethod c-output-slot-name #-(or cormanlisp clisp) progn
+(defmethod slot-value-observe #-(or cormanlisp clisp) progn
   (slot-name self new old old-boundp)
   (declare (ignorable slot-name self new old old-boundp)))
 
