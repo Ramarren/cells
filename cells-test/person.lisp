@@ -36,33 +36,35 @@
                           (incf *name-ct-calc*)
                           (length (names self))))))
 
-(def-c-output names ((self person) new-names)
+(defobserver names ((self person) new-names)
   (format t "~&you can call me ~a" new-names))
 
 (defmethod c-unchanged-test ((self person) (slotname (eql 'names)))
   'equal)
 
-(defvar *thought* "less")
+(defvar *thought* "failed")
+(defvar *output-speech* "failed")
 
-(def-c-output thought ((self person) new-value)
+(defobserver thought ((self person) new-value)
   (when new-value
     (trc "output thought" self new-value)
     (setq *thought* new-value)
     (trc "i am thinking" new-value)))
 
-(def-c-output speech ())
+(defobserver speech ()
+  (setf *output-speech* new-value))
 
 (defmodel sick ()
   ((e-value :cell :ephemeral :initarg :e-value :accessor e-value)
    (s-value :initarg :s-value :reader s-value)))
 
-(def-c-output s-value () 
+(defobserver s-value () 
   :test)
 
-(def-c-output e-value () 
+(defobserver e-value () 
   :test)
 
-(defun cv-test-person ()
+(def-cell-test cv-test-person ()
   (cv-test-person-1)
   (cv-test-person-3)
   (cv-test-person-4)
@@ -70,14 +72,14 @@
   ;; (cv-test-talker)
   )
 
-(defun cv-test-person-1 ()
+(def-cell-test cv-test-person-1 ()
   ;; 
   ;; a recent exchange with someone who has developed with others a visual
   ;; programming system was interesting. i mentioned my dataflow thing, he mentioned
   ;; they liked the event flow model. i responded that events posed a problem for
   ;; cells. consider something like:
   ;;
-  ;; (make-be 'button
+  ;; (make-instance 'button
   ;;      :clicked (c-in nil)
   ;;      :action (c? (when (clicked self) (if (- (time-now *cg-system*) (last-click-time.....
   ;;
@@ -109,20 +111,20 @@
   ;; triggering of slot dependents.
   ;;
   ;;
-  (let ((p (make-be 'person :speech (c-in nil))))
+  (let ((p (make-instance 'person :speech (c-in nil))))
     ;;
     ;; - ephemeral c-variable cells revert to nil if setf'ed non-nil later
     ;;
     (setf (speech p) "thanks for all the fish")
-    (cv-assert (null (speech p)))
-    (cv-assert (equal (output-new 'speech) "thanks for all the fish"))
-    (cv-assert (equal *thought* "thanks for all the fish")) ;; thought is ephemeral as well, so tricky test
+    (ct-assert (null (speech p)))
+    (ct-assert (equal *output-speech* "thanks for all the fish"))
+    (ct-assert (equal *thought* "thanks for all the fish")) ;; thought is ephemeral as well, so tricky test
     ;;
     ;; now check the /ruled/ ephemeral got reset to nil
     ;;
-    (cv-assert (null (thought p)))))
+    (ct-assert (null (thought p)))))
 
-(defun cv-test-person-3 ()
+(def-cell-test cv-test-person-3 ()
   ;; -------------------------------------------------------
   ;;  dynamic dependency graph maintenance
   ;;
@@ -130,7 +132,7 @@
   ;; invocation of the rule. note that a cellular slot may be constant, not mediated by a
   ;; cell, in which case the access does not record a dependency.
   ;;
-  (let ((p (make-be 'person
+  (let ((p (make-instance 'person
              :names (c-in '("speedy" "chill"))
              :pulse (c-in 60)
              :speech "nice and easy does it"
@@ -140,20 +142,20 @@
     ;;
     ;; with the (variable=1) pulse not > 80, the branch taken leads to (constant=0) speech, so:
     ;;
-    (cv-assert (eql 1 (length (cd-useds (md-slot-cell p 'thought)))))
+    (ct-assert (eql 1 (length (cd-useds (md-slot-cell p 'thought)))))
     ;;
     ;; with the (variable=1) pulse > 80, the branch taken leads to (variable=1) names, so:
     ;;
     (setf (pulse p) 200)
-    (cv-assert (eql 2 (length (cd-useds (md-slot-cell p 'thought)))))
+    (ct-assert (eql 2 (length (cd-useds (md-slot-cell p 'thought)))))
     ;;
     ;; let's check the engine's ability reliably to drop dependencies by lowering the pulse again
     ;;
     (setf (pulse p) 50)
-    (cv-assert (eql 1 (length (cd-useds (md-slot-cell p 'thought)))))))
+    (ct-assert (eql 1 (length (cd-useds (md-slot-cell p 'thought)))))))
 
-(defun cv-test-person-4 ()
-  (let ((p (make-be 'person
+(def-cell-test cv-test-person-4 ()
+  (let ((p (make-instance 'person
              :names '("speedy" "chill")
              :pulse (c-in 60)
              :speech (c? (car (names self)))
@@ -164,15 +166,15 @@
     ;;    - they are defined and
     ;;    - all cells accessed are constant.
     ;;
-    (cv-assert (null (md-slot-cell p 'speech)))
-    (cv-assert (md-slot-cell-flushed  p 'speech))
-    (cv-assert (c-optimized-away-p (md-slot-cell-flushed p 'speech)))   
+    (ct-assert (null (md-slot-cell p 'speech)))
+    (ct-assert (md-slot-cell-flushed  p 'speech))
+    (ct-assert (c-optimized-away-p (md-slot-cell-flushed p 'speech)))   
     
-    (cv-assert (not (c-optimized-away-p (md-slot-cell p 'thought)))) ;; pulse is variable, so cannot opti
-    (cv-assert (eql 1 (length (cd-useds (md-slot-cell p 'thought))))) ;; but speech is opti, so only 1 used
+    (ct-assert (not (c-optimized-away-p (md-slot-cell p 'thought)))) ;; pulse is variable, so cannot opti
+    (ct-assert (eql 1 (length (cd-useds (md-slot-cell p 'thought))))) ;; but speech is opti, so only 1 used
     ))
 
-(defun cv-test-person-5 ()
+(def-cell-test cv-test-person-5 ()
   ;;
   ;; for now cells do not allow cyclic dependency, where a computation of a cell leads back
   ;; to itself. we could do something like have the self-reference return the cached value
@@ -192,11 +194,11 @@
   ;;
   ;;   make sure cyclic dependencies are trapped:
   ;;
-  (cell-reset)
-  (cv-assert
+  (cells-reset)
+  (ct-assert
    (handler-case
        (progn
-         (pulse (make-be 'person
+         (pulse (make-instance 'person
                   :names (c? (trc "calculating names" self)
                            (maptimes (n (pulse self))))
                   :pulse (c? (trc "calculating pulse" self)
@@ -221,64 +223,64 @@
    (idea :initform (c-in "new friend!") :initarg :idea :accessor idea)
    ))
 
-(def-c-output words ((self talker) new-words)
+(defobserver words ((self talker) new-words)
   (trc "new words" new-words)
   (setf (idea self) (concatenate 'string "idea " new-words)))
 
 (defmethod c-unchanged-test ((self talker) (slotname (eql 'words)))
   'string-equal)
 
-(def-c-output idea ((self talker) new-idea)
+(defobserver idea ((self talker) new-idea)
   (trc "new idea" new-idea)
   (setf (words self) (concatenate 'string "say " new-idea)))
 
 (defmethod c-unchanged-test ((self talker) (slotname (eql 'idea)))
   'string-equal)
 
-(def-c-output words8 ((self talker8) new-words8)
+(defobserver words8 ((self talker8) new-words8)
   (trc "new words8, sets idea8 to same" new-words8 *causation*)
-  (with-deference
+  (with-integrity (:change)
       (setf (idea8 self) (concatenate 'string "+" new-words8))))
 
 (defmethod c-unchanged-test ((self talker8) (slotname (eql 'words8)))
   'string-equal)
 
-(def-c-output idea8 ((self talker8) new-idea8)
+(defobserver idea8 ((self talker8) new-idea8)
   (trc "new idea8, sets mood8 to same" new-idea8 *causation*)
-  (with-deference
+  (with-integrity (:change)
       (setf (mood8 self) (concatenate 'string "+" new-idea8))))
 
 (defmethod c-unchanged-test ((self talker8) (slotname (eql 'idea8)))
   'string-equal)
 
-(def-c-output mood8 ((self talker8) new-mood8)
+(defobserver mood8 ((self talker8) new-mood8)
   (trc "new mood8, sets words8 to same:" new-mood8 *causation*)
-  (with-deference
+  (with-integrity (:change)
       (setf (words8 self) (concatenate 'string "+" new-mood8))))
 
 (defmethod c-unchanged-test ((self talker8) (slotname (eql 'mood8)))
   'string-equal)
 
-(defmacro cv-assert-error (&body body)
-  `(cv-assert
+(defmacro ct-assert-error (&body body)
+  `(ct-assert
     (handler-case
         (prog1 nil
           ,@body)
      (t (error)
-        (trc "cv-assert-error" error)
+        (trc "ct-assert-error" error)
        (setf *stop* nil)
         t))))
 
 #+(or) ; FIXME: this test is borked
-(defun cv-test-talker ()
+(def-cell-test cv-test-talker ()
   ;;
   ;; make sure cyclic setf is trapped
   ;;
-  (cell-reset)
+  (cells-reset)
   
   ;;;  (trc "start unguarded cyclic")
   ;;;
-  ;;;  (let ((tk (make-be 'talker)))
+  ;;;  (let ((tk (make-instance 'talker)))
   ;;;     (setf (idea tk) "yes")
   ;;;     (string-equal "yes" (words tk))
   ;;;     (setf (words tk) "no")
@@ -286,19 +288,19 @@
   
   (trc "start guarded cyclic")
   
-  #+(or) (cv-assert-error
-         (let ((tk (make-be 'talker)))
+  #+(or) (ct-assert-error
+         (let ((tk (make-instance 'talker)))
            (setf (idea tk) "yes")
-           (cv-assert (string-equal "yes" (words tk)))
+           (ct-assert (string-equal "yes" (words tk)))
            (setf (words tk) "no")
-           (cv-assert (string-equal "no" (idea tk)))))
+           (ct-assert (string-equal "no" (idea tk)))))
   ;;
   ;; make sure cells declared to be cyclic are allowed
   ;; and halt (because after the first cyclic setf the cell in question
   ;; is being given the same value it already has, and propagation stops.
   ;;
-  (make-be 'talker8)
-  #+(or) (let ((tk (make-be 'talker8)))
+  (make-instance 'talker8)
+  #+(or) (let ((tk (make-instance 'talker8)))
           (setf (idea8 tk) "yes")
           (string-equal "yes" (words8 tk))
           (setf (words8 tk) "no")

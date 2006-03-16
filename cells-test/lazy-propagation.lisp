@@ -38,7 +38,7 @@
 #+(or)
 (cv-laziness)
 
-(defun cv-laziness ()
+(def-cell-test cv-laziness ()
   (macrolet ((chk (area density)
                `(progn
                   (assert (= ,area *area*) () "area is ~a, should be ~a" *area* ,area)
@@ -46,7 +46,7 @@
                   (trc nil "cv-laziness ok with:" ,area ,density)))
              )
     (let ((*c-debug* t))
-      (cell-reset)
+      (cells-reset)
     
       (let* ((*area* 0)
              (*density* 0)
@@ -76,7 +76,7 @@
 #+(or)
 (cv-laziness)
 
-(def-c-output area ()
+(defobserver area ()
   (trc "area is" new-value :was old-value))
 
 

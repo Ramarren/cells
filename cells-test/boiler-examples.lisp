@@ -35,10 +35,10 @@
    (vent :initarg :vent :accessor vent :initform nil)
    ))
 
-(defun boiler-1 ()
+(def-cell-test boiler-1 ()
 
   ;; resets debugging/testing specials
-  (cell-reset)   
+  (cells-reset)   
 
   (let ((b (make-instance 'boiler1
              :temp  (c-in 20)
@@ -49,15 +49,15 @@
                           (:on :open)
                           (:off :closed))))))
 
-    (cv-assert (eql 20 (temp b)))
-    (cv-assert (eql :on (status b)))
-    (cv-assert (eql :open (vent b)))
+    (ct-assert (eql 20 (temp b)))
+    (ct-assert (eql :on (status b)))
+    (ct-assert (eql :open (vent b)))
 
     (setf (temp b) 100) ;; triggers the recalculation of status and then of vent
 
-    (cv-assert (eql 100 (temp b)))
-    (cv-assert (eql :off (status b)))
-    (cv-assert (eql :closed (vent b)))
+    (ct-assert (eql 100 (temp b)))
+    (ct-assert (eql :off (status b)))
+    (ct-assert (eql :closed (vent b)))
     ))
 
 #+(or)
@@ -78,9 +78,9 @@
    (thermometer :cell nil :initarg :thermometer :accessor thermometer :initform nil)
    ))
 
-;;; def-c-output ((slot-name) (&optional method-args) &body body
+;;; defobserver ((slot-name) (&optional method-args) &body body
 
-;;; the def-c-output macro defines a method with
+;;; the defobserver macro defines a method with
 ;;; three arguments -- by default, these arguments are named
 ;;;   self -- bound to the instance being operated on
 ;;;   old-value -- bound to the previous value of the cellular slot
@@ -94,14 +94,14 @@
 ;;; the body of the macro defines code which is executed
 ;;; when the the slot-name slot is initialized or changed.
 
-(def-c-output status ((self boiler2))
+(defobserver status ((self boiler2))
   (trc "output> boiler status" self :oldstatus= old-value :newstatus= new-value)
   ;
   ; << in real life call boiler api here to actually turn it on or off >>
   ;
   )
 
-(def-c-output vent ((self boiler2))
+(defobserver vent ((self boiler2))
   (trc "output> boiler vent changing from" old-value :to new-value)
   ;
   ; << in real life call boiler api here to actually open or close it >>
@@ -119,7 +119,7 @@
 ;;; old and new values are bound to parameters called oldtemp
 ;;; and newtemp
 
-(def-c-output temp ((self thermometer) newtemp oldtemp)
+(defobserver temp ((self thermometer) newtemp oldtemp)
   (trc "output> thermometer temp changing from" oldtemp :to newtemp))
 
 ;--------------------------
@@ -134,8 +134,8 @@
 ;;; instances of different classes.
 
 
-(defun boiler-2 ()
-  (cell-reset)    
+(def-cell-test boiler-2 ()
+  (cells-reset)    
   (let ((b (make-instance 'boiler2 
                     :status (c? (eko ("boiler2 status c?")
                                      (if (< (temp (thermometer self)) 100)
@@ -146,15 +146,15 @@
                     :thermometer (make-instance 'thermometer
                                    :temp (c-in 20)))))
                    
-    (cv-assert (eql 20 (temp (thermometer b))))
-    (cv-assert (eql :on (status b)))
-    (cv-assert (eql :open (vent b)))
+    (ct-assert (eql 20 (temp (thermometer b))))
+    (ct-assert (eql :on (status b)))
+    (ct-assert (eql :open (vent b)))
     
     (setf (temp (thermometer b)) 100)
     
-    (cv-assert (eql 100 (temp (thermometer b))))
-    (cv-assert (eql :off (status b)))
-    (cv-assert (eql :closed (vent b)))
+    (ct-assert (eql 100 (temp (thermometer b))))
+    (ct-assert (eql :off (status b)))
+    (ct-assert (eql :closed (vent b)))
     ))
 
 #+(or)
@@ -174,7 +174,7 @@
 ;;; note:  we use boiler2 and thermometer from example 2 in example 3,
 ;;; along with their def-output methods defined in example 2.
 ;;;
-;;; also: these do not use cv-assert to perform automatic testing, but
+;;; also: these do not use ct-assert to perform automatic testing, but
 ;;; they do illustrate a possible real-world application of synapses. to
 ;;; observe the difference made by synapses, one must look at the trace output
 ;
@@ -209,9 +209,9 @@
 
 
 
-(defun boiler-3 (&key (sensitivity-enabled t))
+(def-cell-test boiler-3 (&key (sensitivity-enabled t))
   (declare (ignorable sensitivity-enabled))
-  (cell-reset) 
+  (cells-reset) 
   #+soon
   (let ((b (make-instance 'boiler2 
               :status (c? (let ((temp (if sensitivity-enabled
@@ -237,7 +237,7 @@
           (setf (temp (thermometer b)) newtemp))))))
 
 
-(defun boiler-4 () (boiler-3 :sensitivity-enabled t))
+(def-cell-test boiler-4 () (boiler-3 :sensitivity-enabled t))
 
 ;;
 ;; de-comment 'trc statements above to see what is happening
@@ -248,9 +248,9 @@
 #+(or)
 (boiler-4)
 
-(defun boiler-5 ()
+(def-cell-test boiler-5 ()
 
-  (cell-reset) 
+  (cells-reset) 
   #+soon
   (let ((b (make-instance 'boiler2 
               :status (c-in :off)
@@ -271,7 +271,7 @@
 
 (boiler-5)
 
-(defun f-debug (sensitivity &optional subtypename)
+(def-cell-test f-debug (sensitivity &optional subtypename)
   (declare (ignore sensitivity subtypename))
   #+soon
   (mk-synapse (prior-fire-value)

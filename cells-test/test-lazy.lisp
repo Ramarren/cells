@@ -69,7 +69,7 @@
   t t)
 
 (deftest md-slot-makunbound
-    (let ((self (to-be (make-instance 'unbound-values
+    (let ((self (progn (make-instance 'unbound-values
 			 'val1 (c-in nil) 'val2 (c-in nil)))))
       (md-slot-makunbound self 'val1)
       (md-slot-makunbound self 'val2)
@@ -78,8 +78,8 @@
   t t)
 
 (deftest formula-depends-on-unbound
-    (let ((obj1 (to-be (make-instance 'unbound-formulas)))
-	  (obj2 (to-be (make-instance 'unbound-formulas))))
+    (let ((obj1 (progn (make-instance 'unbound-formulas)))
+	  (obj2 (progn (make-instance 'unbound-formulas))))
       (values ;(unbound-error-p (test-formula obj1))
 	      (unbound-error-p (test-lazy-formula obj1))
 
@@ -90,16 +90,16 @@
 
 (deftest unbound-ok-for-unbound-formulas
     (unbound-error-p
-     (progn (let ((self (to-be (make-instance 'unbound-formulas))))
+     (progn (let ((self (progn (make-instance 'unbound-formulas))))
 	      (setf (test-val1 self) t
 		    (test-val2 self) t))
-	    (let ((self (to-be (make-instance 'unbound-formulas))))
+	    (let ((self (progn (make-instance 'unbound-formulas))))
 	      (setf (test-val2 self) t
 		    (test-val1 self) t))))
   nil)
 
 (deftest unbound-errs-for-eager
-    (let ((self (to-be (make-instance 'unbound-formulas2
+    (let ((self (progn (make-instance 'unbound-formulas2
 			 'val1 (c-in 1) 'val2 (c-in 2)))))
       (values (test-formula self)
 	     (unbound-error-p (md-slot-makunbound self 'val1))
@@ -109,11 +109,12 @@
   )
 
 (deftest unbound-ok-for-unchecked-lazy
-    (let ((self (to-be (make-instance 'unbound-formulas
+    (let ((self (progn (make-instance 'unbound-formulas
 			 'val1 (c-in 1) 'val2 (c-in 2)))))
       (values (test-lazy-formula self)
 	      (unbound-error-p (md-slot-makunbound self 'val1))
 	      (unbound-error-p (md-slot-makunbound self 'val2))))
   2 nil nil)
 
-#+(or) (do-tests)
+#+(or) 
+(cv-test-lazy)

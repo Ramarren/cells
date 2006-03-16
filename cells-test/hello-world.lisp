@@ -34,16 +34,16 @@
              :accessor location)
    (response :cell :ephemeral :initform nil :initarg :response :accessor response)))
 
-(def-c-output response(self new-response old-response)
+(defobserver response(self new-response old-response)
   (when new-response
     (format t "~&computer: ~a" new-response)))
 
-(def-c-output happen()
+(defobserver happen()
   (when new-value
     (format t "~&happen: ~a" new-value)))
 
-(defun hello-world ()
-  (let ((dell (make-be 'computer
+(def-cell-test hello-world ()
+  (let ((dell (make-instance 'computer
                  :response (c? (bwhen (h (happen self))
                                  (if (eql (^location) :at-home)
                                      (case h
@@ -55,7 +55,7 @@
 
     (setf (happen dell) :arrive)
     (setf (happen dell) :knock-knock)
-    (setf (happen dell) :world)
+    (setf (happen dell) :leave)
     (values)))
 
 #+(or)
@@ -64,15 +64,16 @@
 
 #| output
 
-happen: knock-knock
+happen: KNOCK-KNOCK
 computer: <silence>
-happen: knock-knock
+happen: KNOCK-KNOCK
 computer: <silence>
-happen: arrive
-happen: knock-knock
+happen: ARRIVE
+happen: KNOCK-KNOCK
 computer: who's there?
-happen: world
-computer: hello, world.
+happen: LEAVE
+computer: <silence>
+
 
 |#
 

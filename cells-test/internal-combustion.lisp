@@ -42,14 +42,14 @@
     (flet ((test (it) (zerop (mod it 3))))
       (eql (test new-value) (test old-value)))))
 
-(def-c-output mod3ek () (trc "mod3ek output" self))
+(defobserver mod3ek () (trc "mod3ek output" self))
 
 (defmethod c-unchanged-test ((self engine) (slotname (eql 'mod3ek)))
   (lambda (new-value old-value)
     (flet ((test (it) (zerop (mod it 3))))
       (eql (test new-value) (test old-value)))))
 
-(def-c-output cylinders () 
+(defobserver cylinders () 
   ;;(when *dbg* (break))
   (trc "cylinders output" self old-value new-value))
 
@@ -64,18 +64,18 @@
 (defmodel indirect-model (true-model)())
 
 
-(defun cv-test-engine ()
+(def-cell-test cv-test-engine ()
   (when *stop* (break "stopped! 2"))
   ;;
   ;; before we get to engines, a quick check that we are correctly enforcing the
   ;; requirment that classes defined by defmodel inherit from model-object
   ;;
-  (cv-assert (make-instance 'non-model))
-  (cv-assert (make-be 'true-model))
-  (cv-assert (make-be 'indirect-model))
-  (cv-assert (handler-case
+  (ct-assert (make-instance 'non-model))
+  (ct-assert (make-instance 'true-model))
+  (ct-assert (make-instance 'indirect-model))
+  (ct-assert (handler-case
                  (progn
-                   (make-be 'faux-model)
+                   (make-instance 'faux-model)
                    nil) ;; bad to reach here
                (t (error) (trc "error is" error)
                  error)))
@@ -94,17 +94,17 @@
   ;; to cellular slots unless they are c-variable. (why this is so has to do with efficiency,
   ;; and will be covered when we get to cells being optimized away.)
   ;; 
-  (cv-assert
-   (eql :gas (fuel (make-be 'engine :fuel :gas))))
-  (cv-assert
-   (eql :diesel (setf (fuel (make-be 'engine :fuel :gas)) :diesel)))
+  (ct-assert
+   (eql :gas (fuel (make-instance 'engine :fuel :gas))))
+  (ct-assert
+   (eql :diesel (setf (fuel (make-instance 'engine :fuel :gas)) :diesel)))
   ;;
   ;;
-  #+(or)error ;; Cloucell needed to hold a Cell in a non cellular slot. duh.
-  (cv-assert
+  #+(or) ;; not an error: Cloucell needed to hold a Cell in a non cellular slot. duh.
+  (ct-assert
    (handler-case
        (progn
-         (make-be 'engine :fuel (c-in :gas))
+         (make-instance 'engine :fuel (c-in :gas))
          nil) ;; bad to reach here
      (t (error) (trc "error is" error)
        error)))
@@ -124,21 +124,21 @@
   ;; aside: the value 4 itself occupies the actual slot. this helped when we used Cells
   ;; with a persistent CLOS tool which maintained inverse indices off slots if asked.
   ;;
-  (cv-assert
+  (ct-assert
    (progn
-     (eql 33 (cylinders (make-be 'engine-w-initform)))))
+     (eql 33 (cylinders (make-instance 'engine-w-initform)))))
   
-  (cv-assert
-   (eql 4 (cylinders (make-be 'engine :cylinders 4))))
+  (ct-assert
+   (eql 4 (cylinders (make-instance 'engine :cylinders 4))))
   
-  (cv-assert
-   (eql 4 (cylinders (make-be 'engine :cylinders (c-in 4)))))
+  (ct-assert
+   (eql 4 (cylinders (make-instance 'engine :cylinders (c-in 4)))))
   
-  (cv-assert
-   (eql 4 (cylinders (make-be 'engine :cylinders (c? (+ 2 2))))))
+  (ct-assert
+   (eql 4 (cylinders (make-instance 'engine :cylinders (c? (+ 2 2))))))
   
-  (cv-assert
-   (eql 16 (valves (make-be 'engine
+  (ct-assert
+   (eql 16 (valves (make-instance 'engine
                      :cylinders 8
                      :valves (c? (* (cylinders self) (valves-per-cylinder self)))
                      :valves-per-cylinder (c? (floor (cylinders self) 4)))))) ;; admittedly weird semantics
@@ -172,13 +172,13 @@
                   (output-clear 'cylinders)
                   (output-clear 'valves)
                   (trc "starting output init test" ,newv ',cylini)
-                  (make-be 'engine
+                  (make-instance 'engine
                     :cylinders ,cylini
                     :valves ,cylini)
-                  (cv-assert (outputted 'cylinders))
-                  (cv-assert (eql ,newv (output-new 'cylinders)))
-                  ;(cv-assert (not (output-old-boundp 'cylinders)))
-                  ;(cv-assert (not (outputted 'valves)))
+                  (ct-assert (outputted 'cylinders))
+                  (ct-assert (eql ,newv (output-new 'cylinders)))
+                  ;(ct-assert (not (output-old-boundp 'cylinders)))
+                  ;(ct-assert (not (outputted 'valves)))
                   )))
     (output-init 6 6)
     (output-init 10 (c-in 10))
@@ -208,26 +208,26 @@
   ;;
   ;; first verify acceptable setf...
   ;;
-  (cv-assert
-   (let ((e (make-be 'engine :cylinders (c-in 4))))
+  (ct-assert
+   (let ((e (make-instance 'engine :cylinders (c-in 4))))
      (setf (cylinders e) 6)
      (eql 6 (cylinders e))))
   ;;
   ;; ...and two not acceptable...
   ;;
-  (cv-assert
+  (ct-assert
    (handler-case
-       (let ((e (make-be 'engine :cylinders 4)))
+       (let ((e (make-instance 'engine :cylinders 4)))
          (setf (cylinders e) 6)
          nil) ;; bad to reach here
      (t (error)
        (trc "error correctly is" error)
-       (cell-reset)
+       (cells-reset)
        t))) ;; something non-nil to satisfy assert
   
-  (let ((e (make-be 'engine :cylinders (c? (+ 2 2)))))
+  (let ((e (make-instance 'engine :cylinders (c? (+ 2 2)))))
     (assert *c-debug*)
-    (cv-assert
+    (ct-assert
      (handler-case
          (progn
            (setf (cylinders e) 6)
@@ -246,12 +246,12 @@
   ;;
   
   ;;
-  #+(or) (let ((e (make-be 'engine
+  #+(or) (let ((e (make-instance 'engine
                    :mod3 (c-in 3)
                    :mod3ek (c-in 3)
                    :cylinders (c? (* 4 (mod3 self))))))
           
-          (cv-assert (eql 12 (cylinders e)))
+          (ct-assert (eql 12 (cylinders e)))
           (output-clear 'mod3)
           (output-clear 'mod3ek)
           (trc "mod3 outputes cleared, setting mod3s now")
@@ -262,20 +262,20 @@
           ;; override treats the cell as unchanged; no output, no recalculation
           ;; of the cylinders cell
           ;;
-          (cv-assert (not (outputted 'mod3ek))) ;; no real need to check mod3 unoutputted
-          (cv-assert (eql 12 (cylinders e)))
+          (ct-assert (not (outputted 'mod3ek))) ;; no real need to check mod3 unoutputted
+          (ct-assert (eql 12 (cylinders e)))
           ;;
           ;; now test in the other direction to make sure change according to the 
           ;; override still works.
           ;;
           (setf (mod3 e) 5
             (mod3ek e) 5)
-          (cv-assert (outputted 'mod3ek))
-          (cv-assert (eql 20 (cylinders e)))
+          (ct-assert (outputted 'mod3ek))
+          (ct-assert (eql 20 (cylinders e)))
           )
   )
 
-(defun cv-test-propagation-on-slot-write ()
+(def-cell-test cv-test-propagation-on-slot-write ()
   ;; ---------------------------------------------------------------
   ;;   propagation (output and trigger dependents) on slot write
   ;;
@@ -292,29 +292,29 @@
   (output-clear 'valves)
   (output-clear 'valves-per-cylinder)
   (when *stop* (break "stopped!"))
-  (let ((e (make-be 'engine
+  (let ((e (make-instance 'engine
                     :cylinders 4
                     :valves-per-cylinder (c-in 2)
                     :valves (c? (* (valves-per-cylinder self) (cylinders self))))))
     ;;
-    ;; these first tests check that cells get outputted appropriately at make-be time (the change
+    ;; these first tests check that cells get outputted appropriately at make-instance time (the change
     ;; is from not existing to existing)
     ;;
-    (cv-assert (and (eql 4 (output-new 'cylinders))
+    (ct-assert (and (eql 4 (output-new 'cylinders))
                     (not (output-old-boundp 'cylinders))))
     
-    (cv-assert (valves-per-cylinder e)) ;; but no output is defined for this slot
+    (ct-assert (valves-per-cylinder e)) ;; but no output is defined for this slot
     
-    (cv-assert (valves e))
+    (ct-assert (valves e))
     ;;
     ;; now we test true change from one value to another
     ;;
     (setf (valves-per-cylinder e) 4)
     ;;    
-    (cv-assert (eql 16 (valves e)))
+    (ct-assert (eql 16 (valves e)))
     ))
 
-(defun cv-test-no-prop-unchanged ()
+(def-cell-test cv-test-no-prop-unchanged ()
   ;;
   ;; next we check the engines ability to handle dataflow efficiently by /not/ reacting
   ;; to coded setfs which in fact produce no change.
@@ -324,11 +324,11 @@
   ;; triggered to recalculate. ie, the dependency's value has not changed so the dependent
   ;; cell's cached value remains valid.
   ;;
-  (cell-reset)
+  (cells-reset)
   (output-clear 'cylinders)
   (let* ((*dbg* t)
          valves-fired
-         (e (make-be 'engine
+         (e (make-instance 'engine
               :cylinders (c-in 4)
               :valves-per-cylinder 2
               :valves (c-formula (:lazy t)
@@ -336,26 +336,26 @@
                         (trc "!!!!!! valves")
                         (* (valves-per-cylinder self) (cylinders self))))))
     (trc "!!!!!!!!hunbh?")
-    (cv-assert (outputted 'cylinders))
+    (ct-assert (outputted 'cylinders))
     (output-clear 'cylinders)
-    (cv-assert (not valves-fired)) ;; no output is defined so evaluation is deferred
+    (ct-assert (not valves-fired)) ;; no output is defined so evaluation is deferred
     (trc "sampling valves....")
     (let ()
-      (cv-assert (valves e)) ;; wake up unoutputted cell
+      (ct-assert (valves e)) ;; wake up unoutputted cell
       )
-    (cv-assert valves-fired)
+    (ct-assert valves-fired)
     (setf valves-fired nil)
   
-    (cv-assert (and 1 (not (outputted 'cylinders))))
+    (ct-assert (and 1 (not (outputted 'cylinders))))
     (setf (cylinders e) 4) ;; same value
     (trc "same cyl")
-    (cv-assert (and 2 (not (outputted 'cylinders))))
-    (cv-assert (not valves-fired))
+    (ct-assert (and 2 (not (outputted 'cylinders))))
+    (ct-assert (not valves-fired))
   
     (setf (cylinders e) 6)
-    (cv-assert (outputted 'cylinders))
-    (cv-assert (not valves-fired))
-    (cv-assert (valves e))(cv-assert valves-fired)))
+    (ct-assert (outputted 'cylinders))
+    (ct-assert (not valves-fired))
+    (ct-assert (valves e))(ct-assert valves-fired)))
 
 #+(or)
 

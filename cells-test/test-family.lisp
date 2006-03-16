@@ -26,18 +26,18 @@
 (defmodel human (family)
   ((age :initarg :age :accessor age :initform 10)))
 
-(def-c-output .kids ((self human))
+(defobserver .kids ((self human))
   (when new-value
     (print `(i have ,(length new-value) kids))
     (dolist (k new-value)
       (trc "one kid is named" (md-name k) :age (age k)))))
   
-(def-c-output age ((k human))
+(defobserver age ((k human))
   (format t "~&~a is ~d years old" (md-name k) (age k)))
   
-(defun cv-test-family ()
-  (cell-reset)
-  (let ((mom (make-be 'human)))
+(def-cell-test cv-test-family ()
+  (cells-reset)
+  (let ((mom (make-instance 'human)))
     ;
     ; the real power of cells appears when a population of model-objects are linked by cells, as
     ; when a real-word collection of things all potentially affect each other.
@@ -59,10 +59,10 @@
     ; one consequence of this is that one not need call to-be on new instances being added to
     ; a larger model family, it will be done as a matter of course.
     ;    
-    (push (make-instance 'human :md-name 'natalia :age (c-in 23)) (kids mom))
-    (push (make-instance 'human :md-name 'veronica :age (c? (- (age (fm-other natalia)) 6))) (kids mom))
-    (push (make-instance 'human :md-name 'aaron :age (c? (- (age (fm-other veronica)) 4))) (kids mom))
-    (push (make-instance 'human :md-name 'melanie :age (c? (- (age (fm-other veronica)) 12))) (kids mom))
+    (push (make-instance 'human :fm-parent mom :md-name 'natalia :age (c-in 23)) (kids mom))
+    (push (make-instance 'human :fm-parent mom :md-name 'veronica :age (c? (- (age (fm-other natalia)) 6))) (kids mom))
+    (push (make-instance 'human :fm-parent mom :md-name 'aaron :age (c? (- (age (fm-other veronica)) 4))) (kids mom))
+    (push (make-instance 'human :fm-parent mom :md-name 'melanie :age (c? (- (age (fm-other veronica)) 12))) (kids mom))
     ;
     ; some of the above rules invoke the macro fm-other. that searches the model space, first searching the 
     ; kids of the starting point (which defaults to a captured 'self), then recursively up to the 
@@ -71,7 +71,7 @@
     (flet ((nat-age (n)
              (setf (age (fm-other natalia :starting mom)) n)
              (dolist (k (kids mom))
-               (cv-assert
+               (ct-assert
                 (eql (age k)
                   (ecase (md-name k)
                     (natalia n)
@@ -122,9 +122,9 @@
 #+(or)
 (cv-family-values)
 
-(defun cv-family-values ()
+(def-cell-test cv-family-values ()
   (let* ((kf-calls 0)
-         (wall (make-be 'family-values
+         (wall (make-instance 'family-values
                         :kv-collector (lambda (mdv)
                                        (eko ("kidnos")(when (numberp mdv)
                                          (loop for kn from 1 to (floor mdv)
@@ -132,25 +132,25 @@
                         :md-value (c-in 5)
                         :kv-key #'md-value
                         :kid-factory (lambda (f kv)
-                                      (declare (ignorable f))
                                       (incf kf-calls)
                                       (trc "making kid" kv)
                                       (make-instance 'bottle
+                                        :fm-parent f
                                         :md-value kv
                                         :label (c? (format nil "bottle ~d out of ~d on the wall"
                                                        (^md-value)
                                                        (length (kids f)))))))))
-    (cv-assert (eql 5 kf-calls))
+    (ct-assert (eql 5 kf-calls))
    
     (setq kf-calls 0)
     (decf (md-value wall))
-    (cv-assert (eql 4 (length (kids wall))))
-    (cv-assert (zerop kf-calls))
+    (ct-assert (eql 4 (length (kids wall))))
+    (ct-assert (zerop kf-calls))
 
     (setq kf-calls 0)
     (incf (md-value wall))
-    (cv-assert (eql 5 (length (kids wall))))
-    (cv-assert (eql 1 kf-calls))
+    (ct-assert (eql 5 (length (kids wall))))
+    (ct-assert (eql 1 kf-calls))
 
     ))
 

@@ -27,29 +27,31 @@
 (defmodel bing (model)
   ((bang :initform (c-in nil) :accessor bang)))
 
-(def-c-output bang ()
+(defobserver bang ()
   (trc "new bang" new-value self)
   (bwhen (p .parent)
-    (with-deference
+    (with-integrity (:change)
         (setf (bang p) new-value)))
   #+(or) (dolist (k (^kids))
-    (setf (bang k) (if (numberp new-value)
-                       (1+ new-value)
-                     0))))
+           (setf (bang k) (if (numberp new-value)
+                              (1+ new-value)
+                            0))))
 
 (defmodel bings (bing family)
   ()
   (:default-initargs
       :kids (c? (loop repeat 2
                       collect (make-instance 'bing
-                                  :md-name (copy-symbol 'kid))))))
+                                :fm-parent self
+                                :md-name (copy-symbol 'kid))))))
 
-(defun cv-output-setf ()
-  (cell-reset)
-  (let ((top (make-be 'bings
+(def-cell-test cv-output-setf ()
+  (cells-reset)
+  (let ((top (make-instance 'bings
                :md-name 'top
                :kids (c-in nil))))
-    (push (make-instance 'bings) (kids top))
+    (push (make-instance 'bings
+            :fm-parent top) (kids top))
     (dolist (k (kids (car (kids top))))
       (setf (bang k) (kid-no k)))))
 

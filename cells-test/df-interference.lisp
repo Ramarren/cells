@@ -37,22 +37,22 @@
                     (+ (^aa) (^ddx))) :initarg :eex :reader eex)
    ))
 
-(def-c-output aa ((self xx3))
+(defobserver aa ((self xx3))
     (trc nil "output aa:" new-value))
 
-(def-c-output bb ((self xx3))
+(defobserver bb ((self xx3))
    (trc nil "output bb:" new-value))
 
-(def-c-output cc ((self xx3))
+(defobserver cc ((self xx3))
     (trc nil "output cc:" new-value))
 
-(def-c-output dd ((self xx3))
+(defobserver dd ((self xx3))
     (trc nil "output dd:" new-value))
 
-(def-c-output ee ((self xx3))
+(defobserver ee ((self xx3))
    (trc nil "output ee:" new-value))
 
-(def-c-output eex ((self xx3))
+(defobserver eex ((self xx3))
   (incf *eex*)
     (trc "output eex:" new-value *eex*))
 
@@ -80,15 +80,15 @@
 ;; irrevocable damage may have been done.
 ;;
 
-(defun df-test ()
-  (cell-reset)
+(def-cell-test df-test ()
+  (cells-reset)
   (let* ((*eex* 0)
-         (it (make-be 'xx3)))
+         (it (make-instance 'xx3)))
     (trc "eex =" *eex*)
-    (cv-assert (eql *eex* 1))
+    (ct-assert (eql *eex* 1))
     ;;(inspect it);;(cellbrk)
-    (cv-assert (and (eql (aa it) 0)(eql (bb it) 0)(eql (cc it) 0)))
-    (cv-assert (and (eql (dd it) 0)(eql (ddx it) 0)(eql (ee it) 0)(eql (eex it) 0)))
+    (ct-assert (and (eql (aa it) 0)(eql (bb it) 0)(eql (cc it) 0)))
+    (ct-assert (and (eql (dd it) 0)(eql (ddx it) 0)(eql (ee it) 0)(eql (eex it) 0)))
     
     ;;;- interference handling
     ;;;
@@ -96,18 +96,18 @@
       (trc "--------- 1 => (aa it) --------------------------")
       (setf (aa it) 1)
       
-      (cv-assert (and (eql (aa it) 1)(eql (bb it) 2)(eql (cc it) 3)))
+      (ct-assert (and (eql (aa it) 1)(eql (bb it) 2)(eql (cc it) 3)))
       (trc "dd,ddx:" (dd it) (ddx it) )
-      (cv-assert (and (eql (dd it) 0)(eql (ddx it) 5)))
-      (cv-assert (and (eql (ee it) 1)(eql (eex it) 6)))
-      (cv-assert (eql *eex* 1)))
+      (ct-assert (and (eql (dd it) 0)(eql (ddx it) 5)))
+      (ct-assert (and (eql (ee it) 1)(eql (eex it) 6)))
+      (ct-assert (eql *eex* 1)))
     
     (let ((*eex* 0))
       (trc "--------- 2 => (aa it) --------------------------")
       (setf (aa it) 2)
-      (cv-assert (and (eql (aa it) 2)(eql (bb it) 4)(eql (cc it) 6)
+      (ct-assert (and (eql (aa it) 2)(eql (bb it) 4)(eql (cc it) 6)
                    (eql (dd it) 0)(eql (ddx it) 10)(eql (ee it) 2)(eql (eex it) 12)))
-      (cv-assert (eql *eex* 1)))
+      (ct-assert (eql *eex* 1)))
     
     (dolist (c (cells it))
       (trc "cell is" c)

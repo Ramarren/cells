@@ -62,28 +62,28 @@
 ;; a convenience arrange for horizontal justification, but if some kid chose to define its
 ;; left attribute that would be honored.
 ;;
-(defun cv-kid-slotting ()
-  (cell-reset)
-  (let ((stack (make-be 'stack
+(def-cell-test cv-kid-slotting ()
+  (cells-reset)
+  (let ((stack (make-instance 'stack
                           :left 10 :top 20
                         :width 500 :height 1000
                         :justify (c-in :left)
-                        :kids (eko ("kids") (loop for kn from 1 to 4
-                                    collect (make-instance 'image
+                        :kids (c? (eko ("kids") (loop for kn from 1 to 4
+                                    collect (make-kid 'image
                                               :top 0 ;; overridden
                                               :width (* kn 10)
-                                              :height (* kn 50))))
+                                              :height (* kn 50)))))
                         )))
-    (cv-assert (eql (length (kids stack)) 4))
-    (cv-assert (and (eql 10 (left stack))
+    (ct-assert (eql (length (kids stack)) 4))
+    (ct-assert (and (eql 10 (left stack))
                     (every (lambda (k) (eql 10 (left k)))
                            (kids stack))))
-    (cv-assert (every (lambda (k)
+    (ct-assert (every (lambda (k)
                         (eql (top k) (bottom (fm-prior-sib k))))
                       (cdr (kids stack))))
 
     (setf (justify stack) :right)
-    (cv-assert (and (eql 510 (right stack))
+    (ct-assert (and (eql 510 (right stack))
                     (every (lambda (k) (eql 510 (right k)))
                            (kids stack))))
     ))
