@@ -85,7 +85,7 @@
     
     ; --- manifest new value as needed ---
     ;
-    ; propagation to users jumps back in front of client slot-change handling in cells3
+    ; propagation to users jumps back in front of client slot-value-observe handling in cells3
     ; because model adopting (once done by the kids change handler) can now be done in
     ; shared-initialize (since one is now forced to supply the parent to make-instance).
     ;
@@ -95,13 +95,13 @@
     ; 
     (c-propagate-to-users c)
 
-    (slot-change (c-slot-name c) (c-model c)
+    (slot-value-observe (c-slot-name c) (c-model c)
       (c-value c) prior-value prior-value-supplied)
     ;
     ; with propagation done, ephemerals can be reset. we also do this in c-awaken, so
     ; let the fn decide if C really is ephemeral. Note that it might be possible to leave
     ; this out and use the datapulse to identify obsolete ephemerals and clear them
-    ; when read. That would avoid ever making again bug I had in which I had the reset inside slot-change,
+    ; when read. That would avoid ever making again bug I had in which I had the reset inside slot-value-observe,
     ; thinking that that always followed propagation to users. It would also make
     ; debugging easier in that I could find the last ephemeral value in the inspector.
     ; would this be bad for persistent CLOS, in which a DB would think there was still a link
@@ -111,14 +111,6 @@
     ))
 
 ; --- slot change -----------------------------------------------------------
-
-(defun slot-change (slot-name self new-value prior-value prior-value-supplied)
-  (trc nil "slot-change > now!!" self slot-name new-value prior-value)
-  ;; (count-it :output slot-name)
-  ;
-  ; this next guy is a GF with progn method combo, which is why we cannot just use slot-change
-  ;
-  (slot-value-observe slot-name self new-value prior-value prior-value-supplied))
 
 (defmacro defobserver (slotname
                       (&optional (self-arg 'self) (new-varg 'new-value)
@@ -172,15 +164,16 @@
   ;         there is no way one can reliably be sure H will not ask for A
   ;
   (trc nil "c-propagate-to-users > queueing" c)
-  (let ((causation (cons c *causation*))) ;; in case deferred
-    (with-integrity (:tell-dependents c)
-      (assert (null *c-calculators*))
-      (let ((*causation* causation))
-        (trc nil "c-propagate-to-users > notifying users of" c)
-        (dolist (user (c-users c))
-          (unless (member (cr-lazy user) '(t :always :once-asked))
-            (trc nil "propagating to user is (used,user):" c user)
-            (c-value-ensure-current user :user-propagation)))))))
+  (when (c-users c)
+    (let ((causation (cons c *causation*))) ;; in case deferred
+      (with-integrity (:tell-dependents c)
+        (assert (null *c-calculators*))
+        (let ((*causation* causation))
+          (trc nil "c-propagate-to-users > notifying users of" c)
+          (dolist (user (c-users c))
+            (unless (member (cr-lazy user) '(t :always :once-asked))
+              (trc nil "propagating to user is (used,user):" c user)
+              (c-value-ensure-current user :user-propagation))))))))
 
 
 

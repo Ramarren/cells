@@ -80,29 +80,69 @@
   (tagbody
     tell-dependents
     (just-do-it :tell-dependents)
-
-    (just-do-it :awaken) ;--- awaken new instances ---
+    ;
+    ; while the next step looks separate from the prior, they are closely bound.
+    ; during :tell-dependents, any number of new model instances can be spawned.
+    ; as they are spawned, shared-initialize queues them for awakening, which
+    ; you will recall forces the calculation of ruled cells and observer notification
+    ; for all cell slots. These latter may enqueue :change or :client tasks, in which
+    ; case note that they become appended to :change or :client tasks enqueued
+    ; during :tell-dependents. How come? Because the birth itself of model instances during
+    ; a datapulse is considered part of that datapulse, so we do want tasks enqueued
+    ; during their awakening to be handled along with those enqueued by cells of
+    ; existing model instances.
+    ;
+    (just-do-it :awaken) ;--- md-awaken new instances ---
+    ;
+    ; we do not go back to check for a need to :tell-dependents because (a) the original propagation
+    ; and processing of the :tell-dependents queue is a full propagation; no rule can ask for a cell that
+    ; then decides it needs to recompute and possibly propagate; and (b) the only rules forced awake during
+    ; awakening need that precisely because no one asked for their values, so their can be no dependents
+    ; to "tell". I think. :) So...
+    ;
+    (assert (null (fifo-peek (ufb-queue :tell-dependents))))
 
     ;--- process client queue ------------------------------
     ;
     (when *stop* (return-from finish-business))
-    (trc (fifo-peek (ufb-queue :client)) "!!! finbiz --- USER --- length" (fifo-length (ufb-queue :client)))
-
+    
     (bwhen (clientq (ufb-queue :client))
       (if *client-queue-handler*
-          (funcall *client-queue-handler* clientq) ;; might be empty/not exist
+          (funcall *client-queue-handler* clientq) ;; might be empty/not exist, so handlers must check
         (just-do-it clientq)))
 
     ;--- now we can reset ephemerals --------------------
+    ;
+    ; one might be wondering when the observers got notified. That happens
+    ; Nice historical note: by accident, in the deep-cells test to exercise the new behavior
+    ; of cells3, I coded an ephemeral cell and initialized it to non-nil, hitting a runtime
+    ; error (now gone) saying I had no idea what a non-nil ephemeral would mean. That had been
+    ; my conclusion when the idea occurred to me the first time, so I stuck in an assertion
+    ; to warn off users. 
+    ;
+    ; But the new
+    ; datachange progression defined by Cells3 had already forced me to manage ephemeral resets
+    ; more predictably (something in the test suite failed). By the time I got the runtime
+    ; error on deep-cells I was able to confidently take out the error and just let the thing
+    ; run. deep-cells looks to behave just right, but maybe a tougher test will present a problem?
+    ;
     (just-do-it :ephemeral-reset)
     
     ;--- do deferred state changes -----------------------
     ;
-    (bwhen (task-info (fifo-pop (ufb-queue :change))) ;; it would be odd, but nils can legally inhabit queues, so be safe...
+    (bwhen (task-info (fifo-pop (ufb-queue :change)))
       (trc nil "!!!!!!!!!!!!!!!!!!! finbiz --- CHANGE ---- (first of)" (fifo-length (ufb-queue :change)))
       (destructuring-bind (defer-info . task-fn) task-info
         (trc nil "finbiz: deferred state change" defer-info)
         (data-pulse-next (list :finbiz defer-info))
         (funcall task-fn)
+        ;
+        ; to finish this state change we could recursively call (finish-business), but
+        ; a goto let's us not use the stack. Someday I envision code that keeps on
+        ; setf-ing, polling the OS for events, in which case we cannot very well use
+        ; recursion. But as a debugger someone might want to change the next form
+        ; to (finish-business) if they are having trouble with a chain of setf's and
+        ; want to inspect the history on the stack.
+        ;
         (go tell-dependents)))))
 

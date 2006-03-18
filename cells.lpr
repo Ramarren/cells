@@ -49,7 +49,7 @@
   :old-space-size 256000
   :new-space-size 6144
   :runtime-build-option :standard
-  :on-initialization 'cells::test-cells
+  :on-initialization 'cells::go-deep
   :on-restart 'do-default-restart)
 
 ;; End of Project Definition

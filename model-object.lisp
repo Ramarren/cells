@@ -133,7 +133,7 @@
           ;; but I think anything better creates a run-time hit.
           ;;
           (unless (md-slot-cell-flushed self slot-name) ;; slot will have been propagated just after cell was flushed
-            (slot-change slot-name self (bd-slot-value self slot-name) nil nil)))
+            (slot-value-observe slot-name self (bd-slot-value self slot-name) nil nil)))
 
          ((find (c-lazy c) '(:until-asked :always t))
           (trc nil "md-awaken deferring c-awaken since lazy" 

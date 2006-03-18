@@ -20,7 +20,8 @@
                               (:file "output-setf")
                               (:file "test-cycle")
                               (:file "test-ephemeral")
-                              (:file "test-synapse")))))
+                              (:file "test-synapse")
+                              (:file "deep-cells")))))
 
 (defmethod perform :after ((op load-op) (system (eql (find-system :cells-test))))
   (funcall (find-symbol "TEST-CELLS" "CELLS")))
