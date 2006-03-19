@@ -6,12 +6,11 @@
 
 (asdf:defsystem :cells
     :name "cells"
-  :author "Kenny Tilton <ktilton@nyc.rr.com>"
-  :version "2.0"
-  :maintainer "Kenny Tilton <ktilton@nyc.rr.com>"
+  :author "Kenny Tilton <kentilton@gmail.com>"
+  :maintainer "Kenny Tilton <kentilton@gmail.com>"
   :licence "MIT Style"
   :description "Cells"
-  :long-description "The Cells dataflow extension to CLOS."
+  :long-description "Cells: a dataflow extension to CLOS."
   :serial t
   :components ((:module "utils-kt"
                  :serial t
@@ -24,10 +23,10 @@
                (:file "defpackage")
                (:file "cells")
                (:file "integrity")
+               (:file "constructors")
                (:file "cell-types")
                (:file "synapse")
                (:file "synapse-types")
-               (:file "constructors")
                (:file "initialize")
                (:file "md-slot-value")
                (:file "slot-utilities")
