@@ -12,18 +12,22 @@ expression to specify the value of a cell. The Cells system takes care
 of tracking dependencies among cells, and propagating values. It is
 distributed under an MIT-style license.
 
-Documentation is unfortunately quite lacking; the cells-devel list is
-still your best source of information.  Some documentation can be
-found in the doc/ directory of the distribution.  See the website at
-http://www.common-lisp.net/project/cells/ for more info.
+Documentation/support is in the form of:
+
+   the cells-devel mailing list (users and developers both welcome)
+   .\docs\01-cell-basics.lisp
+   .\docs\motor-control.lisp ;; actually Bill Clementson's blog entry
+   extensive examples in the Cells-test regression test suite 
+   the companion Celtk module, which happens also to provide a substantial and 
+        growing portable, native Common Lisp GUI. 
+
+The above examples have all been tested against the current release of Cells.
+Now in .\doc is cells-overview.pdf. That is pretty rough and obsolete in re the
+code, but some of it might be enlightening.
 
 Cells is written in almost-portable ANSI Common Lisp.  It makes very
 light use of the introspective portions of the MOP, and contains a few
-workarounds for shortcomings in common implementations.  It contains
-gratuitous use of silly reader conditionals (eg, #-chya, #-not, etc),
-so users wishing to push things like :TEST and :NOT on *FEATURES*, and
-users of the New Implementation of Lisp (NIL) should beware.  If the
-last sentance didn't mean anything to you, you can ignore it.
+workarounds for shortcomings in common implementations. 
 
 Cells is known to currently work on the following Lisp implementations:
 
@@ -43,7 +47,7 @@ One of the Cells tests fails with CMUCL.  This appears to be caused by
 a bug in its CLOS implementation, but has not been investigated in
 great depth.
 
-Cells is belived to work with Corman CL, but has not been recently
+Cells is believed to work with Corman CL, but has not been recently
 tested.  In the past, MCL was supported, but a it does not currently
 pass the test suite.  Ressurecting full support for any of these
 implementations should be easy.

@@ -50,6 +50,8 @@ First, define the motor class (Note: defmodel is a macro that wraps a class
 definition and several method definitions):
 |#
 
+(in-package :cells)
+
 (defmodel motor ()
   ((status :initarg :status :accessor status :initform nil)
    (fuel-pump :initarg :fuel-pump :accessor fuel-pump 

@@ -1,3 +1,5 @@
+(in-package :cells)
+
 (defvar *client-log*)
 (defvar *obs-1-count*)
 
