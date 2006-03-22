@@ -7,8 +7,18 @@
 (push (make-pathname :device "c" :directory '(:absolute "0dev" "cells"))
     asdf:*central-registry*)
 
+(push (make-pathname :device "c" :directory '(:absolute "0dev" "Celtk"))
+    asdf:*central-registry*)
+
 #-runtestsuite
-(ASDF:OOS 'ASDF:LOAD-OP :CELLS :force t)
+(ASDF:OOS 'ASDF:LOAD-OP :CELLS)
 
 #+runtestsuite
-(ASDF:OOS 'ASDF:LOAD-OP :CELLS-TEST :force t)
+(ASDF:OOS 'ASDF:LOAD-OP :CELLS-TEST)
+
+#+checkoutceltk
+(ASDF:OOS 'ASDF:LOAD-OP :CELTK)
+
+#+testceltk
+(ctk::tk-test)
+
