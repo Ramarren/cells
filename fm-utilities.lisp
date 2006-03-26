@@ -127,15 +127,17 @@
   (without-c-dependency
    (when family
      (labels ((tv-family (fm)
-                (when (and (typep fm 'model-object)
-                        (not (eql fm skip-tree)))
-                  (let ((outcome (and (not (eql skip-node fm)) ;; skipnode new 990310 kt
-                                   (funcall applied-fn fm))))
-                    (unless (and outcome opaque)
-                      (dolist (kid (kids fm))
-                        (tv-family kid))
-                      ;(tv-family (mdValue fm))
-                      )))))
+                (etypecase fm
+                  (cons (loop for md in fm do (tv-family md)))
+                  (model-object
+                   (unless (eql fm skip-tree)
+                     (let ((outcome (and (not (eql skip-node fm)) ;; skipnode new 990310 kt
+                                      (funcall applied-fn fm))))
+                       (unless (and outcome opaque)
+                         (dolist (kid (kids fm))
+                           (tv-family kid))
+                         ;(tv-family (mdValue fm))
+                         )))))))
        (tv-family family)
        (when global-search
          (fm-traverse (fm-parent family) applied-fn 
