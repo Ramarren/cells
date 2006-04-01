@@ -26,10 +26,6 @@
   `(let ((*dbg* t))
      ,@body))
 
-#+clisp
-(defun slot-definition-name (slot)
-  (clos::slotdef-name slot))
-
 ;;;(defmethod class-slot-named ((classname symbol) slotname)
 ;;;  (class-slot-named (find-class classname) slotname))
 ;;;

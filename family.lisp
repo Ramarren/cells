@@ -23,7 +23,7 @@
 (in-package :cells)
 
 (eval-when (:compile-toplevel :execute :load-toplevel)
-  (export '(model md-value family kids kid1 perishable)))
+  (export '(model md-value family kids kid1 ^k1 kid2 ^k2 last-kid ^k-last perishable)))
 
 (defmodel model ()
   ((.md-name :cell nil :initform nil :initarg :md-name :accessor md-name)
@@ -86,7 +86,12 @@
        (if (typep ,self ',type) ,self (upper ,self ,type)))))
 
 (defun kid1 (self) (car (kids self)))
+(defun kid2 (self) (cadr (kids self)))
+(defmacro ^k1 () `(kid1 self))
+(defmacro ^k2 () `(kid2 self))
+
 (defun last-kid (self) (last1 (kids self)))
+(defmacro ^k-last () `(last-kid self))
 
 ;; /// redundancy in following
 
@@ -142,9 +147,9 @@
   (c-assert (listp old-kids))
   (c-assert (not (member nil old-kids)))
   (c-assert (not (member nil new-kids)))
-  (c-assert (every 'fm-parent new-kids) ()
-    "New for Cells3: parent must be supplied to make-instance of kid ~a"
-    (find-if-not 'fm-parent new-kids))
+  (bwhen (sample (find-if-not 'fm-parent new-kids))
+      (c-break "New as of Cells3: parent must be supplied to make-instance of ~a kid ~a"
+        (type-of sample) sample))
   (trc nil ".kids output > entry" new-kids (mapcar 'fm-parent new-kids))
 
   (dolist (k (set-difference old-kids new-kids))

@@ -43,6 +43,5 @@
     #:fifo-map #:fifo-peek #:fifo-data #:with-fifo-map #:fifo-length
 
     #-(or lispworks mcl) #:true
-    #+clisp #:slot-definition-name
     #+(and mcl (not openmcl-partial-mop)) #:class-slots
     ))
