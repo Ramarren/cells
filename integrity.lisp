@@ -41,18 +41,35 @@
   (when *stop*
     (return-from call-with-integrity))
   (if *within-integrity*
-        (if opcode
-            (ufb-add opcode (cons defer-info action))
-          (funcall action))
+      (if opcode
+          (ufb-add opcode (cons defer-info action))
+        (funcall action))
     (let ((*within-integrity* t)
-          *unfinished-business*)
+          *unfinished-business*
+          *defer-changes*)
       (when (or (zerop *data-pulse-id*)
-              (eq opcode :change))
+              (eq opcode :change)
+              )
         (eko (nil "!!! New pulse, event" *data-pulse-id* defer-info)
           (data-pulse-next (cons opcode defer-info))))
       (prog1
           (funcall action)
         (finish-business)))))
+
+(defmacro without-integrity ((&optional dbg-info) &rest body)
+  "Whimsical name for launching a self-contained, dynamic integrity chunk, as with
+string-to-mx in the math-paper project, where everything is fully isolated from the
+outside computation."
+  `(call-without-integrity ,dbg-info (lambda () ,@body)))
+
+(defun call-without-integrity (dbg-info action)
+  (declare (ignorable dbg-info))
+  (let ((*within-integrity* nil)
+          *unfinished-business*
+          *defer-changes*
+        *c-calculators*
+        (*data-pulse-id* 0))
+    (funcall action)))
 
 (defun ufb-queue (opcode)
   (assert (find opcode *ufb-opcodes*))
@@ -131,7 +148,7 @@
     ;--- do deferred state changes -----------------------
     ;
     (bwhen (task-info (fifo-pop (ufb-queue :change)))
-      (trc nil "!!!!!!!!!!!!!!!!!!! finbiz --- CHANGE ---- (first of)" (fifo-length (ufb-queue :change)))
+      (trc nil "!!! finbiz --- CHANGE ---- (first of)" (fifo-length (ufb-queue :change)))
       (destructuring-bind (defer-info . task-fn) task-info
         (trc nil "finbiz: deferred state change" defer-info)
         (data-pulse-next (list :finbiz defer-info))

@@ -34,10 +34,6 @@
 
 (defmethod c-awaken-cell ((c cell))
   (assert (c-inputp c))
-  #+goforit(when (and (c-ephemeral-p c)
-          (c-value c))
-    (c-break "Feature not yet supported: initializing ephemeral to other than nil: [~a]"
-      (c-value c)))
   ;
   ; nothing to calculate, but every cellular slot should be output
   ;

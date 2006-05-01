@@ -41,11 +41,11 @@
      
      #:class-precedence-list
      #-(and mcl (not openmcl-partial-mop)) #:class-slots
-     #-clisp #:slot-definition-name
+     #:slot-definition-name
      )
   (:export #:cell #:.md-name 
     #:c-input #:c-in #:c-in8
-    #:c-formula #:c? #:c?8 #:c?_ #:c??
+    #:c-formula #:c? #:c_? #:c?8 #:c?_ #:c??
     #:with-integrity #:without-c-dependency #:self #:*parent*
     #:.cache #:.with-c-cache #:c-lambda
     #:defmodel #:defobserver #:slot-value-observe #:def-c-unchanged-test

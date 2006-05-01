@@ -57,9 +57,6 @@
     :value-state :unevaluated
     :rule (c-lambda (without-c-dependency ,@body))))
 
-
-    
-
 (defmacro c?dbg (&body body)
   `(make-c-dependent
     :code ',body
@@ -72,6 +69,14 @@
     :code ',body
     :value-state :unevaluated
     :lazy t
+    :rule (c-lambda ,@body)))
+
+(defmacro c_? (&body body)
+  "Lazy until asked, then eagerly propagating"
+  `(make-c-dependent
+    :code ',body
+    :value-state :unevaluated
+    :lazy :until-asked
     :rule (c-lambda ,@body)))
 
 (defmacro c?? ((&key (tagp nil) (in nil) (out t))&body body)

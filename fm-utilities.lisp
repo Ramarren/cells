@@ -525,7 +525,7 @@
   (count-it :fm-find-one)
   (flet ((matcher (fm)
            (when diag
-             (trc "fm-find-one matcher sees" md-name fm (md-name fm)))
+             (trc "fm-find-one matcher sees name" (md-name fm) :ofthing fm :seeking md-name))
            (when (and (eql (name-root md-name)(md-name fm))
                    (or (null (name-subscript md-name))
                      (eql (name-subscript md-name) (fm-pos fm)))
@@ -541,7 +541,7 @@
                      :skip-tree skip-tree
                      :global-search global-search))))
       (when (and must-find (null match))
-        (trc "fm-find-one > erroring fm-not-found" family md-name must-find global-search)
+        (trc "fm-find-one > erroring fm-not-found, in family: " family :seeking md-name :global? global-search)
         ;;(inspect family)
         (setq diag t must-find nil)
         (fm-traverse family #'matcher

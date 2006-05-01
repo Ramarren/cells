@@ -111,9 +111,6 @@ square of the time falling.
 
 (in-package :cells)
 
-(cells-reset)
-
-
 (defmodel stone ()
   ((accel :cell t :initarg :accel :initform 0 :accessor accel)
    (time-elapsed :cell t :initarg :time-elapsed
@@ -210,9 +207,11 @@ now evaluate the following:
 
 #+evaluatethis
 
-(defparameter *s2* (make-instance 'stone
-                     :accel 32 ;; (constant) feet per second per second
-                     :time-elapsed (c-in 0)))
+(progn
+  (cells-reset)
+  (defparameter *s2* (make-instance 'stone
+                       :accel 32 ;; (constant) feet per second per second
+                       :time-elapsed (c-in 0))))
 
 #|
 

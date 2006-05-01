@@ -162,10 +162,25 @@
   (when *defer-changes*
     (c-break "SETF of ~a must be deferred by wrapping code in WITH-INTEGRITY" c))
 
-  (with-integrity (:change)
+  (progn ;; with-integrity (:change)
+    ;;
+    ;; ok, we had a weird bug to find caused by a SETF being deferred unexpectedly. 
+    ;; This was the gears Togl demo, setf-ing a display-list in the create callback. It got
+    ;; called within the dynamic scope of the ufb queue handler doing the :make-tk items.
+    ;; When contemplating a fix, it occurred to me that I had no idea what to return from 
+    ;; (setf md-slot-value) if the core setf behavior got deferred. I concluded one could not
+    ;; sensibly impose integrity automatically here, as slick as that might seem. So callers
+    ;; will have to provide the with-integrity (:change... wrapper. Since SETF happens mostly
+    ;; in event handling callbacks, hopefully this will not be necesssary at all. A quck check
+    ;; of Celtk confirms this pattern.
+    ;;
     (md-slot-value-assume c new-value nil))
 
-  new-value)
+  ;; new-value 
+  ;; above line commented out 2006-05-01. It seems to me we want the value assumed by the slot
+  ;; not the value setf'ed (on rare occasions they diverge, or at least used to for delta slots)
+  ;; anyway, if they no longer diverge the question of which to return is moot
+  )
                     
 (defmethod md-slot-value-assume (c raw-value propagation-code)
   (assert c)

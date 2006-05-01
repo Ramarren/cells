@@ -1,4 +1,4 @@
-;; -*- lisp-version: "8.0 [Windows] (Mar 19, 2006 10:49)"; cg: "1.81"; -*-
+;; -*- lisp-version: "8.0 [Windows] (Apr 21, 2006 10:24)"; cg: "1.81"; -*-
 
 (in-package :cg-user)
 
@@ -49,7 +49,7 @@
   :old-space-size 256000
   :new-space-size 6144
   :runtime-build-option :standard
-  :on-initialization 'cells::go-deep
+  :on-initialization 'cells::test
   :on-restart 'do-default-restart)
 
 ;; End of Project Definition

@@ -36,7 +36,8 @@
   nil)
 
 (defmethod print-object ((self model) s)
-  (format s "~a" (or (md-name self) (type-of self))))
+  (format s "~a" (type-of self))
+  #+shhh (format s "~a" (or (md-name self) (type-of self))))
 
 (define-symbol-macro .parent (fm-parent self))
 
@@ -143,7 +144,7 @@
 
 (defobserver .kids ((self family) new-kids old-kids)
   (declare (ignorable usage))
-  (c-assert (listp new-kids))
+  (c-assert (listp new-kids) () "New kids value for ~a not listp: ~a ~a" self (type-of new-kids) new-kids)
   (c-assert (listp old-kids))
   (c-assert (not (member nil old-kids)))
   (c-assert (not (member nil new-kids)))

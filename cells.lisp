@@ -141,7 +141,7 @@
   (unless *stop*
     (c-stop args)
     (format t "c-break > stopping > ~a" args)
-    (apply #'error args)))
+    (apply 'break args)))
 
 
 
