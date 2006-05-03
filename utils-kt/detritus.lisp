@@ -62,6 +62,9 @@
 (defun fifo-length (q) (length (fifo-data q)))
 (defun fifo-peek (q) (car (fifo-data q)))
 
+(defun fifo-browse (q fn)
+  (map nil fn (fifo-data q)))
+
 (defun fifo-add (q new)
   (if (car q)
       (let ((last (cdr q))

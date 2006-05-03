@@ -47,6 +47,7 @@
     (let ((*within-integrity* t)
           *unfinished-business*
           *defer-changes*)
+      (trc nil "initiating new UFB!!!!!!!!!!!!" opcode defer-info)
       (when (or (zerop *data-pulse-id*)
               (eq opcode :change)
               )
@@ -82,11 +83,13 @@ outside computation."
 
 (defun ufb-add (opcode continuation)
   (assert (find opcode *ufb-opcodes*))
+  (trc nil "ufb-add deferring" opcode (when (eql opcode :client)(car continuation)))
   (fifo-add (ufb-queue-ensure opcode) continuation))
 
 (defun just-do-it (op-or-q &aux (q (if (keywordp op-or-q)
                                        (ufb-queue op-or-q)
                                      op-or-q)))
+  (trc nil "just do it doing" op-or-q)
   (loop for (nil . task) = (fifo-pop q)
         while task
         do (trc nil "unfin task is" opcode task)
@@ -123,11 +126,15 @@ outside computation."
     ;
     (when *stop* (return-from finish-business))
     
+    handle-clients
     (bwhen (clientq (ufb-queue :client))
       (if *client-queue-handler*
           (funcall *client-queue-handler* clientq) ;; might be empty/not exist, so handlers must check
-        (just-do-it clientq)))
-
+        (just-do-it clientq))
+      (when (fifo-peek (ufb-queue :client))
+        #+shhh (ukt::fifo-browse (ufb-queue :client) (lambda (entry)
+                                                (trc "surprise client" entry)))
+        (go handle-clients)))
     ;--- now we can reset ephemerals --------------------
     ;
     ; one might be wondering when the observers got notified. That happens
