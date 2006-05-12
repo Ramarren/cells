@@ -98,4 +98,3 @@
 
 (defobserver sorted-kids ()
   (setf (sort-map self) new-value)) ;; cellular trick to avoid cyclicity
-
