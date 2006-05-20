@@ -25,7 +25,7 @@ The above examples have all been tested against the current release of Cells.
 Now in .\doc is cells-overview.pdf. That is pretty rough and obsolete in re the
 code, but some of it might be enlightening.
 
-Cells is written in almost-portable ANSI Common Lisp.  It makes very
+Cells is written in portable ANSI Common Lisp.  It makes very
 light use of the introspective portions of the MOP, and contains a few
 workarounds for shortcomings in common implementations. 
 
@@ -44,7 +44,7 @@ Partially supported are:
   * MCL
 
 One of the Cells tests fails with CMUCL.  This appears to be caused by
-a bug in its CLOS implementation, but has not been investigated in
+a bug in CMUCL's  CLOS implementation, but has not been investigated in
 great depth.
 
 Cells is believed to work with Corman CL, but has not been recently
@@ -56,8 +56,6 @@ Porting Cells to an unsupported but ANSI-conforming Lisp
 implementation should be trivial: mostly a matter of determining the
 package where the MOP lives.  In reality, however, you might have to
 find workarounds for bugs in ANSI compliance.
-
-
 
 ***** Installation *****
 

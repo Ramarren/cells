@@ -11,10 +11,10 @@
     asdf:*central-registry*)
 
 #-runtestsuite
-(ASDF:OOS 'ASDF:LOAD-OP :CELLS)
+(asdf:oos 'asdf:load-op :cells)
 
 #+runtestsuite
-(ASDF:OOS 'ASDF:LOAD-OP :CELLS-TEST)
+(asdf:oos 'asdf:load-op :cells-test)
 
 #+checkoutceltk
 (ASDF:OOS 'ASDF:LOAD-OP :CELTK)
