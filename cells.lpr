@@ -1,4 +1,4 @@
-;; -*- lisp-version: "8.0 [Windows] (May 11, 2006 6:29)"; cg: "1.81"; -*-
+;; -*- lisp-version: "8.0 [Windows] (May 22, 2006 0:51)"; cg: "1.81"; -*-
 
 (in-package :cg-user)
 
@@ -27,7 +27,9 @@
                  (make-instance 'module :name
                                 "doc\\01-Cell-basics.lisp")
                  (make-instance 'module :name
-                                "doc\\motor-control.lisp"))
+                                "doc\\motor-control.lisp")
+                 (make-instance 'module :name
+                                "porting\\do-no-harm.lisp"))
   :projects (list (make-instance 'project-module :name
                                  "utils-kt\\utils-kt"))
   :libraries nil
