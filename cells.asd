@@ -8,7 +8,7 @@
     :name "cells"
   :author "Kenny Tilton <kentilton@gmail.com>"
   :maintainer "Kenny Tilton <kentilton@gmail.com>"
-  :licence "MIT Style"
+  :licence "Lisp LGPL"
   :description "Cells"
   :long-description "Cells: a dataflow extension to CLOS."
   :serial t

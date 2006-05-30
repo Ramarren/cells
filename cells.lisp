@@ -84,11 +84,11 @@ See the Lisp Lesser GNU Public License for more details.
 (define-condition unbound-cell (unbound-slot) ())
 
 (defgeneric slot-value-observe (slotname self new old old-boundp)
-  #-(or cormanlisp clisp)
+  #-(or cormanlisp)
   (:method-combination progn))
 
 #-cells-testing
-(defmethod slot-value-observe #-(or cormanlisp clisp) progn
+(defmethod slot-value-observe #-(or cormanlisp) progn
   (slot-name self new old old-boundp)
   (declare (ignorable slot-name self new old old-boundp)))
 

@@ -119,7 +119,7 @@ See the Lisp Lesser GNU Public License for more details.
        ,(if (eql (last1 output-body) :test)
             (let ((temp1 (gensym))
                   (loc-self (gensym)))
-              `(defmethod slot-value-observe #-(or clisp cormanlisp) ,(if aroundp :around 'progn)
+              `(defmethod slot-value-observe #-(or cormanlisp) ,(if aroundp :around 'progn)
                  ((slotname (eql ',slotname)) ,self-arg ,new-varg ,oldvarg ,oldvargboundp)
                  (let ((,temp1 (bump-output-count ,slotname))
                        (,loc-self ,(if (listp self-arg)
@@ -129,7 +129,7 @@ See the Lisp Lesser GNU Public License for more details.
                      (format t "~&output ~d (~a ~a) old: ~a" ,temp1 ',slotname ,loc-self ,oldvarg))
                    (format t "~&output ~d (~a ~a) new: ~a" ,temp1 ',slotname ,loc-self ,new-varg))))
           `(defmethod slot-value-observe
-               #-(or clisp cormanlisp) ,(if aroundp :around 'progn)
+               #-(or cormanlisp) ,(if aroundp :around 'progn)
              ((slotname (eql ',slotname)) ,self-arg ,new-varg ,oldvarg ,oldvargboundp)
              (declare (ignorable
                        ,@(flet ((arg-name (arg-spec)
@@ -138,9 +138,7 @@ See the Lisp Lesser GNU Public License for more details.
                                     (atom arg-spec))))
                            (list (arg-name self-arg)(arg-name new-varg)
                              (arg-name oldvarg)(arg-name oldvargboundp)))))
-             ,@output-body
-             ;;broke cells-gtk #+(or clisp cormanlisp) (call-next-method)
-             )))))
+             ,@output-body)))))
 
 (defmacro bump-output-count (slotname) ;; pure test func
   `(if (get ',slotname :outputs)

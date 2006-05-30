@@ -98,17 +98,21 @@ subclass for them?)
   ()
   (:default-initargs
       :md-value (c? (bwhen (ks (^kids))
+                      ;(trc "chya" (mapcar 'md-value ks))
                       (apply '+ (mapcar 'md-value ks))))))
 
 (def-cell-test many-useds
-    (with-integrity ()
-      (let ((i (make-instance 'm-index)))
-        (loop for n below 100
-            do (push (make-instance 'model
-                       :fm-parent i
-                       :md-value (c-in n))
-                 (kids i)))
-        (trc "index total" (md-value i)))))
+    (let ((i (make-instance 'm-index)))
+      (loop for n below 100
+          do (push (make-instance 'model
+                     :fm-parent i
+                     :md-value (c-in n))
+               (kids i)))
+      (trc "index total" (md-value i))
+      (ct-assert (= 4950 (md-value i)))))
+
+#+test
+(many-useds)
 
 (defmodel m-null ()
   ((aa :initform nil :cell nil :initarg :aa :accessor aa)))

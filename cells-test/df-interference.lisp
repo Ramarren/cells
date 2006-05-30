@@ -118,11 +118,3 @@
     ))
 
 
-(defmodel skipper ()
-  ((price :initform (c-in 0) :accessor price)
-   (max-price :accessor max-price
-     :initform (c? (if .cache
-                       (max (^price) .cache)
-                     (^price))))
-   (half-max :accessor half-max
-     :initform (c? (floor (^half-max)

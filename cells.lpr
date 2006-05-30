@@ -27,9 +27,7 @@
                  (make-instance 'module :name
                                 "doc\\01-Cell-basics.lisp")
                  (make-instance 'module :name
-                                "doc\\motor-control.lisp")
-                 (make-instance 'module :name
-                                "porting\\do-no-harm.lisp"))
+                                "doc\\motor-control.lisp"))
   :projects (list (make-instance 'project-module :name
                                  "utils-kt\\utils-kt"))
   :libraries nil

@@ -191,9 +191,9 @@ See the Lisp Lesser GNU Public License for more details.
         
         ; --- data flow propagation -----------
         ;
-        (trc nil "md-sv comparing no-prop" c prior-state absorbed-value prior-value)
+        (trc nil "md-sv testing propagation" c propagation-code prior-state absorbed-value prior-value)
         (if (or (eq propagation-code :no-propagate) ;; possible if c is a cell serving as a synapse between two cells
-              (and (null propagation-code)
+              (and (not (eq propagation-code :propagate))
                 (eql prior-state :valid)
                 (c-no-news c absorbed-value prior-value)))
             (progn
