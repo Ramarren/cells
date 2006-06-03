@@ -31,7 +31,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defparameter *c-debug* nil)
 (defparameter *defer-changes* nil)
 (defparameter *within-integrity* nil)
-(defparameter *client-queue-handler* NIL)
+(defparameter *client-queue-handler* nil)
 (defparameter *unfinished-business* nil)
 (defun cells-reset (&optional client-queue-handler)
   (utils-kt-reset)
