@@ -55,16 +55,6 @@ See the Lisp Lesser GNU Public License for more details.
                                    (c? (px-maintain-pl
                                         (^prior-sib-pr self (spacing .parent)))))))))))
 
-(defmodel geo-stack (geo-inline)
-  ()
-  (:default-initargs
-      :orientation :vertical))
-
-(defmodel geo-row (geo-inline)
-  ()
-  (:default-initargs
-      :orientation :horizontal))
-
 (defmacro a-stack ((&rest stack-args) &body dd-kids)
   `(mk-part ,(copy-symbol 'a-stack) (geo-inline)
       ,@stack-args

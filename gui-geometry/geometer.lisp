@@ -30,6 +30,10 @@ See the Lisp Lesser GNU Public License for more details.
    (w-box :cell nil :initform (mkr 0 0 0 0) :accessor w-box
      :documentation "bbox in window coordinate system")))
 
+(defmethod collapsed (other)
+  (declare (ignore other))
+  nil)
+
 ;;-------- Zero-zero Top Left ----------------------------
 ;;
 (defmodel geo-zero-tl (family) 

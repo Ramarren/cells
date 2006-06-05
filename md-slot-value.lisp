@@ -42,13 +42,12 @@ See the Lisp Lesser GNU Public License for more details.
   (if c
       (prog1
           (with-integrity ()
-            (c-value-ensure-current c :md-slot-value))
+            (c-value-ensure-current c))
         (when (car *c-calculators*)
           (c-link-ex c)))
     (values (bd-slot-value self slot-name) nil)))
   
-(defun c-value-ensure-current (c &optional (debug-id :anon-caller))
-  (declare (ignorable debug-id))
+(defun c-value-ensure-current (c)
   (count-it :c-value-ensure-current)
   (trc nil "c-value-ensure-current >" c)
   (cond
@@ -59,7 +58,7 @@ See the Lisp Lesser GNU Public License for more details.
 
    ((or (not (c-validp c))
       (some (lambda (used)
-              (c-value-ensure-current used :recursive-used)
+              (c-value-ensure-current used)
               (trc nil "comparing pulses (user, used): " (c-pulse c)(c-pulse used))
               (when (and (c-changed used) (> (c-pulse used)(c-pulse c)))
                  (trc nil "used changed" c used)

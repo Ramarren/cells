@@ -22,30 +22,14 @@ See the Lisp Lesser GNU Public License for more details.
 (eval-when (compile load)
  (proclaim '(optimize (speed 3) (safety 0) (space 0) (debug 0))))
 
-
 (defun c-link-ex (used &aux (user (car *c-calculators*)))
-  (c-assert user)
-  (c-assert used)
   (when (c-optimized-away-p used) ;; 2005-05-21 removed slow type check that used is cell
     (return-from c-link-ex nil))
-
-
-  ;
-  ; --------- debug stuff --------------
-  (c-assert user)
-  (c-assert (c-model user))
-  (c-assert (c-model used))
-
-  #+dfdbg (trc user "c-link > user, used" user used)
-  (c-assert (not (eq :eternal-rest (md-state (c-model user)))))
-  (c-assert (not (eq :eternal-rest (md-state (c-model used)))))
-  (count-it :c-link-entry)
-
+  (trc nil "c-link-ex entry: used=" used :user user)
   (multiple-value-bind (used-pos useds-len)
       (loop with u-pos
           for known in (cd-useds user)
           counting known into length
-            ;; do (print (list :data known length))
           when (eq used known)
           do
             (count-it :known-used)
@@ -56,7 +40,9 @@ See the Lisp Lesser GNU Public License for more details.
       (trc nil "c-link > new user,used " user used)
       (count-it :new-used)
       (setf used-pos useds-len)
-      (push used (cd-useds user)))
+      (push used (cd-useds user))
+      (user-ensure used user) ;; 060604 experiment was in unlink
+      )
 
     (handler-case
         (setf (sbit (cd-usage user) used-pos) 1)
@@ -66,7 +52,6 @@ See the Lisp Lesser GNU Public License for more details.
           (adjust-array (cd-usage user) (+ used-pos 16) :initial-element 0))
         (setf (sbit (cd-usage user) used-pos) 1))))
   used)
-
 
 
 ;--- c-unlink-unused --------------------------------
@@ -81,7 +66,10 @@ See the Lisp Lesser GNU Public License for more details.
                                 (count-it :unlink-unused)
                                 (c-unlink-user (car useds) c)
                                 (rplaca useds nil))
-                            (user-ensure (car useds) c))))
+                            (progn
+                              ;; moved into c-link-ex 060604 (user-ensure (car useds) c)
+                              )
+                            )))
                    (if (cdr useds)
                        (progn
                          (nail-unused (cdr useds))

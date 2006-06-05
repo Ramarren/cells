@@ -165,11 +165,11 @@ See the Lisp Lesser GNU Public License for more details.
       (with-integrity (:tell-dependents c)
         (assert (null *c-calculators*))
         (let ((*causation* causation))
-          (trc nil "c-propagate-to-users > notifying users of" c)
+          (trc "c-propagate-to-users > notifying users of" c (mapcar 'c-slot-name (c-users c)))
           (dolist (user (c-users c))
             (unless (member (cr-lazy user) '(t :always :once-asked))
               (trc nil "propagating to user is (used,user):" c user)
-              (c-value-ensure-current user :user-propagation))))))))
+              (c-value-ensure-current user))))))))
 
 
 
