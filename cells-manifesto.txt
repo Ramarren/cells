@@ -1,0 +1,85 @@
+
+                                Cells In A Nutshell
+
+The Cells library as it stands is all about doing interesting things with slots of CLOS instances.
+Nothing says a global variable could not be mediated by a Cell, and indeed one Cells user is 
+known to have experimented with that. Also, some work was done on having slots of DEFSTRUCTs mediated
+by Cells. But for the rest of this exposition let's just talk about CLOS slots and instances.
+
+The Cells library allows the programmer to specify at make-instance time that a slot of an instance
+be mediated for the life of that instance by one of:
+
+   -- a so-called "input" Cell;
+   -- a "ruled" Cell; or
+   -- no Cell at all.
+
+Note that "slot of an instance" is not the same as "slot of a class". A vital feature of the Cells library
+is that different instances may do different things Cells-wise with the same slot.
+
+A slot mediated by an input Cell may be assigned new values at runtime. It is an error to assign a new
+value to a slot of an instance not mediated by any Cell. Ruled Cells come with an instance-specific 
+rule in the form of an anonymous function of two variables, the instance owning the slot and the prior value
+(if any) computed by the rule. These rules consist of arbitrarily complex Common Lisp code, and are invoked
+immediately after instance initialization or, if they are declared lazy, when their slot readers are invoked. 
+
+When a rule runs, any dynamic read (either expressly in the rule source or during the execution of 
+some function invoked by the rule) of a slot of any instance mediated by a Cell of any type establishes a
+runtime dependency of the ruled cell on the slot of the instance that was read. Note then that thanks
+to code branching, dependencies can vary after every rule invocation.
+
+When application code assigns a new value to an input Cell (a quick way of saying an instance slot mediated by
+an input Cell) -- typically by code polling OS events or a socket or an input device -- a cascade of recalculation
+ensues to bring direct and indirect ruled dependents current with the new value assigned to the input Cell.
+
+To allow the emergent data animation model to operate usefully on the world outside the model--if only to
+update the screen--programmers may specify so-called observer callbacks dispatched according to: slot name, 
+instance, new value, old value, and whether the old value actually existed (false only on the first go).
+
+Finally, to make it possible for such a declarative model to talk intelligibly to imperative systems such as
+Tcl/Tk which sometimes requires a precise sequence of commands for something to work at all, a mechanism exists by
+which client code can (a) queue tasks for execution after a data change has fully propagated and (b) process
+those tasks with a client-supplied handler. Tasks are queued with arbitrary keying data which can be used by 
+the handler to sort or compress the queued tasks.
+
+                                          Data Integrity
+
+When application code assigns to some input cell X, the Cells engine guarantees:
+
+  - recomputation exactly once of all and only state affected by the change to X, directly or indirectly through 
+    some intermediate datapoint. note that if A depends on B, and B depends on X, when B gets recalculated
+    it may come up with the same value as before. In this case A is not considered to have been affected
+    by the change to X and will not be recomputed.
+
+  - recomputations, when they read other datapoints, must see only values current with the new value of X.
+    Example: if A depends on B and X, and B depends on X, when A reads B it must return a value recomputed from
+    the new value of X.
+
+  - similarly, client observer callbacks must see only values current with the new value of X; and
+
+  - a corollary: should a client observer SETF a datapoint Y, all the above must
+    happen with values current with not just X, but also with the value of Y /prior/
+    to the change to Y.
+
+  - Deferred "client" code must see only values current with X and not any values current with some
+    subsequent change to Y queued by an observer
+
+                                          Benefits
+
+Program state guaranteed to be self-consistent, without programmer effort. Dependencies are identified
+by the engine, and change propagation happens automatically.
+
+Greater object re-use. Slots of instances can be authored with rules, not just literal values. In a sense,
+we get greater reuse by allowing instances to override slot derivations instance by instance. But not slot
+expressions, which are still class-oriented.
+
+Natural decomposition of overall application complexity into so many simple rules and slot observers.
+
+                                       Applications
+
+Any application that must maintain an interesting, long-lived data model incorporating a stream of unpredictable 
+data. Two examples: any GUI application and a RoboCup soccer client.
+
+An application needing to shadow data between two systems. Examples: a Lisp GUI imlemented by thinly wrapping a 
+C GUI library, where Lisp-land activity must be propagated to the C GUI, and C GUI events must propagate
+to Lisp-land. See the Cells-Gtk or Celtk projects. Also, a persistent CLOS implementation that must echo 
+CLOS instance data into, say, SQL tables.
