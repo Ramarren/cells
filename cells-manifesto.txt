@@ -1,11 +1,41 @@
 
-                                Cells In A Nutshell
-
+                                
+Cells In A Nutshell
+-------------------
 The Cells library as it stands is all about doing interesting things with slots of CLOS instances.
 Nothing says a global variable could not be mediated by a Cell, and indeed one Cells user is 
 known to have experimented with that. Also, some work was done on having slots of DEFSTRUCTs mediated
 by Cells. But for the rest of this exposition let's just talk about CLOS slots and instances.
 
+DEFMODEL and Slot types
+-----------------------
+Classes, some of whose slots may be mediated by Cells, are defined by DEFMODEL, which is exactly
+like DEFCLASS but adds support for two slot definition options, :cell and :unchanged-if.
+
+   :cell {nil | t | :ephemeral}
+
+:cell is optional. The default is ":cell t", meaning the Cells engine will manage the slot. 
+Specifying NIL signifies that this slot is entirely 
+outside any handling by the Cells engine; it is just a plain CLOS slot. 
+
+Specifying :ephemeral causes the Cells engine to reset the apparent slot 
+value to NIL immediately and only after fully propagating any value assumed by the slot, either
+by assignment to an input Cell (the vastly more common case) or by a rule calculation.
+
+Ephemeral cells are necessary to correctly model events in the otherwise steady-state 
+spreadsheet paradigm.
+
+  :unchanged-if <function-name>
+
+Specifying :unchanged-if is optional. [Come to think of it, it should be an error to specify
+both :cell nil and :unchanged-if.] If specified, the named function is a predicate
+of two arguments, the new and old value in that order. The predicate determines if a subsequent
+slot value (either computed or assigned to an input) is unchanged in the sense that no propagation
+is necessary, either to dependent ruled cells or (getting ahead of ourselves) "on change" observers.
+The default unchanged test is EQL.
+
+Cell types
+----------
 The Cells library allows the programmer to specify at make-instance time that a slot of an instance
 be mediated for the life of that instance by one of:
 
@@ -13,27 +43,67 @@ be mediated for the life of that instance by one of:
    -- a "ruled" Cell; or
    -- no Cell at all.
 
-Note that "slot of an instance" is not the same as "slot of a class". A vital feature of the Cells library
-is that different instances may do different things Cells-wise with the same slot.
+Note that different instances of the same class may do different things Cells-wise with the same slot.
+One label widget may have a fixed width of 42 and text "Hi, Mom!", where another might have
+an input Cell mediating the text (so edit logic can assign new values as the user types) and a
+rule mediating the width so the widget can have a minimum width of 42(so it does not disappear altogether)
+yet grow based on text length and relevant font metrics to always leave room for one more character 
+(if the GUI design calls for that).
 
-A slot mediated by an input Cell may be assigned new values at runtime. It is an error to assign a new
-value to a slot of an instance not mediated by any Cell. Ruled Cells come with an instance-specific 
-rule in the form of an anonymous function of two variables, the instance owning the slot and the prior value
-(if any) computed by the rule. These rules consist of arbitrarily complex Common Lisp code, and are invoked
-immediately after instance initialization or, if they are declared lazy, when their slot readers are invoked. 
+To summarize, the class specification supplied with DEFMODEL specifies whether a slot can ever
+be managed by the Cells engine. For those that can, at and only at instance initialization time,
+different instances can have different Cell types mediating the same slot.
+
+Input Cells
+-----------
+A slot mediated by an input Cell may be assigned new values at runtime. These are how Cell-based models
+get data from the world outside the model -- it cannot be rules all the way down. Typically, these
+input assignements are made by code polling OS events via some GetNextEvent API call, or by callbacks
+registered with an event system such as win32 WindowProc functions. Other code may poll sockets or 
+serial inputs from some external device.
+
+Ruled Cells
+-----------
+Ruled Cells come with an instance-specific  rule in the form of an anonymous function of two variables, 
+the instance owning the slot and the prior value (if any) computed by the rule. These rules consist of 
+arbitrarily complex Common Lisp code, and are invoked immediately after instance initialization or, if 
+they are declared lazy, when their slot readers are invoked. 
 
 When a rule runs, any dynamic read (either expressly in the rule source or during the execution of 
 some function invoked by the rule) of a slot of any instance mediated by a Cell of any type establishes a
 runtime dependency of the ruled cell on the slot of the instance that was read. Note then that thanks
 to code branching, dependencies can vary after every rule invocation.
 
+Dataflow
+--------
 When application code assigns a new value to an input Cell (a quick way of saying an instance slot mediated by
 an input Cell) -- typically by code polling OS events or a socket or an input device -- a cascade of recalculation
 ensues to bring direct and indirect ruled dependents current with the new value assigned to the input Cell.
 
+No Cell at All
+--------------
+Because of all that, it is an error to assign a new value to a slot of an instance not mediated by any Cell. 
+The Cells engine can do a handy optimization by treating such slots as constants and not creating dependencies when ruled
+Cells read these. But then we cannot let these Cells vary and still guarantee data integrity, because
+we no longer know who else to update in light of such variation. The optimization, by the way, extends to
+eliminating ruled Cells which, after any computation, end up not depending on any other cell.
+
+Again, note that this is different than specifying ":cell nil" for some slot. Here, the Cells engine
+has been told to manage some slot, but for some instance the slot has been authored to bear some value
+for the lifetime of that instance.
+
+Observers
+---------
 To allow the emergent data animation model to operate usefully on the world outside the model--if only to
 update the screen--programmers may specify so-called observer callbacks dispatched according to: slot name, 
 instance, new value, old value, and whether the old value actually existed (false only on the first go).
+
+It is legal for observer code to assign to input Cells, but (a) special syntax is required to defer executuion
+until the observed state change has fully propagated; and (b) doing so compromises the declarative
+quality of an application -- one can no longer look to one rule to see how a slot (in this case the
+input slot being assigned by the observer) gets its value. A reasonable usage might be one with
+a cycle, where changing slot A requires a change to slot B, and changing slot B requires a change to
+slot A, such as the scroll thumb position and the amount a document has been scrolled.
 
 Finally, to make it possible for such a declarative model to talk intelligibly to imperative systems such as
 Tcl/Tk which sometimes requires a precise sequence of commands for something to work at all, a mechanism exists by
@@ -41,8 +111,9 @@ which client code can (a) queue tasks for execution after a data change has full
 those tasks with a client-supplied handler. Tasks are queued with arbitrary keying data which can be used by 
 the handler to sort or compress the queued tasks.
 
-                                          Data Integrity
-
+                                          
+Data Integrity
+--------------
 When application code assigns to some input cell X, the Cells engine guarantees:
 
   - recomputation exactly once of all and only state affected by the change to X, directly or indirectly through 
@@ -63,8 +134,8 @@ When application code assigns to some input cell X, the Cells engine guarantees:
   - Deferred "client" code must see only values current with X and not any values current with some
     subsequent change to Y queued by an observer
 
-                                          Benefits
-
+Benefits
+--------
 Program state guaranteed to be self-consistent, without programmer effort. Dependencies are identified
 by the engine, and change propagation happens automatically.
 
@@ -74,8 +145,8 @@ expressions, which are still class-oriented.
 
 Natural decomposition of overall application complexity into so many simple rules and slot observers.
 
-                                       Applications
-
+Applications
+------------
 Any application that must maintain an interesting, long-lived data model incorporating a stream of unpredictable 
 data. Two examples: any GUI application and a RoboCup soccer client.
 
@@ -83,3 +154,111 @@ An application needing to shadow data between two systems. Examples: a Lisp GUI 
 C GUI library, where Lisp-land activity must be propagated to the C GUI, and C GUI events must propagate
 to Lisp-land. See the Cells-Gtk or Celtk projects. Also, a persistent CLOS implementation that must echo 
 CLOS instance data into, say, SQL tables.
+
+Prior Art
+---------
+The entire constraint programming field, beginning I guess with Guy Steele's
+PhD Thesis in which he develops a constraint programming language or two:
+  http://portal.acm.org/citation.cfm?id=889490&dl=ACM&coll=ACM
+  http://www.cs.utk.edu/~bvz/quickplan.html
+
+Sutherland, I. Sketchpad: A Man Machine Graphical Communication System. PhD thesis, MIT, 1963.
+Steele himself cites Sketchpad as inexlicably unappreciated prior
+art to his Constraints system:
+
+Garnet's KR: http://www.cs.cmu.edu/~garnet/
+Also written in Lisp. Cells looks  much like KR, though Cells was 
+developed in ignorance of KR (or any other prior art). KR has 
+an astonishing number of backdoors to its constraint
+engine, none of which have turned out to be necessary for Cells.
+
+COSI:
+ "The Constraint Sequencing Infrastructure (COSI) is an extension to
+the Common Lisp Object System (*(CLOS)) which supports a constraint
+based object-oriented programming model. .....
+
+"A constraint is a specialized method which will be automatically
+re-run by the COSI infrastructure whenever any of its input values
+change. Input values are any of the object attributes that are
+accessed by the constraint, and which are therefore assumed to
+alter the processing within the constraint. 
+
+"Whenever a state change occurs those constraints which depend upon
+that state are added to a propagation queue. When the system is
+queried a propagation cycle runs ensuring that the state of the
+system is consistent with all constraints prior to returning a value."
+-- http://www.cliki.net/ACL2/COSI?source
+
+Adobe Adam:
+http://opensource.adobe.com/group__asl__overview.html#asl_overview_intro_to_adam_and_eve
+"Adam is a modeling engine and declarative language for describing constraints and 
+relationships on a collection of values, typically the parameters to an 
+application command. When bound to a human interface (HI) Adam provides 
+the logic that controls the HI behavior. Adam is similar in concept to a spreadsheet 
+or a forms manager. Values are set and dependent values are recalculated. 
+Adam provides facilities to resolve interrelated dependencies and to track 
+those dependencies, beyond what a spreadsheet provides."
+
+See also:
+ The spreadsheet paradigm: http://www.cs.utk.edu/~bvz/active-value-spreadsheet.html
+ The dataflow paradigm: http://en.wikipedia.org/wiki/Dataflow
+ Reactive programming: http://www.haskell.org/yampa/AFPLectureNotes.pdf
+ Frame-based programming
+
+Commentary
+----------
+-- Jack Unrue, comp.lang.lisp
+"Cells provides the plumbing for data dependency management which every 
+non-trivial program must have; a developer using Cells can focus on 
+computing program state and reacting to state changes, leaving Cells to worry about
+how that state is propagated. Cells does this by enabling a declarative 
+mechanism built via an extension to CLOS, and hence achieves its goal in a way 
+that meshes well with with typical Common Lisp programming style."
+
+-- Bill Clementson, http://bc.tech.coop/blog/030911.html
+"Kenny Tilton has been talking about his Cells implementation on comp.lang.lisp 
+for some time but I've only just had a look at it over the past few evenings. 
+It's actually pretty neat. Kenny describes Cells as, conceptually, analogous to 
+a spreadsheet cell (e.g. -- something in which you can put a value or a formula 
+and have it updated automatically based on changes in other "cell" values). 
+Another way of saying this might be that Cells allows you to define classes 
+whose slots can be dynamically (and automatically) updated and for which 
+standard observers can be defined that react to changes in those slots."
+
+-- "What is Cells?", Cells-GTk FAQ, http://common-lisp.net/project/cells-gtk/faq.html#q2
+"If you are at all familiar with developing  moderately complex software that 
+is operated through a GUI, then you have probably 
+learned this lesson: Keeping what is presented through the GUI in-sync with what 
+the user is allowed to do, and in-sync with the computational state of the 
+program is often tedious, complicated work. .... Cells-GTK helps 
+with these tasks by providing an abstraction over the details; each of the tasks 
+just listed can be controlled by (a) formula that specify the value of 
+attributes of graphic features in the part-subpart declaration (that declaration 
+is called 'defpart' in cells-gtk); and, (b) formula that specify the value of CLOS slots."
+
+-- Phillip Eby, PyCells and peak.events, 
+... http://www.eby-sarna.com/pipermail/peak/2006-May/002545.html
+"What I discovered is quite cool.  The Cells system *automatically 
+discovers* dynamic dependencies, without having to explicitly specify that 
+X depends on Y, as long as X and Y are both implemented using cell 
+objects.  The system knows when you are computing a value for X, and 
+registers the fact that Y was read during this computation, thus allowing 
+it to automatically invalidate the X calculation if Y changes.
+
+"...Aside from the automatic dependency 
+detection, the cells system has another trick that is able to significantly 
+reduce the complexity of event cascades, similar to what I was trying (but 
+failing) to do using the "scheduled thread" concept in peak.events.
+
+"Specifically, the cells system understands how to make event-based updates 
+orderly and deterministic, in a way that peak.events cannot.  It 
+effectively divides time into "propagation" and "non-propagation" 
+states.  Instead of simply making callbacks whenever a computed value 
+changes, the system makes orderly updates by queueing invalidated cells for 
+updating.  Also, if you write code that sets a new value imperatively (as 
+opposed to it being pulled declaratively), the actual set operation is 
+deferred until all computed cells are up-to-date with the current state of 
+the universe."
+
+
+                                
