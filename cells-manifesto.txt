@@ -260,5 +260,7 @@ opposed to it being pulled declaratively), the actual set operation is
 deferred until all computed cells are up-to-date with the current state of 
 the universe."
 
+-- Peter Seibel, comp.lang.lisp
+"I couldn't find anything that explained what it was and why I should care."
 
                                 
