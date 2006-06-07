@@ -260,7 +260,14 @@ opposed to it being pulled declaratively), the actual set operation is
 deferred until all computed cells are up-to-date with the current state of 
 the universe."
 
--- Peter Seibel, comp.lang.lisp
+Uncommentary
+------------
+-- Peter Seibel, comp.lang.lisp:
 "I couldn't find anything that explained what it was and why I should care."
+
+-- Alan Crowe, comp.lang.lisp:
+"Further confession: I'm bluffing. I've grasped that Cells is
+interesting, but I haven't downloaded it yet, and I haven't
+checked out how it works or what /exactly/ it does."
 
                                 

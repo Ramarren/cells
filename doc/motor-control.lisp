@@ -58,6 +58,11 @@ definition and several method definitions):
 	      :initform (c? (ecase (^status) (:on :open) (:off :closed))))
    (temp :initarg :temp :accessor temp :initform (c-in 0))))
 
+#+test
+(progn 
+  (cells-reset)
+  (setf (status (make-instance 'motor :status :on)) 42))
+
 #|
 
 Note that "status" is a cell with no initial value or formula, "fuel-pump" is 

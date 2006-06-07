@@ -151,8 +151,12 @@ See the Lisp Lesser GNU Public License for more details.
     (c-setting-debug self slot-name c new-value))
   
   (unless c
-    (c-break "(setf md-slot-value)> cellular slot ~a of ~a cannot be setf unless initialized as inputp"
-      slot-name self))
+    (c-break "cellular slot ~a of ~a cannot be SETFed because it is not 
+mediated by a Cell with :inputp t. To achieve this, the initial value ~s -- whether 
+supplied as an :initform, :default-initarg, or at make-instance time via 
+an :initarg -- should be wrapped in either macro C-IN or C-INPUT. 
+In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
+      slot-name self (slot-value self slot-name)))
 
   (when *defer-changes*
     (c-break "SETF of ~a must be deferred by wrapping code in WITH-INTEGRITY" c))

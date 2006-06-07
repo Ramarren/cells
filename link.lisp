@@ -54,7 +54,7 @@ See the Lisp Lesser GNU Public License for more details.
   used)
 
 
-;--- c-unlink-unused --------------------------------
+;--- unlink unused --------------------------------
 
 (defun c-unlink-unused (c &aux (usage (cd-usage c)))
   (when (cd-useds c)
@@ -86,7 +86,6 @@ See the Lisp Lesser GNU Public License for more details.
       (c-users from-used))))
 
 ; ---------------------------------------------
-
 
 (defun cd-usage-clear-all (c)
   (loop with a = (cd-usage c)
