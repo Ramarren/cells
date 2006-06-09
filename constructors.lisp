@@ -93,7 +93,7 @@ See the Lisp Lesser GNU Public License for more details.
                   ,(when out `(trc "c?? result:" ,result (c-slot-name c) (when ,tagp ,thetag)))
                   ,result))))))
 
-(defmacro c-formula ((&rest keys &key lazy) &body forms)
+(defmacro c-formula ((&rest keys &key lazy &allow-other-keys) &body forms)
   (assert (member lazy '(nil t :once-asked :until-asked :always)))
   `(make-c-dependent
     :code ',forms

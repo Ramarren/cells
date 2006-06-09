@@ -1,16 +1,76 @@
-
+In the text that follows, [xxx] signifies a footnote named "xxx" and
+listed alphabetically at the end.
                                 
-Cells In A Nutshell
--------------------
-The Cells library as it stands is all about doing interesting things with slots of CLOS instances.
-Nothing says a global variable could not be mediated by a Cell, and indeed one Cells user is 
-known to have experimented with that. Also, some work was done on having slots of DEFSTRUCTs mediated
-by Cells. But for the rest of this exposition let's just talk about CLOS slots and instances.
+Summary
+-------
+Cells is a mature, stable extension to CLOS[impl] allowing one to create classes 
+whose instances can have slot values determined by instance-specific formulas. 
+
+Motivation
+----------
+As a child I watched my father toil at home for hours over paper 
+spreadsheets with pencil and slide rule. After he changed one value, 
+he had to propagate that change to other cells by first remembering 
+which other ones included the changed cell in their computation. 
+Then he had to do the calculations for those, erase, enter...
+and then repeating that process to propagate those changes in a 
+cascade across the paper.
+
+VisiCalc let my father take the formula he had in mind and 
+put it in (declare it to) the electronic spreadsheet. Then VisiCalc 
+could do the tedious work: recalculating, knowing what to recalculate, 
+and knowing in what order to recalculate.
+
+Cells do for programmers what electronic spreadsheets did for my father.
+Without Cells, CLOS slots are like cells of a paper spreadsheet. 
+A single key-down event can cause a cascade of change throughout an 
+application. The programmer has to arrange for it all to happen,
+all in the right order: delete any selected text, insert 
+the new character, re-wrap the text, update the undo mechanism, revisit
+the menu statuses ("Cut" is no longer enabled), update the scroll bars,
+possibly scroll the window, flag the file as unsaved... 
+
+Here is a real-world case study:
+
+"The last company I worked with made a product that was a control unit
+for some mechanical devices, presenting both sensor readings coming in
+from those devices and an interface to program the devices. Consider
+it like a very sophisticated microwave oven, perhaps with a
+temperature probe.
+
+"The UI code was a frighteningly complex rat's nest. Input data
+arriving from the sensors changed certain state values, which caused
+the display to update, but the system state also changed, and rules
+had to be evaluated, the outcome of which might be tuning to the
+running job or warning messages presented to the user, and in the
+meantime the user may be adjusting the running job. I'm sure there are
+even more interactions I'm leaving out.
+
+"There was no "large idea" in this code to organize these dependencies
+or orchestrate the data flow. The individual facilities were
+well-formed enough: "message" input and output, GUI widgets and forms,
+real-world entities modeled as entities in the code. However, the
+connections between these things were ad-hoc and not formalized. Every
+change to the system would provoke defects, and the failure usually
+involved not propagating some event, propagating it at the wrong time,
+or propagating it to the wrong recipients."
+   --- Steven Harris, on comp.lang.lisp
+
+What Mr. Harris describes is what Fred Brooks [bullet] said was an essential
+property of software development, meaning by essential that there was no
+way around it, and thus his prediction that a software silver bullet was
+in principle impossible.
+
+Which brings us to Cells.
 
 DEFMODEL and Slot types
 -----------------------
 Classes, some of whose slots may be mediated by Cells, are defined by DEFMODEL, which is exactly
-like DEFCLASS but adds support for two slot definition options, :cell and :unchanged-if.
+like DEFCLASS but adds support for two slot definition options, :cell and :unchanged-if. Classes 
+defined by DEFMODEL can inherit from normal CLOS classes.
+
+New slot definition options
+----------------------------
 
    :cell {nil | t | :ephemeral}
 
@@ -36,8 +96,8 @@ The default unchanged test is EQL.
 
 Cell types
 ----------
-The Cells library allows the programmer to specify at make-instance time that a slot of an instance
-be mediated for the life of that instance by one of:
+The Cells library allows the programmer to specify at make-instance time that a Cell 
+slot of an instance be mediated for the life of that instance by one of:
 
    -- a so-called "input" Cell;
    -- a "ruled" Cell; or
@@ -94,7 +154,7 @@ for the lifetime of that instance.
 
 Observers
 ---------
-To allow the emergent data animation model to operate usefully on the world outside the model--if only to
+To allow the emergent animated data model to operate usefully on the world outside the model--if only to
 update the screen--programmers may specify so-called observer callbacks dispatched according to: slot name, 
 instance, new value, old value, and whether the old value actually existed (false only on the first go).
 
@@ -141,12 +201,33 @@ by the engine, and change propagation happens automatically.
 
 Greater object re-use. Slots of instances can be authored with rules, not just literal values. In a sense,
 we get greater reuse by allowing instances to override slot derivations instance by instance. But not slot
-expressions, which are still class-oriented.
+expressions, which are still class-oriented. By this I mean the observers expressing changes in value are 
+dispatched by the class of the instance and so are not instance-specific. (Such a thing has been 
+suggested, however.) Another strong bit of class-orientation comes from the fact that code reading
+slot X of some instance Y obviously does so without knowing how the returned value was derived. It knows 
+only that the slot is named X, and will do things with that value assuming only that it has the
+X attribute of the instance Y. So again: the derivation of a slot value is potentially instance-oriented 
+under Cells, but its expression or manifestation is still class-oriented.
 
-Natural decomposition of overall application complexity into so many simple rules and slot observers.
+Natural decomposition of overall application complexity into so many simple rules and slot observers. 
+Let's return for a moment to VisiCalc and its descendants. In even the most complex financial spreadsheet  
+model, no one cell rule accesses more than a relatively few other spreadsheet cells (counting a row or 
+column range as one reference). Yet the complex model emerges. All the work of tracking dependencies
+is handled by the spreadsheet software, which require no special declaration by the modeller. They simply 
+writes the Cell rule. In writing the rule, they are concerned only with the derivation of one datapoint from
+a population of other datapoints. No effort goes into arranging for the rule to get run at the right time,
+and certainly no energy is spent worrying about what other cells might be using the authored cell. That
+cell has certain semantics -- "account balance", perhaps -- and the modeller need only worry about writing
+a correct, static computation of those semantics.
 
-Applications
-------------
+Same with Cells. :) The only difference is that VisiCalc has one "observer" requirement for all cells: 
+update the screen. In Cells applications, a significant amount of application functionality -- indeed, all
+its outputs -- end up in cell observers. But as discussed above, this additional burden falls only on 
+the class designer when they decide to add a slot to a class. As instances are created and different rules
+specified for different slots to achieve custom behavior, the effort is the same as for the VisiCalc user.
+
+Suggested Applications
+----------------------
 Any application that must maintain an interesting, long-lived data model incorporating a stream of unpredictable 
 data. Two examples: any GUI application and a RoboCup soccer client.
 
@@ -157,6 +238,17 @@ CLOS instance data into, say, SQL tables.
 
 Prior Art
 ---------
+Adobe Adam, originally developed only to manage complex GUIs. [Adam]
+
+COSI, a class-based Cells-alike used at STSCI to in software used to 
+schedule Hubble telescope viewing time. [COSI]
+
+Garnet's KR: http://www.cs.cmu.edu/~garnet/
+Also written in Lisp. Cells looks  much like KR, though Cells was 
+developed in ignorance of KR (or any other prior art). KR has 
+an astonishing number of backdoors to its constraint
+engine, none of which have turned out to be necessary for Cells.
+
 The entire constraint programming field, beginning I guess with Guy Steele's
 PhD Thesis in which he develops a constraint programming language or two:
   http://portal.acm.org/citation.cfm?id=889490&dl=ACM&coll=ACM
@@ -165,39 +257,6 @@ PhD Thesis in which he develops a constraint programming language or two:
 Sutherland, I. Sketchpad: A Man Machine Graphical Communication System. PhD thesis, MIT, 1963.
 Steele himself cites Sketchpad as inexlicably unappreciated prior
 art to his Constraints system:
-
-Garnet's KR: http://www.cs.cmu.edu/~garnet/
-Also written in Lisp. Cells looks  much like KR, though Cells was 
-developed in ignorance of KR (or any other prior art). KR has 
-an astonishing number of backdoors to its constraint
-engine, none of which have turned out to be necessary for Cells.
-
-COSI:
- "The Constraint Sequencing Infrastructure (COSI) is an extension to
-the Common Lisp Object System (*(CLOS)) which supports a constraint
-based object-oriented programming model. .....
-
-"A constraint is a specialized method which will be automatically
-re-run by the COSI infrastructure whenever any of its input values
-change. Input values are any of the object attributes that are
-accessed by the constraint, and which are therefore assumed to
-alter the processing within the constraint. 
-
-"Whenever a state change occurs those constraints which depend upon
-that state are added to a propagation queue. When the system is
-queried a propagation cycle runs ensuring that the state of the
-system is consistent with all constraints prior to returning a value."
--- http://www.cliki.net/ACL2/COSI?source
-
-Adobe Adam:
-http://opensource.adobe.com/group__asl__overview.html#asl_overview_intro_to_adam_and_eve
-"Adam is a modeling engine and declarative language for describing constraints and 
-relationships on a collection of values, typically the parameters to an 
-application command. When bound to a human interface (HI) Adam provides 
-the logic that controls the HI behavior. Adam is similar in concept to a spreadsheet 
-or a forms manager. Values are set and dependent values are recalculated. 
-Adam provides facilities to resolve interrelated dependencies and to track 
-those dependencies, beyond what a spreadsheet provides."
 
 See also:
  The spreadsheet paradigm: http://www.cs.utk.edu/~bvz/active-value-spreadsheet.html
@@ -260,8 +319,9 @@ opposed to it being pulled declaratively), the actual set operation is
 deferred until all computed cells are up-to-date with the current state of 
 the universe."
 
-Uncommentary
-------------
+_______________
+Uncommentary :)
+
 -- Peter Seibel, comp.lang.lisp:
 "I couldn't find anything that explained what it was and why I should care."
 
@@ -270,4 +330,46 @@ Uncommentary
 interesting, but I haven't downloaded it yet, and I haven't
 checked out how it works or what /exactly/ it does."
 
-                                
+_________                      
+Footnotes
+
+[Adam] "Adam is a modeling engine and declarative language for describing constraints and 
+relationships on a collection of values, typically the parameters to an 
+application command. When bound to a human interface (HI) Adam provides 
+the logic that controls the HI behavior. Adam is similar in concept to a spreadsheet 
+or a forms manager. Values are set and dependent values are recalculated. 
+Adam provides facilities to resolve interrelated dependencies and to track 
+those dependencies, beyond what a spreadsheet provides."
+http://opensource.adobe.com/group__asl__overview.html#asl_overview_intro_to_adam_and_eve
+________
+[bullet] This resolves a problem Fred Brooks identified in 1987: ""The essence of a software 
+entity is a construct of  interlocking concepts: data sets, relationships among data items, algorithms, 
+and invocations of functions... Software systems have orders-of-magnitude more states than 
+computers do...a scaling-up of a software  entity is not merely a repetition of the same elements 
+in larger sizes; it is necessarily an increase in the number of different elements. In most cases, 
+the elements interact with each other in some nonlinear fashion, and the complexity of the whole 
+increases much more than linearly."
+-- http://www.virtualschool.edu/mon/SoftwareEngineering/BrooksNoSilverBullet.html
+______
+[COSI] "The Constraint Sequencing Infrastructure (COSI) is an extension to
+the Common Lisp Object System (*(CLOS)) which supports a constraint
+based object-oriented programming model. .....
+
+"A constraint is a specialized method which will be automatically
+re-run by the COSI infrastructure whenever any of its input values
+change. Input values are any of the object attributes that are
+accessed by the constraint, and which are therefore assumed to
+alter the processing within the constraint. 
+
+"Whenever a state change occurs those constraints which depend upon
+that state are added to a propagation queue. When the system is
+queried a propagation cycle runs ensuring that the state of the
+system is consistent with all constraints prior to returning a value."
+-- http://www.cliki.net/ACL2/COSI?source
+______
+[impl] The Cells library as it stands is all about doing interesting things 
+with slots of CLOS instances, but Cells is not only about CLOS or even Lisp. 
+One Cells user is known to have mediated a global variable with a Cell, some work 
+was done on having slots of DEFSTRUCTs mediated by Cells, and ports to C++, Java, and
+Python have been explored.
+

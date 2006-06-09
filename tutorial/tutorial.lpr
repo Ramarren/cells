@@ -12,7 +12,9 @@
                                 "01b-change-handling.lisp")
                  (make-instance 'module :name "01c-cascade.lisp")
                  (make-instance 'module :name "02-lesson.lisp")
-                 (make-instance 'module :name "03-ephemeral.lisp"))
+                 (make-instance 'module :name "03-ephemeral.lisp")
+                 (make-instance 'module :name
+                                "04-formula-once-then-input.lisp"))
   :projects (list (make-instance 'project-module :name "..\\cells"))
   :libraries nil
   :distributed-files nil
