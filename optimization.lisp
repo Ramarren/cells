@@ -27,7 +27,7 @@ See the Lisp Lesser GNU Public License for more details.
   (typecase c
     (c-dependent
      (if (and *c-optimizep*
-           (not (c-optimized-away-p c)) ;; c-streams come this way repeatedly even if optimized away
+           (not (c-optimized-away-p c)) ;; c-streams (FNYI) may come this way repeatedly even if optimized away
            (c-validp c)
            (not (c-synaptic c)) ;; no slot to cache invariant result, so they have to stay around)
            ;; chop (every (lambda (lbl-syn) (null (cd-useds (cdr lbl-syn)))) (cd-synapses c))

@@ -70,7 +70,7 @@ See the Lisp Lesser GNU Public License for more details.
    (t (c-pulse-update c :valid-uninfluenced)))
 
   (when (c-unboundp c)
-    (error 'unbound-cell :instance (c-model c) :name (c-slot-name c)))
+    (error 'unbound-cell :cell c :instance (c-model c) :name (c-slot-name c)))
 
   (c-value c))
 
@@ -141,7 +141,7 @@ See the Lisp Lesser GNU Public License for more details.
           (without-c-dependency
               (c-propagate c prior-value t)))))))
 
-;;; --- setf md-slot-value --------------------------------------------------------
+;;; --- setf md.slot.value --------------------------------------------------------
 ;;;
 
 (defun (setf md-slot-value) (new-value self slot-name
@@ -176,35 +176,33 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
       (let ((prior-state (c-value-state c))
             (prior-value (c-value c))
             (absorbed-value (c-absorb-value c raw-value)))
-        
+
+        (c-pulse-update c :slotv-assume)
+
+        ; --- head off unchanged; this got moved earlier on 2006-06-10 ---
+        (when (and (not (eq propagation-code :propagate))
+                (eql prior-state :valid)
+                (c-no-news c absorbed-value prior-value))
+          (trc nil "(setf md-slot-value) > early no news" propagation-code prior-state prior-value  absorbed-value)
+          (count-it :nonews)
+          (return-from md-slot-value-assume absorbed-value))
+
         ; --- slot maintenance ---
         (unless (c-synaptic c)
           (md-slot-value-store (c-model c) (c-slot-name c) absorbed-value))
         
         ; --- cell maintenance ---
-        (c-pulse-update c :slotv-assume)
         (setf
          (c-value c) absorbed-value
          (c-value-state c) :valid
          (c-state c) :awake)
         
-        (unless (typep c 'c-stream) ;; c-stream (actually a FNYI) needs to run out first stream at least
-          (c-optimize-away?! c)) ;;; put optimize test here to avoid needless linking
-        
+        (c-optimize-away?! c) ;;; put optimize test here to avoid needless linking
         
         ; --- data flow propagation -----------
-        ;
-        (trc nil "md-sv testing propagation" c propagation-code prior-state absorbed-value prior-value)
-        (if (or (eq propagation-code :no-propagate) ;; possible if c is a cell serving as a synapse between two cells
-              (and (not (eq propagation-code :propagate))
-                (eql prior-state :valid)
-                (c-no-news c absorbed-value prior-value)))
-            (progn
-              (trc nil "(setf md-slot-value) >no news" prior-state (c-no-news c absorbed-value prior-value))
-              (count-it :nonews))
-          (progn
-            (setf (c-changed c) t)
-            (c-propagate c prior-value (eq prior-state :valid))))  ;; until 06-02-13 was (not (eq prior-state :unbound))
+        (unless (eq propagation-code :no-propagate)
+          (setf (c-changed c) t)
+          (c-propagate c prior-value (eq prior-state :valid)))  ;; until 06-02-13 was (not (eq prior-state :unbound))
         
         absorbed-value)))
 

@@ -81,7 +81,8 @@ See the Lisp Lesser GNU Public License for more details.
 (define-symbol-macro .cause
     (car *causation*))
 
-(define-condition unbound-cell (unbound-slot) ())
+(define-condition unbound-cell (unbound-slot)
+  ((cell :initarg :cell :reader cell :initform nil)))
 
 (defgeneric slot-value-observe (slotname self new old old-boundp)
   #-(or cormanlisp)

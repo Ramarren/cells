@@ -46,5 +46,3 @@ for some other reason regularly fed as a C-INPUT.
     ;
     ; just showin' off...
     (assert (= 51 (1+ (age kv))(incf (age kv))(get-age "555-55-5555")))))
-
-

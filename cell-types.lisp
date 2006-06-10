@@ -103,40 +103,6 @@ See the Lisp Lesser GNU Public License for more details.
   (usage (make-array 16 :element-type 'bit
                         :initial-element 0) :type simple-bit-vector))
 
-
-(defstruct (c-stream
-            (:include c-dependent)
-            (:conc-name cs-))
-  values)
-
-(defstruct streamer from stepper donep to)
-
-#+(or)
-(defmacro c~~~ (&key (from 0)
-                 stepper
-                 (donep (c-lambda (> .cache (streamer-to slot-c))))
-                 to)
-   `(make-c-stream
-     :rule (c-lambda (make-streamer
-                      :from ,from
-                      :stepper ,stepper
-                      :to ,to :donep ,donep))))
-
-;;;(defmethod md-slot-value-assume :around ((c c-stream) (s streamer))
-;;;  (bif (to (streamer-to s))
-;;;    (loop for slot-value = (streamer-from s)
-;;;          then (bif (stepper (streamer-stepper s))
-;;;                 (funcall stepper c)
-;;;                 (incf slot-value))
-;;;          until (bif (to (streamer-to s))
-;;;                  (> slot-value to)
-;;;                  (bwhen (donep-test (streamer-donep s))
-;;;                    (funcall donep-test c)))
-;;;          do (progn
-;;;               (print `(assume doing ,slot-value))
-;;;               (call-next-method c slot-value))))
-;;;  (c-optimize-away?! c))
-
 (defstruct (c-drifter
             (:include c-dependent)))
 
