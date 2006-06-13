@@ -17,7 +17,7 @@
                                 "04-formula-once-then-input.lisp")
                  (make-instance 'module :name "05-class-cell.lisp")
                  (make-instance 'module :name
-                                "..\\gotchas\\some-ephemeral-uhoh.lisp")
+                                "..\\gotchas\\lost-ephemeral-init.lisp")
                  (make-instance 'module :name "chat-cells.lisp"))
   :projects (list (make-instance 'project-module :name "..\\cells"))
   :libraries nil
@@ -88,7 +88,7 @@
   :old-space-size 256000
   :new-space-size 6144
   :runtime-build-option :standard
-  :on-initialization 'tu-cells::tu-some-ephemeral-uhoh
+  :on-initialization 'tu-cells::tu-chat-2
   :on-restart 'do-default-restart)
 
 ;; End of Project Definition

@@ -49,6 +49,7 @@ See the Lisp Lesser GNU Public License for more details.
       for sn = (slot-definition-name esd)
       for sv = (when (slot-boundp self sn)
                  (slot-value self sn))
+      ;;do (print (list self sn sv (typep sv 'cell)))
       when (typep sv 'cell)
       do (if (md-slot-cell-type (type-of self) sn)
              (md-install-cell self sn sv)

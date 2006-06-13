@@ -103,7 +103,7 @@ See the Lisp Lesser GNU Public License for more details.
     ; would this be bad for persistent CLOS, in which a DB would think there was still a link
     ; between two records until the value actually got cleared?
     ;
-    (c-ephemeral-reset c)
+    (ephemeral-reset c)
     ))
 
 ; --- slot change -----------------------------------------------------------

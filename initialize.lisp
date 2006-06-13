@@ -33,7 +33,7 @@ See the Lisp Lesser GNU Public License for more details.
   ; nothing to calculate, but every cellular slot should be output
   ;
   (slot-value-observe (c-slot-name c) (c-model c) (c-value c) nil nil)
-  (c-ephemeral-reset c))
+  (ephemeral-reset c))
 
 (defmethod awaken-cell ((c c-ruled))
   (let (*c-calculators*)

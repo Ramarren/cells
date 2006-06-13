@@ -53,11 +53,11 @@ See the Lisp Lesser GNU Public License for more details.
 ; 
 ; Not a type, but an option to the :cell parameter of defmodel
 ;
-(defun c-ephemeral-p (c)
+(defun ephemeral-p (c)
   (eql :ephemeral (md-slot-cell-type (type-of (c-model c)) (c-slot-name c))))
 
-(defun c-ephemeral-reset (c)
-  (when (c-ephemeral-p c) ;; so caller does not need to worry about this
+(defun ephemeral-reset (c)
+  (when (ephemeral-p c) ;; so caller does not need to worry about this
     ;
     ; as of Cells3 we defer resetting ephemerals because everything
     ; else gets deferred and we cannot /really/ reset it until
@@ -67,9 +67,10 @@ See the Lisp Lesser GNU Public License for more details.
     ; ;; good q: what does (setf <ephem> 'x) return? historically nil, but...?
     ;
     (with-integrity (:ephemeral-reset c)
-      (trc nil "!!!!!!!!!!!!!! c-ephemeral-reset resetting:" c)
+      (trc nil "!!!!!!!!!!!!!! ephemeral-reset resetting:" c)
       (md-slot-value-store (c-model c) (c-slot-name c) nil)
       (setf (c-value c) nil)
+      #+notsureaboutthis
       (loop for user in (c-users c)
             do (calculate-and-link user)))))
 
