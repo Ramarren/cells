@@ -135,8 +135,8 @@ See the Lisp Lesser GNU Public License for more details.
             (multiple-value-bind (c-or-value suppressp)
                 (funcall (ks-rule ks-def) self)
               (unless suppressp
-                (trc nil "c-install " slot-name c-or-value)
-                (c-install self slot-name c-or-value)))))))))
+                (trc nil "md-install-cell " slot-name c-or-value)
+                (md-install-cell self slot-name c-or-value)))))))))
 
 (defobserver .kids ((self family) new-kids old-kids)
   (declare (ignorable usage))

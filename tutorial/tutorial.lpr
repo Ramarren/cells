@@ -2,7 +2,7 @@
 
 (in-package :cg-user)
 
-(defpackage :COMMON-GRAPHICS-USER)
+(defpackage :TU-CELLS)
 
 (define-project :name :tutorial
   :modules (list (make-instance 'module :name "test.lisp")
@@ -14,12 +14,16 @@
                  (make-instance 'module :name "02-lesson.lisp")
                  (make-instance 'module :name "03-ephemeral.lisp")
                  (make-instance 'module :name
-                                "04-formula-once-then-input.lisp"))
+                                "04-formula-once-then-input.lisp")
+                 (make-instance 'module :name "05-class-cell.lisp")
+                 (make-instance 'module :name
+                                "..\\gotchas\\some-ephemeral-uhoh.lisp")
+                 (make-instance 'module :name "chat-cells.lisp"))
   :projects (list (make-instance 'project-module :name "..\\cells"))
   :libraries nil
   :distributed-files nil
   :internally-loaded-files nil
-  :project-package-name :common-graphics-user
+  :project-package-name :tu-cells
   :main-form nil
   :compilation-unit t
   :verbose nil
@@ -84,7 +88,7 @@
   :old-space-size 256000
   :new-space-size 6144
   :runtime-build-option :standard
-  :on-initialization 'default-init-function
+  :on-initialization 'tu-cells::tu-some-ephemeral-uhoh
   :on-restart 'do-default-restart)
 
 ;; End of Project Definition

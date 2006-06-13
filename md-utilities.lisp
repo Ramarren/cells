@@ -67,6 +67,6 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmacro make-kid (class &rest initargs)
   `(make-instance ,class
-     :fm-parent self
+     :fm-parent (progn (assert self) self)
      ,@initargs))
 

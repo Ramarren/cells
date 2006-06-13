@@ -199,17 +199,17 @@ See the Lisp Lesser GNU Public License for more details.
 
 ;;-----------------------------------------------
 
-(defun inset-width (image)
-   (- (l-width image) (outset image) (outset image)))
+(defun inset-width (self)
+   (- (l-width self) (outset self) (outset self)))
 
-(defun inset-lr (image)
-   (- (lr image) (outset image)))
+(defun inset-lr (self)
+   (- (lr self) (outset self)))
 
-(defun inset-lb (image)
-   (ups (lb image) (outset image)))
+(defun inset-lb (self)
+   (ups (lb self) (outset self)))
 
-(defun inset-height (image)
-   (- (l-height image) (outset image) (outset image)))
+(defun inset-height (self)
+   (- (l-height self) (outset self) (outset self)))
 
 ;---------------------------------
 

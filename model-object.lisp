@@ -51,7 +51,7 @@ See the Lisp Lesser GNU Public License for more details.
                  (slot-value self sn))
       when (typep sv 'cell)
       do (if (md-slot-cell-type (type-of self) sn)
-             (c-install self sn sv)
+             (md-install-cell self sn sv)
            (when *c-debug*
              (trc "warning: cell ~a offered for non-cellular model/slot ~a/~a" sv self sn))))
   ;
@@ -60,12 +60,12 @@ See the Lisp Lesser GNU Public License for more details.
   (with-integrity (:awaken self)
     (md-awaken self)))
 
-(defun c-install (self sn c &aux (c-isa-cell (typep c 'cell)))
+(defun md-install-cell (self sn c &aux (c-isa-cell (typep c 'cell)))
   ;
   ; iff cell, init and move into dictionary
   ;
   (when c-isa-cell
-    (count-it :c-install)
+    (count-it :md-install-cell)
     (setf
      (c-model c) self
      (c-slot-name c) sn
@@ -121,7 +121,7 @@ See the Lisp Lesser GNU Public License for more details.
          ((not c)
           ;; all slots must hit any change handlers as instances come into existence to get
           ;; models fully connected to the outside world they are controlling. that
-          ;; happens in c-awaken-cell for slots in fact mediated by cells, but as an
+          ;; happens in awaken-cell for slots in fact mediated by cells, but as an
           ;; optimization we allow raw literal values to be specified for a slot, in
           ;; which case heroic measures are needed to get the slot to the change handler
           ;;
@@ -142,7 +142,7 @@ See the Lisp Lesser GNU Public License for more details.
           (count-it :c-awaken)
                 
           (setf (c-state c) :awake)
-          (c-awaken-cell c))))))
+          (awaken-cell c))))))
   
   (setf (md-state self) :awake)
   self)

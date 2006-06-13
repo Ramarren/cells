@@ -42,14 +42,14 @@ See the Lisp Lesser GNU Public License for more details.
   (if c
       (prog1
           (with-integrity ()
-            (c-value-ensure-current c))
+            (ensure-value-is-current c))
         (when (car *c-calculators*)
           (c-link-ex c)))
     (values (bd-slot-value self slot-name) nil)))
   
-(defun c-value-ensure-current (c)
-  (count-it :c-value-ensure-current)
-  (trc nil "c-value-ensure-current >" c)
+(defun ensure-value-is-current (c)
+  (count-it :ensure-value-is-current)
+  (trc nil "ensure-value-is-current >" c)
   (cond
    ((c-currentp c)(trc nil "c-currentp" c)) ;; used to follow c-inputp, but I am toying with letting ephemerals (inputs) fall obsolete
    ;; and then get reset here (ie, ((c-input-p c) (c-ephemeral-reset c))). ie, do not assume inputs are never obsolete
@@ -58,14 +58,14 @@ See the Lisp Lesser GNU Public License for more details.
 
    ((or (not (c-validp c))
       (some (lambda (used)
-              (c-value-ensure-current used)
+              (ensure-value-is-current used)
               (trc nil "comparing pulses (user, used): " (c-pulse c)(c-pulse used))
               (when (and (c-changed used) (> (c-pulse used)(c-pulse c)))
                  (trc nil "used changed" c used)
                 t))
         (cd-useds c)))
     (trc nil "ensuring current calc-set of" (c-slot-name c) debug-id)
-    (c-calculate-and-set c))
+    (calculate-and-set c))
 
    (t (c-pulse-update c :valid-uninfluenced)))
 
@@ -74,36 +74,35 @@ See the Lisp Lesser GNU Public License for more details.
 
   (c-value c))
 
-(defun c-calculate-and-set (c)
+(defun calculate-and-set (c)
   (flet ((body ()
            (when (c-stopped)
              (princ #\.)
-             (return-from c-calculate-and-set))
-    
+             (return-from calculate-and-set))
+           
            (when (find c *c-calculators*) ;; circularity
-             (trc "c-calculate-and-set breaking on circularity" c)
              (c-break ;; break is problem when testing cells on some CLs
               "cell ~a midst askers: ~a" c *c-calculators*))
-           (trc nil "calcing, calcers" (c-slot-name c) (mapcar 'c-slot-name *c-calculators*))
-           (count-it :c-calculate-and-set)
-           ;;;  (count-it :c-calculate-and-set (type-of (c-model c))) ;; (c-slot-name c))
-    
-           (cd-usage-clear-all c)
-    
+  
            (multiple-value-bind (raw-value propagation-code)
-               (let ((*c-calculators* (cons c *c-calculators*))
-                     (*defer-changes* t))
-                 (funcall (cr-rule c) c))
+               (calculate-and-link c)
+             
              (when (and *c-debug* (typep raw-value 'cell))
                (c-break "new value for cell ~s is itself a cell: ~s. probably nested (c? ... (c? ))"
                  c raw-value))
-        
-             (c-unlink-unused c)
-             (trc nil "calc-set calling md-sv-assum" c propagation-code)
+             
              (md-slot-value-assume c raw-value propagation-code))))
     (if nil ;; *dbg*
         (ukt::wtrc (0 100 "calcnset" c) (body))
       (body))))
+
+(defun calculate-and-link (c)
+  (let ((*c-calculators* (cons c *c-calculators*))
+        (*defer-changes* t))
+    (cd-usage-clear-all c)
+    (multiple-value-prog1
+        (funcall (cr-rule c) c)
+      (c-unlink-unused c))))
 
 ;-------------------------------------------------------------
 
@@ -183,7 +182,7 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
         (when (and (not (eq propagation-code :propagate))
                 (eql prior-state :valid)
                 (c-no-news c absorbed-value prior-value))
-          (trc nil "(setf md-slot-value) > early no news" propagation-code prior-state prior-value  absorbed-value)
+          (trc "(setf md-slot-value) > early no news" propagation-code prior-state prior-value  absorbed-value)
           (count-it :nonews)
           (return-from md-slot-value-assume absorbed-value))
 

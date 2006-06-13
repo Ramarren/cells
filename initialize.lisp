@@ -24,11 +24,10 @@ See the Lisp Lesser GNU Public License for more details.
 (defstruct (c-envaluer (:conc-name nil))
   envalue-rule)
 
-
-(defmethod c-awaken-cell (c)
+(defmethod awaken-cell (c)
   (declare (ignorable c)))
 
-(defmethod c-awaken-cell ((c cell))
+(defmethod awaken-cell ((c cell))
   (assert (c-inputp c))
   ;
   ; nothing to calculate, but every cellular slot should be output
@@ -36,17 +35,17 @@ See the Lisp Lesser GNU Public License for more details.
   (slot-value-observe (c-slot-name c) (c-model c) (c-value c) nil nil)
   (c-ephemeral-reset c))
 
-(defmethod c-awaken-cell ((c c-ruled))
+(defmethod awaken-cell ((c c-ruled))
   (let (*c-calculators*)
-    (c-calculate-and-set c)))
+    (calculate-and-set c)))
 
 #+cormanlisp ; satisfy CormanCL bug
-(defmethod c-awaken-cell ((c c-dependent))
+(defmethod awaken-cell ((c c-dependent))
   (let (*c-calculators*)
-    (trc nil "c-awaken-cell c-dependent clearing *c-calculators*" c)
-    (c-calculate-and-set c)))
+    (trc nil "awaken-cell c-dependent clearing *c-calculators*" c)
+    (calculate-and-set c)))
 
-(defmethod c-awaken-cell ((c c-drifter))
+(defmethod awaken-cell ((c c-drifter))
   ;
   ; drifters *begin* valid, so the derived version's test for unbounditude
   ; would keep (drift) rule ever from being evaluated. correct solution
@@ -55,7 +54,7 @@ See the Lisp Lesser GNU Public License for more details.
   ; awakening, because awakening's other role is to get an instance up to speed
   ; at once upon instantiation 
   ;
-  (c-calculate-and-set c)
+  (calculate-and-set c)
   (cond ((c-validp c) (c-value c))
         ((c-unboundp c) nil)
         (t "illegal state!!!")))

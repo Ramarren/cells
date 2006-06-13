@@ -46,7 +46,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun c-pulse-update (c key)
   (declare (ignorable key))
-  (trc nil  "c-pulse-update updating" *data-pulse-id* c key)
+  (trc nil "c-pulse-update updating" *data-pulse-id* c key)
   (setf (c-changed c) nil
       (c-pulse c) *data-pulse-id*))
 
@@ -159,8 +159,8 @@ See the Lisp Lesser GNU Public License for more details.
   ;         but B is busy eagerly propagating. "This time" is important because it means
   ;         there is no way one can reliably be sure H will not ask for A
   ;
-  (trc nil "c-propagate-to-users > queueing" c)
   (when (c-users c)
+    (trc nil "c-propagate-to-users > queueing" c)
     (let ((causation (cons c *causation*))) ;; in case deferred
       (with-integrity (:tell-dependents c)
         (assert (null *c-calculators*))
@@ -169,7 +169,7 @@ See the Lisp Lesser GNU Public License for more details.
           (dolist (user (c-users c))
             (unless (member (cr-lazy user) '(t :always :once-asked))
               (trc nil "propagating to user is (used,user):" c user)
-              (c-value-ensure-current user))))))))
+              (ensure-value-is-current user))))))))
 
 
 

@@ -40,7 +40,7 @@ See the Lisp Lesser GNU Public License for more details.
        (prog1
            (multiple-value-bind (v p)
                (with-integrity ()
-                 (c-value-ensure-current synapse))
+                 (ensure-value-is-current synapse))
              (trc nil "with-synapse: synapse, v, prop" synapse v p)
              (values v p))
          (c-link-ex synapse)))))

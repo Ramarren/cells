@@ -64,10 +64,14 @@ See the Lisp Lesser GNU Public License for more details.
     ; within finish-business we are sure all users have been recalculated
     ; and all outputs completed.
     ;
+    ; ;; good q: what does (setf <ephem> 'x) return? historically nil, but...?
+    ;
     (with-integrity (:ephemeral-reset c)
       (trc nil "!!!!!!!!!!!!!! c-ephemeral-reset resetting:" c)
       (md-slot-value-store (c-model c) (c-slot-name c) nil)
-      (setf (c-value c) nil)))) ;; good q: what does (setf <ephem> 'x) return? historically nil, but...?
+      (setf (c-value c) nil)
+      (loop for user in (c-users c)
+            do (calculate-and-link user)))))
 
 ; -----------------------------------------------------
 
