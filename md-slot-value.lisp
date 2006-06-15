@@ -182,7 +182,7 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
         (when (and (not (eq propagation-code :propagate))
                 (eql prior-state :valid)
                 (c-no-news c absorbed-value prior-value))
-          (trc "(setf md-slot-value) > early no news" propagation-code prior-state prior-value  absorbed-value)
+          (trc nil "(setf md-slot-value) > early no news" propagation-code prior-state prior-value  absorbed-value)
           (count-it :nonews)
           (return-from md-slot-value-assume absorbed-value))
 
