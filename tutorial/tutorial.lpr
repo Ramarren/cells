@@ -18,7 +18,8 @@
                  (make-instance 'module :name "05-class-cell.lisp")
                  (make-instance 'module :name
                                 "..\\gotchas\\lost-ephemeral-init.lisp")
-                 (make-instance 'module :name "chat-cells.lisp"))
+                 (make-instance 'module :name "chat-cells.lisp")
+                 (make-instance 'module :name "df-interference.lisp"))
   :projects (list (make-instance 'project-module :name "..\\cells"))
   :libraries nil
   :distributed-files nil

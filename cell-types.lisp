@@ -105,8 +105,11 @@ See the Lisp Lesser GNU Public License for more details.
             (:conc-name cd-))
   ;; chop (synapses nil :type list)
   (useds nil :type list)
-  (usage (make-array 16 :element-type 'bit
-                        :initial-element 0) :type simple-bit-vector))
+  (usage (blank-usage-mask)))
+
+(defun blank-usage-mask ()
+  (make-array 16 :element-type 'bit
+    :initial-element 0))
 
 (defstruct (c-drifter
             (:include c-dependent)))
@@ -153,3 +156,6 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmethod c-print-value (c stream)
   (declare (ignore c stream)))
+
+
+

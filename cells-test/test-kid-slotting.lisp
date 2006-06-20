@@ -24,33 +24,28 @@
 
 (in-package :cells)
 
-(defmodel image (family)
-  ((left :initform nil :initarg :left :accessor left)
-   (top :initform nil :initarg :top :accessor top)
-   (width :initform nil :initarg :width :accessor width)
-   (height :initform nil :initarg :height :accessor height)
-   ))
+(defmd image (family) left top width height)
 
 (defun right (x) (+ (left x) (width x)))
 (defun bottom (x) (+ (top x) (height x)))
 
-(defmodel stack (image)
-  ((justify :initform :left :initarg :justify :accessor justify)
-   (.kid-slots :initform (lambda (self)
-                           (declare (ignore self))
-                           (list
-                            (mk-kid-slot (left :if-missing t)
-                              (c? (+ (left .parent)
-                                    (ecase (justify .parent)
-                                      (:left 0)
-                                      (:center (floor (- (width .parent) (^width)) 2))
-                                      (:right (- (width .parent) (^width)))))))
-                            (mk-kid-slot (top)
-                              (c? (bif (psib (psib))
-                                    (bottom psib)
-                                    (top .parent))))))
-     :accessor kid-slots
-     :initarg :kid-slots)))
+(defmd stack (image)
+  justify
+  (.kid-slots :initform (lambda (self)
+                          (declare (ignore self))
+                          (list
+                           (mk-kid-slot (left :if-missing t)
+                             (c? (+ (left .parent)
+                                   (ecase (justify .parent)
+                                     (:left 0)
+                                     (:center (floor (- (width .parent) (^width)) 2))
+                                     (:right (- (width .parent) (^width)))))))
+                           (mk-kid-slot (top)
+                             (c? (bif (psib (psib))
+                                   (bottom psib)
+                                   (top .parent))))))
+    :accessor kid-slots
+    :initarg :kid-slots))
 ;;
 ;; kid-slotting exists largely so graphical containers can be defined which arrange their
 ;; component parts without those parts' cooperation. so a stack class can be defined as shown

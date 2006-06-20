@@ -65,7 +65,6 @@ subclass for them?)
 
 (defvar *cell-tests* nil)
 
-
 #+go
 (test-cells)
 
@@ -99,12 +98,10 @@ subclass for them?)
 
 ;; test huge number of useds by one rule
 
-(defmodel m-index (family)
-  ()
-  (:default-initargs
-      :md-value (c? (bwhen (ks (^kids))
-                      ;(trc "chya" (mapcar 'md-value ks))
-                      (apply '+ (mapcar 'md-value ks))))))
+(defmd m-index (family)
+  :md-value (c? (bwhen (ks (^kids))
+                  ;(trc "chya" (mapcar 'md-value ks))
+                  (apply '+ (mapcar 'md-value ks)))))
 
 (def-cell-test many-useds
     (let ((i (make-instance 'm-index)))
@@ -119,18 +116,18 @@ subclass for them?)
 #+test
 (many-useds)
 
-(defmodel m-null ()
-  ((aa :initform nil :cell nil :initarg :aa :accessor aa)))
+(defmd m-null () 
+  (aa :cell nil :initform nil :initarg :aa :accessor aa))
+
 
 (def-cell-test m-null
     (let ((m (make-instance 'm-null :aa 42)))
       (ct-assert (= 42 (aa m)))
-      (ct-assert (= 21 (decf (aa m) 21)))
+      (ct-assert (= 21 (let ((slot 'aa))
+                         (funcall (fdefinition `(setf ,slot)) (- (aa m) 21) m))))
       :okay-m-null))
 
-(defmodel m-solo ()
-  ((m-solo-a :initform nil :initarg :m-solo-a :accessor m-solo-a)
-   (m-solo-b :initform nil :initarg :m-solo-b :accessor m-solo-b)))
+(defmd m-solo () m-solo-a m-solo-b)
 
 (def-cell-test m-solo
     (let ((m (make-instance 'm-solo
@@ -143,9 +140,7 @@ subclass for them?)
       (ct-assert (= 82 (m-solo-b m)))
       :okay-m-null))
 
-(defmodel m-var ()
-  ((m-var-a :initform nil :initarg :m-var-a :accessor m-var-a)
-   (m-var-b :initform nil :initarg :m-var-b :accessor m-var-b)))
+(defmd m-var () m-var-a m-var-b)
 
 (defobserver m-var-b ()
   (print `(output m-var-b ,self ,new-value ,old-value)))
@@ -157,9 +152,9 @@ subclass for them?)
     (ct-assert (= 21 (m-var-a m)))
     :okay-m-var))
 
-(defmodel m-var-output ()
-  ((cbb :initform nil :initarg :cbb :accessor cbb)
-   (aa :cell nil :initform nil :initarg :aa :accessor aa)))
+(defmd m-var-output ()
+  cbb
+  (aa :cell nil :initform nil :initarg :aa :accessor aa))
 
 (defobserver cbb ()
   (trc "output cbb" self)
@@ -175,9 +170,7 @@ subclass for them?)
     (ct-assert (eql -15 (aa m)))
     (list :okay-m-var (aa m))))
 
-(defmodel m-var-linearize-setf ()
-  ((ccc :initform nil :initarg :ccc :accessor ccc)
-   (ddd :initform nil :initarg :ddd :accessor ddd)))
+(defmd m-var-linearize-setf () ccc ddd)
 
 (defobserver ccc ()
   (with-integrity (:change)
@@ -198,9 +191,9 @@ subclass for them?)
 
 ;;; -------------------------------------------------------
 
-(defmodel m-ruled ()
-  ((eee :initform nil :initarg :eee :accessor eee)
-   (fff :initform (c? (floor (^ccc) 2)) :initarg :fff :accessor fff)))
+(defmd m-ruled ()
+  eee
+  (fff (c? (floor (^ccc) 2))))
 
 (defobserver eee ()
   (print `(output> eee ,new-value old ,old-value)))
@@ -222,15 +215,15 @@ subclass for them?)
     (ct-assert (= 18 (fff m)) m)
     :okay-m-ruled))
 
-(defmodel m-worst-case ()
-  ((wc-x :accessor wc-x :initform (c-input () 2))
-   (wc-a :accessor wc-a :initform (c? (prog2
-                                        (trc "Start A")
-                                          (when (oddp (wc-x self))
-                                            (wc-c self))
-                                        (trc "Stop A"))))
-   (wc-c :accessor wc-c :initform (c? (evenp (wc-x self))))
-   (wc-h :accessor wc-h :initform (c? (or (wc-c self)(wc-a self))))))
+(defmd m-worst-case ()
+  (wc-x (c-input () 2))
+  (wc-a (c? (prog2
+              (trc "Start A")
+                (when (oddp (wc-x self))
+                  (wc-c self))
+              (trc "Stop A"))))
+  (wc-c (c? (evenp (wc-x self))))
+  (wc-h (c? (or (wc-c self)(wc-a self)))))
 
 (defun dependency-dump (self)
   (let ((slot-cells (loop for esd in (class-slots (class-of self))
@@ -252,10 +245,9 @@ subclass for them?)
     (dependency-dump m)
     (ct-assert (eql 3 (incf (wc-x m))))))
 
-(defmodel c?n-class ()
-  ((aaa :initarg :aaa :accessor aaa)
-   (bbb :initarg :bbb :accessor bbb)
-   (sum :initarg :sum :accessor sum :initform (c? (+ (^aaa) (^bbb))))))
+(defmd c?n-class ()
+  aaa bbb
+  (sum (c? (+ (^aaa) (^bbb)))))
 
 (def-cell-test test-c?n ()
   (let ((self (make-instance 'c?n-class

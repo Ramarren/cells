@@ -126,13 +126,25 @@ Ruled Cells
 -----------
 Ruled Cells come with an instance-specific  rule in the form of an anonymous function of two variables, 
 the instance owning the slot and the prior value (if any) computed by the rule. These rules consist of 
-arbitrarily complex Common Lisp code, and are invoked immediately after instance initialization or, if 
-they are declared lazy, when their slot readers are invoked. 
+arbitrarily complex Common Lisp code, and are invoked immediately after instance initialization (but see
+the next bit on lazy cells).
 
 When a rule runs, any dynamic read (either expressly in the rule source or during the execution of 
 some function invoked by the rule) of a slot of any instance mediated by a Cell of any type establishes a
 runtime dependency of the ruled cell on the slot of the instance that was read. Note then that thanks
 to code branching, dependencies can vary after every rule invocation.
+
+Lazy Ruled Cells
+----------------
+Laziness is cell-specific, applies only to ruled cells, and comes in four varieties:
+
+     :once-asked -- this will get evaluated and "observed" on initialization, but then not get reevaluated 
+immediately if dependencies change, rather only when read by application code.
+
+     :until-asked  -- this does not get evaluated/observed until read by application code, but then it becomes 
+un-lazy, eagerly reevaluated as soon as any dependency changes (not waiting until asked).
+
+     :always -- not evaluated/observed until read, and not reevaluated until read after a dependency changes. 
 
 Dataflow
 --------
@@ -157,6 +169,15 @@ Observers
 To allow the emergent animated data model to operate usefully on the world outside the model--if only to
 update the screen--programmers may specify so-called observer callbacks dispatched according to: slot name, 
 instance, new value, old value, and whether the old value actually existed (false only on the first go).
+Observers are inherited according to the rules of CLOS class inheritance. If multiple primary observer
+methods apply because of inheritance, they all get run, most specific last.
+
+ie, observers are a GF with PROGN method combination.
+
+Observers get called in two circumstances: as part of Model object initialization, in a processing step 
+just after CLOS instance initialization, and when a slot changes value. Any observer of a Cell slot 
+is guaranteed to be called at least once during intialization even if a cell slot is bound to a constant
+or if it is an input or ruled Cell that never changes value.
 
 It is legal for observer code to assign to input Cells, but (a) special syntax is required to defer executuion
 until the observed state change has fully propagated; and (b) doing so compromises the declarative
@@ -296,20 +317,18 @@ attributes of graphic features in the part-subpart declaration (that declaration
 is called 'defpart' in cells-gtk); and, (b) formula that specify the value of CLOS slots."
 
 -- Phillip Eby, PyCells and peak.events, 
-... http://www.eby-sarna.com/pipermail/peak/2006-May/002545.html
+   http://www.eby-sarna.com/pipermail/peak/2006-May/002545.html
 "What I discovered is quite cool.  The Cells system *automatically 
 discovers* dynamic dependencies, without having to explicitly specify that 
 X depends on Y, as long as X and Y are both implemented using cell 
 objects.  The system knows when you are computing a value for X, and 
 registers the fact that Y was read during this computation, thus allowing 
-it to automatically invalidate the X calculation if Y changes.
-
-"...Aside from the automatic dependency 
-detection, the cells system has another trick that is able to significantly 
-reduce the complexity of event cascades, similar to what I was trying (but 
-failing) to do using the "scheduled thread" concept in peak.events.
-
-"Specifically, the cells system understands how to make event-based updates 
+it to automatically invalidate the X calculation if Y changes....
+Aside from the automatic dependency detection, the cells system has 
+another trick that is able to significantly reduce the complexity of 
+event cascades, similar to what I was trying (but failing) to do using 
+the "scheduled thread" concept in peak.events.
+Specifically, the cells system understands how to make event-based updates 
 orderly and deterministic, in a way that peak.events cannot.  It 
 effectively divides time into "propagation" and "non-propagation" 
 states.  Instead of simply making callbacks whenever a computed value 

@@ -88,9 +88,7 @@ See the Lisp Lesser GNU Public License for more details.
 ; ---------------------------------------------
 
 (defun cd-usage-clear-all (c)
-  (loop with a = (cd-usage c)
-        for bitn below (array-dimension a 0)
-        do (setf (sbit a bitn) 0)))
+  (setf (cd-usage c) (blank-usage-mask)))
 
 
 ;--- unlink from used ----------------------

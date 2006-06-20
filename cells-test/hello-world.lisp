@@ -24,15 +24,13 @@
 
 (in-package :cells)
 
-(defmodel computer ()
-  ((happen :cell :ephemeral :initform (c-in nil) :accessor happen)
-   (location :cell t
-             :initform (c? (case (^happen)
-                              (:leave :away)
-                              (:arrive :at-home)
-                              (t .cache))) ;; ie, unchanged
-             :accessor location)
-   (response :cell :ephemeral :initform nil :initarg :response :accessor response)))
+(defmd computer ()
+  (happen (c-in nil) :ephemeral)
+  (location (c? (case (^happen)
+                  (:leave :away)
+                  (:arrive :at-home)
+                  (t .cache)))) ;; ie, unchanged
+  (response nil :ephemeral))
 
 (defobserver response(self new-response old-response)
   (when new-response

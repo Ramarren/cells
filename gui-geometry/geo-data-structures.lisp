@@ -216,7 +216,11 @@ See the Lisp Lesser GNU Public License for more details.
        (setf min-h 0 min-v 0 max-h 0 max-v 0))
      (nr-make r min-h min-v max-h max-v))))
 
-
+(defun nr-union (r sr) ;; unlike other code, this is assuming opengl's up==plus, and proper rectangles
+  (nr-make r (min (r-left r) (r-left sr))
+    (max (r-top r) (r-top sr))
+    (max (r-right r) (r-right sr))
+    (min (r-bottom r) (r-bottom sr))))
 
 (defun nr-move-to (r h v)
    (setf (r-left r) h

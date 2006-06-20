@@ -48,7 +48,7 @@
     #:c-formula #:c? #:c_? #:c?8 #:c?_ #:c??
     #:with-integrity #:without-c-dependency #:self #:*parent*
     #:.cache #:.with-c-cache #:c-lambda
-    #:defmodel #:defobserver #:slot-value-observe #:def-c-unchanged-test
+    #:defmodel #:defmd #:defobserver #:slot-value-observe #:def-c-unchanged-test
     #:new-value #:old-value #:old-value-boundp #:c...
     #:md-awaken
     #:mkpart #:make-kid #:the-kids #:nsib #:md-value #:^md-value #:.md-value #:kids #:^kids #:.kids
