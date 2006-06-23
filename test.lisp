@@ -34,14 +34,14 @@ sees stale data, etc etc
 
 - make sure they fire when they should, and do not when they should not
 
-- make sure they survive an evaluation by the user which does not branch to
+- make sure they survive an evaluation by the caller which does not branch to
 them (ie, does not access them)
 
 - make sure they optimize away
 
 - test with forms which access multiple other cells
 
-- look at direct alteration of a user
+- look at direct alteration of a caller
 
 - does SETF honor not propagating, as well as a c-ruled after re-calcing
 

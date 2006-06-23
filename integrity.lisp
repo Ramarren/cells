@@ -64,7 +64,7 @@ outside computation."
   (let ((*within-integrity* nil)
           *unfinished-business*
           *defer-changes*
-        *c-calculators*
+        *call-stack*
         (*data-pulse-id* 0))
     (funcall action)))
 
@@ -138,7 +138,7 @@ outside computation."
     ; of cells3, I coded an ephemeral cell and initialized it to non-nil, hitting a runtime
     ; error (now gone) saying I had no idea what a non-nil ephemeral would mean. That had been
     ; my conclusion when the idea occurred to me the first time, so I stuck in an assertion
-    ; to warn off users. 
+    ; to warn off callers. 
     ;
     ; But the new
     ; datachange progression defined by Cells3 had already forced me to manage ephemeral resets

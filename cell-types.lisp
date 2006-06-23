@@ -26,7 +26,7 @@ See the Lisp Lesser GNU Public License for more details.
   inputp ;; t for old c-variable class
   synaptic
   changed
-  (users-store (make-fifo-queue) :type cons) ;; (C3) probably better to notify users FIFO
+  (caller-store (make-fifo-queue) :type cons) ;; (C3) probably better to notify callers FIFO
   
   (state :nascent :type symbol) ;; :nascent, :awake, :optimized-away
   (value-state :unbound :type symbol) ;; {:unbound | :unevaluated | :valid}
@@ -34,16 +34,16 @@ See the Lisp Lesser GNU Public License for more details.
   debug
   md-info)
 
-(defun c-users (c)
+(defun c-callers (c)
   "Make it easier to change implementation"
-  (fifo-data (c-users-store c)))
+  (fifo-data (c-caller-store c)))
 
-(defun user-ensure (used new-user)
-  (unless (find new-user (c-users used))
-    (fifo-add (c-users-store used) new-user)))
+(defun caller-ensure (used new-caller)
+  (unless (find new-caller (c-callers used))
+    (fifo-add (c-caller-store used) new-caller)))
 
-(defun user-drop (used user)
-  (fifo-delete (c-users-store used) user))
+(defun caller-drop (used caller)
+  (fifo-delete (c-caller-store used) caller))
 
 (defmethod trcp ((c cell))
   nil #+(or) (and (typep (c-model c) 'index)
@@ -61,7 +61,7 @@ See the Lisp Lesser GNU Public License for more details.
     ;
     ; as of Cells3 we defer resetting ephemerals because everything
     ; else gets deferred and we cannot /really/ reset it until
-    ; within finish-business we are sure all users have been recalculated
+    ; within finish-business we are sure all callers have been recalculated
     ; and all outputs completed.
     ;
     ; ;; good q: what does (setf <ephem> 'x) return? historically nil, but...?
@@ -71,8 +71,8 @@ See the Lisp Lesser GNU Public License for more details.
       (md-slot-value-store (c-model c) (c-slot-name c) nil)
       (setf (c-value c) nil)
       #+notsureaboutthis
-      (loop for user in (c-users c)
-            do (calculate-and-link user)))))
+      (loop for caller in (c-callers c)
+            do (calculate-and-link caller)))))
 
 ; -----------------------------------------------------
 

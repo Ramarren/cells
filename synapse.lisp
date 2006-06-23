@@ -23,19 +23,19 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmacro with-synapse (synapse-id (&rest closure-vars) &body body)
   (declare (ignorable trcp))
-  (let ((syn-id (gensym))(syn-user (gensym)))
+  (let ((syn-id (gensym))(syn-caller (gensym)))
     `(let* ((,syn-id ,synapse-id)
-            (,syn-user (car *c-calculators*))
-            (synapse (or (find ,syn-id (cd-useds ,syn-user) :key 'c-slot-name)
+            (,syn-caller (car *call-stack*))
+            (synapse (or (find ,syn-id (cd-useds ,syn-caller) :key 'c-slot-name)
                        (let ((new-syn
                               (let (,@closure-vars)
                                 (make-c-dependent
-                                 :model (c-model ,syn-user)
+                                 :model (c-model ,syn-caller)
                                  :slot-name ,syn-id
                                  :code ',body
                                  :synaptic t
                                  :rule (c-lambda ,@body)))))
-                         (c-link-ex new-syn)
+                         (record-caller new-syn)
                          new-syn))))
        (prog1
            (multiple-value-bind (v p)
@@ -43,7 +43,7 @@ See the Lisp Lesser GNU Public License for more details.
                  (ensure-value-is-current synapse))
              (trc nil "with-synapse: synapse, v, prop" synapse v p)
              (values v p))
-         (c-link-ex synapse)))))
+         (record-caller synapse)))))
 
 
 ;__________________________________________________________________________________

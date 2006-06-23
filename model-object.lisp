@@ -194,7 +194,7 @@ See the Lisp Lesser GNU Public License for more details.
   (bif (entry (assoc slot-name (cells self)))
     (let ((old (cdr entry))) ;; s/b being supplanted by kid-slotter
       (declare (ignorable old))
-      (c-assert (null (c-users old)))
+      (c-assert (null (c-callers old)))
       (c-assert (null (cd-useds old)))
       (trc nil "replacing in model .cells" old new-cell self)
       (rplacd entry new-cell))

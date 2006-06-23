@@ -22,7 +22,7 @@ See the Lisp Lesser GNU Public License for more details.
     #:^px #:^py #:^ll #:^lt #:^lr #:^lb
     #:u96ths #:udots #:uinches #:uin #:upoints #:upts #:u8ths #:u16ths #:u32nds
     #:mkr #:v2-move #:l-height #:mkv2 #:^offset-within #:inset-lr #:v2-v #:v2-h
-    #:r-bounds 
+    #:r-bounds #:l-box
     #:lb
     #:cs-target-res 
     #:nr-make 

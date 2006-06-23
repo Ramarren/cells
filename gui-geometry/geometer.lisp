@@ -57,8 +57,8 @@ See the Lisp Lesser GNU Public License for more details.
      :lr (c? (geo-kid-wrap self 'pr))
       :lb (c? (geo-kid-wrap self 'pb))))
 
-(defun l-rect (geo)
-  (count-it :l-rect)
+(defun l-box (geo)
+  (count-it :l-box)
    (mkr (ll geo) (lt geo) (lr geo) (lb geo)))
 
 ;---------- gOffset -------------------

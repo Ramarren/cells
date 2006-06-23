@@ -61,17 +61,17 @@ See the Lisp Lesser GNU Public License for more details.
 
   (count-it :c-propagate)
   
-  (let (*c-calculators* 
+  (let (*call-stack* 
         (*c-prop-depth*  (1+ *c-prop-depth*))
         (*defer-changes* t))
-    (trc nil "c-propagate clearing *c-calculators*" c)
+    (trc nil "c-propagate clearing *call-stack*" c)
 
     ;------ debug stuff ---------
     ;
     (when *stop*
       (princ #\.)(princ #\!)
       (return-from c-propagate))    
-    (trc nil "c-propagate> propping" c (c-value c) :user-ct (length (c-users c)) c)
+    (trc nil "c-propagate> propping" c (c-value c) :caller-ct (length (c-callers c)) c)
     
     (when *c-debug*
       (when (> *c-prop-depth* 250)
@@ -81,7 +81,7 @@ See the Lisp Lesser GNU Public License for more details.
     
     ; --- manifest new value as needed ---
     ;
-    ; propagation to users jumps back in front of client slot-value-observe handling in cells3
+    ; propagation to callers jumps back in front of client slot-value-observe handling in cells3
     ; because model adopting (once done by the kids change handler) can now be done in
     ; shared-initialize (since one is now forced to supply the parent to make-instance).
     ;
@@ -89,7 +89,7 @@ See the Lisp Lesser GNU Public License for more details.
     ; expected to have side-effects, so we want to propagate fully and be sure no rule
     ; wants a rollback before starting with the side effects.
     ; 
-    (c-propagate-to-users c)
+    (c-propagate-to-callers c)
 
     (slot-value-observe (c-slot-name c) (c-model c)
       (c-value c) prior-value prior-value-supplied)
@@ -98,7 +98,7 @@ See the Lisp Lesser GNU Public License for more details.
     ; let the fn decide if C really is ephemeral. Note that it might be possible to leave
     ; this out and use the datapulse to identify obsolete ephemerals and clear them
     ; when read. That would avoid ever making again bug I had in which I had the reset inside slot-value-observe,
-    ; thinking that that always followed propagation to users. It would also make
+    ; thinking that that always followed propagation to callers. It would also make
     ; debugging easier in that I could find the last ephemeral value in the inspector.
     ; would this be bad for persistent CLOS, in which a DB would think there was still a link
     ; between two records until the value actually got cleared?
@@ -147,29 +147,29 @@ See the Lisp Lesser GNU Public License for more details.
 
 ; --- recalculate dependents ----------------------------------------------------
 
-(defun c-propagate-to-users (c)
+(defun c-propagate-to-callers (c)
   ;
-  ;  We must defer propagation to users because of an edge case in which:
+  ;  We must defer propagation to callers because of an edge case in which:
   ;    - X tells A to recalculate
   ;    - A asks B for its current value
   ;    - B must recalculate because it too uses X
-  ;    - if B propagates to its users after recalculating instead of deferring it
+  ;    - if B propagates to its callers after recalculating instead of deferring it
   ;       - B might tell H to reclaculate, where H decides this time to use A
   ;       - but A is in the midst of recalculating, and cannot complete until B returns.
   ;         but B is busy eagerly propagating. "This time" is important because it means
   ;         there is no way one can reliably be sure H will not ask for A
   ;
-  (when (c-users c)
-    (trc nil "c-propagate-to-users > queueing" c)
+  (when (c-callers c)
+    (trc nil "c-propagate-to-callers > queueing" c)
     (let ((causation (cons c *causation*))) ;; in case deferred
       (with-integrity (:tell-dependents c)
-        (assert (null *c-calculators*))
+        (assert (null *call-stack*))
         (let ((*causation* causation))
-          (trc nil "c-propagate-to-users > notifying users of" c (mapcar 'c-slot-name (c-users c)))
-          (dolist (user (c-users c))
-            (unless (member (cr-lazy user) '(t :always :once-asked))
-              (trc nil "propagating to user is (used,user):" c user)
-              (ensure-value-is-current user))))))))
+          (trc nil "c-propagate-to-callers > notifying callers of" c (mapcar 'c-slot-name (c-callers c)))
+          (dolist (caller (c-callers c))
+            (unless (member (cr-lazy caller) '(t :always :once-asked))
+              (trc nil "propagating to caller is (used,caller):" c caller)
+              (ensure-value-is-current caller))))))))
 
 
 

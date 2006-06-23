@@ -64,7 +64,7 @@ See the Lisp Lesser GNU Public License for more details.
             `(c-break ,fmt$ ,@fmt-args)
           `(c-break "failed assertion: ~a" ',assertion)))))
 
-(defvar *c-calculators* nil)
+(defvar *call-stack* nil)
 
 (defmacro def-c-trace (model-type &optional slot cell-type)
   `(defmethod trcp ((self ,(case cell-type
@@ -76,7 +76,7 @@ See the Lisp Lesser GNU Public License for more details.
           `t))))
 
 (defmacro without-c-dependency (&body body)
-  `(let (*c-calculators*) ,@body))
+  `(let (*call-stack*) ,@body))
 
 (define-symbol-macro .cause
     (car *causation*))

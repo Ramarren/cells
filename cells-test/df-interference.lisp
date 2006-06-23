@@ -64,7 +64,7 @@
 ;;     - b depends on c
 ;;
 ;; if c changes, depending on the accident of the order in which a and b happened to
-;; be first evaluated, a might appear before b on c's list of dependents (users). then the
+;; be first evaluated, a might appear before b on c's list of dependents (callers). then the
 ;; following happens:
 ;;
 ;;     - c triggers a
@@ -113,7 +113,7 @@
       (trc "cell is" c)
       (when (typep (cdr c) 'cell)
         (print `(notifier ,c))
-        (dolist (u (c-users (cdr c)))
+        (dolist (u (c-callers (cdr c)))
           (print `(___ ,u)))))
     ))
 

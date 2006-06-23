@@ -43,8 +43,8 @@ See the Lisp Lesser GNU Public License for more details.
       (prog1
           (with-integrity ()
             (ensure-value-is-current c))
-        (when (car *c-calculators*)
-          (c-link-ex c)))
+        (when (car *call-stack*)
+          (record-caller c)))
     (values (bd-slot-value self slot-name) nil)))
   
 (defun ensure-value-is-current (c)
@@ -59,7 +59,7 @@ See the Lisp Lesser GNU Public License for more details.
    ((or (not (c-validp c))
       (some (lambda (used)
               (ensure-value-is-current used)
-              (trc nil "comparing pulses (user, used): " (c-pulse c)(c-pulse used))
+              (trc nil "comparing pulses (caller, used): " (c-pulse c)(c-pulse used))
               (when (and (c-changed used) (> (c-pulse used)(c-pulse c)))
                  (trc nil "used changed" c used)
                 t))
@@ -80,9 +80,9 @@ See the Lisp Lesser GNU Public License for more details.
              (princ #\.)
              (return-from calculate-and-set))
            
-           (when (find c *c-calculators*) ;; circularity
+           (when (find c *call-stack*) ;; circularity
              (c-break ;; break is problem when testing cells on some CLs
-              "cell ~a midst askers: ~a" c *c-calculators*))
+              "cell ~a midst askers: ~a" c *call-stack*))
   
            (multiple-value-bind (raw-value propagation-code)
                (calculate-and-link c)
@@ -97,7 +97,7 @@ See the Lisp Lesser GNU Public License for more details.
       (body))))
 
 (defun calculate-and-link (c)
-  (let ((*c-calculators* (cons c *c-calculators*))
+  (let ((*call-stack* (cons c *call-stack*))
         (*defer-changes* t))
     (cd-usage-clear-all c)
     (multiple-value-prog1

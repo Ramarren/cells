@@ -36,13 +36,13 @@ See the Lisp Lesser GNU Public License for more details.
   (ephemeral-reset c))
 
 (defmethod awaken-cell ((c c-ruled))
-  (let (*c-calculators*)
+  (let (*call-stack*)
     (calculate-and-set c)))
 
 #+cormanlisp ; satisfy CormanCL bug
 (defmethod awaken-cell ((c c-dependent))
-  (let (*c-calculators*)
-    (trc nil "awaken-cell c-dependent clearing *c-calculators*" c)
+  (let (*call-stack*)
+    (trc nil "awaken-cell c-dependent clearing *call-stack*" c)
     (calculate-and-set c)))
 
 (defmethod awaken-cell ((c c-drifter))

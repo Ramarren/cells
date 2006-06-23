@@ -61,7 +61,8 @@ property of software development, meaning by essential that there was no
 way around it, and thus his prediction that a software silver bullet was
 in principle impossible.
 
-Which brings us to Cells.
+Which brings us to Cells. See also [axiom] Phillip Eby's developiong axiomatic 
+definition he is developing in support of Ryan Forseth's SoC project.
 
 DEFMODEL and Slot types
 -----------------------
@@ -392,3 +393,118 @@ One Cells user is known to have mediated a global variable with a Cell, some wor
 was done on having slots of DEFSTRUCTs mediated by Cells, and ports to C++, Java, and
 Python have been explored.
 
+_______
+[axiom] Phillip Eby's axiomatic specification of Cells:
+
+Data Pulse Axioms
+=================
+
+Overview: updates must be synchronous (all changed cells are updated at
+once), consistent (no cell rule sees out of date values), and minimal (only
+necessary rules run).
+
+1. Global Update Counter:
+   There is a global update counter. (Guarantees that there is a
+globally-consistent notion of the "time" at which updates occur.)
+
+2. Per-Cell "As Of" Value:
+   Every cell has a "current-as-of" update count, that is initialized with
+a value that is less than the global update count will ever be.
+
+3. Out-of-dateness:
+   A cell is out of date if its update count is lower than the update
+count of any of the cells it depends on.
+
+4. Out-of-date Before:
+   When a rule-driven cell's value is queried, its rule is only run if the
+cell is out of date; otherwise a cached previous value is
+returned.  (Guarantees that a rule is not run unless its dependencies have
+changed since the last time the rule was run.)
+
+5. Up-to-date After:
+   Once a cell's rule is run (or its value is changed, if it is an input
+cell), its update count must be equal to the global update
+count.  (Guarantees that a rule cannot run more than once per update.)
+
+6. Inputs Move The System Forward
+   When an input cell changes, it increments the global update count and
+stores the new value in its own update count.
+
+
+Dependency Discovery Axioms
+===========================
+
+Overview: cells automatically notice when other cells depend on them, then
+notify them at most once if there is a change.
+
+
+1. Thread-local "current rule cell":
+   There is a thread-local variable that always contains the cell whose
+rule is currently being evaluated in the corresponding thread.  This
+variable can be empty (e.g. None).
+
+2. "Currentness" Maintenance:
+   While a cell rule's is being run, the variable described in #1 must be
+set to point to the cell whose rule is being run.  When the rule is
+finished, the variable must be restored to whatever value it had before the
+rule began.  (Guarantees that cells will be able to tell who is asking for
+their values.)
+
+3. Dependency Creation:
+   When a cell is read, it adds the "currently-being evaluated" cell as a
+listener that it will notify of changes.
+
+4. Dependency Creation Order:
+   New listeners are added only *after* the cell being read has brought
+itself up-to-date, and notified any *previous* listeners of the
+change.  (Ensures that the listening cell does not receive redundant
+notification if the listened-to cell has to be brought up-to-date first.)
+
+5. Dependency Minimalism:
+   A listener should only be added if it does not already present in the
+cell's listener collection.  (This isn't strictly mandatory, the system
+behavior will be correct but inefficient if this requirement isn't met.)
+
+6. Dependency Removal:
+   Just before a cell's rule is run, it must cease to be a listener for
+any other cells.  (Guarantees that a dependency from a previous update
+cannot trigger an unnecessary repeated calculation.)
+
+7. Dependency Notification
+   Whenever a cell's value changes (due to a rule change or input change),
+it must notify all of its listeners that it has changed, in such a way that
+*none* of the listeners are asked to recalculate their value until *all* of
+the listeners have first been notified of the change.  (This guarantees
+that inconsistent views cannot occur.)
+
+7a. Deferred Recalculation
+    The recalculation of listeners (not the notification of the listeners'
+out-of-dateness) must be deferred if a cell's value is currently being
+calculated.  As soon as there are no cells being calculated, the deferred
+recalculations must occur.  (This guarantees that in the absence of
+circular dependencies, no cell can ask for a value that's in the process of
+being calculated.)
+
+8. One-Time Notification Only
+   A cell's listeners are removed from its listener collection as soon as
+they have been notified.  In particular, the cell's collection of listeners
+must be cleared *before* *any* of the listeners are asked to recalculate
+themselves.  (This guarantees that listeners reinstated as a side effect of
+recalculation will not get a duplicate notification in the current update,
+or miss a notification in a future update.)
+
+9. Conversion to Constant
+   If a cell's rule is run and no dependencies were created, the cell must
+become a "constant" cell, and do no further listener additions or
+notification, once any necessary notifications to existing listeners are
+completed.  (That is, if the rule's run changed the cell's value, it must
+notify its existing listeners, but then the listener collection must be
+cleared -- *again*, in addition to the clearing described in #8.)
+
+10. No Changes During Notification:
+   It is an error to change an input cell's value while change
+notifications are taking place.
+
+11. Weak Notification
+   Automatically created inter-cell links must not inhibit garbage
+collection of either cell.  (Technically optional, but very easy to do.)

@@ -45,9 +45,9 @@ See the Lisp Lesser GNU Public License for more details.
              (setf (cells (c-model c)) (delete entry (cells (c-model c))))
              (push entry (cells-flushed (c-model c))))
            
-           (dolist (user (c-users c))
-             (setf (cd-useds user) (delete c (cd-useds user)))
-             (c-optimize-away?! user) ;; rare but it happens when rule says (or .cache ...)
+           (dolist (caller (c-callers c))
+             (setf (cd-useds caller) (delete c (cd-useds caller)))
+             (c-optimize-away?! caller) ;; rare but it happens when rule says (or .cache ...)
              )
            t)
        

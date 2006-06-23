@@ -47,7 +47,7 @@ See the Lisp Lesser GNU Public License for more details.
   (trc nil "md-quiesce doing" self (type-of self))
   (md-map-cells self nil (lambda (c)
                            (trc nil "quiescing" c)
-                           (c-assert (not (find c *c-calculators*)))
+                           (c-assert (not (find c *call-stack*)))
                            (c-quiesce c))))
 
 (defun c-quiesce (c)
@@ -56,8 +56,8 @@ See the Lisp Lesser GNU Public License for more details.
      (trc nil "c-quiesce unlinking" c)
      (c-unlink-from-used c)
      (when (typep c 'cell)
-       (dolist (user (c-users c))
-         (c-unlink-user c user)))
+       (dolist (caller (c-callers c))
+         (c-unlink-caller c caller)))
       (trc nil "cell quiesce nulled cell awake" c))))
 
 (defmethod not-to-be (other)

@@ -24,13 +24,14 @@
 
 (in-package :cells)
 
+
 (defmd computer ()
-  (happen (c-in nil) :ephemeral)
+  (happen (c-in nil) :cell :ephemeral)
   (location (c? (case (^happen)
                   (:leave :away)
                   (:arrive :at-home)
                   (t .cache)))) ;; ie, unchanged
-  (response nil :ephemeral))
+  (response nil :cell :ephemeral))
 
 (defobserver response(self new-response old-response)
   (when new-response

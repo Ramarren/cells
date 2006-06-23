@@ -22,7 +22,6 @@
 
 (in-package :cells)
 
-
 (defmodel m-syn ()
   ((m-syn-a :initform nil :initarg :m-syn-a :accessor m-syn-a)
    (m-syn-b :initform nil :initarg :m-syn-b :accessor m-syn-b)
