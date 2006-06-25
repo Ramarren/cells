@@ -21,7 +21,6 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :cells)
 
-(define-constant *c-optimizep* t)
 (defparameter *c-prop-depth* 0)
 (defparameter *causation* nil)
 

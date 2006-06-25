@@ -13,7 +13,6 @@
                  (make-instance 'module :name "initialize.lisp")
                  (make-instance 'module :name "md-slot-value.lisp")
                  (make-instance 'module :name "slot-utilities.lisp")
-                 (make-instance 'module :name "optimization.lisp")
                  (make-instance 'module :name "link.lisp")
                  (make-instance 'module :name "propagate.lisp")
                  (make-instance 'module :name "synapse.lisp")

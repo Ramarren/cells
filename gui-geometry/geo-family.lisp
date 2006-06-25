@@ -55,19 +55,6 @@ See the Lisp Lesser GNU Public License for more details.
                                    (c? (px-maintain-pl
                                         (^prior-sib-pr self (spacing .parent)))))))))))
 
-(defmacro a-stack ((&rest stack-args) &body dd-kids)
-  `(mk-part ,(copy-symbol 'a-stack) (geo-inline)
-      ,@stack-args
-     :fm-parent *parent*
-     :orientation :vertical
-     :kids (c? (the-kids ,@dd-kids))))
-
-(defmacro a-row ((&rest stack-args) &body dd-kids)
-  `(mk-part ,(copy-symbol 'a-stack) (geo-inline)
-      ,@stack-args
-     :fm-parent *parent*
-     :orientation :horizontal
-     :kids (c? (the-kids ,@dd-kids))))
 
 #| archive
 

@@ -205,5 +205,31 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
         
         absorbed-value)))
 
+;---------- optimizing away cells whose dependents all turn out to be constant ----------------
+;
+
+(defun c-optimize-away?! (c)
+  (when (and (typep c 'c-dependent)
+          (not (c-optimized-away-p c)) ;; c-streams (FNYI) may come this way repeatedly even if optimized away
+          (c-validp c)
+          (not (c-synaptic c)) ;; no slot to cache invariant result, so they have to stay around)
+          ;; chop (every (lambda (lbl-syn) (null (cd-useds (cdr lbl-syn)))) (cd-synapses c))
+          (not (c-inputp c))
+          (null (cd-useds c)))
+         
+    (trc nil "optimizing away" c (c-state c))
+    (count-it :c-optimized)
+    
+    (setf (c-state c) :optimized-away)
+       
+    (let ((entry (rassoc c (cells (c-model c))))) ; move from cells to cells-flushed
+      (c-assert entry)
+      (setf (cells (c-model c)) (delete entry (cells (c-model c))))
+      (push entry (cells-flushed (c-model c))))
+       
+    (dolist (caller (c-callers c))
+      (setf (cd-useds caller) (delete c (cd-useds caller)))
+      (c-optimize-away?! caller) ;; rare but it happens when rule says (or .cache ...)
+      )))
 
     
