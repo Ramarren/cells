@@ -17,7 +17,7 @@ and then repeating that process to propagate those changes in a
 cascade across the paper.
 
 VisiCalc let my father take the formula he had in mind and 
-put it in (declare it to) the electronic spreadsheet. Then VisiCalc 
+put it into (declare it to) the electronic spreadsheet. Then VisiCalc 
 could do the tedious work: recalculating, knowing what to recalculate, 
 and knowing in what order to recalculate.
 
@@ -75,11 +75,12 @@ New slot definition options
 
    :cell {nil | t | :ephemeral}
 
-:cell is optional. The default is ":cell t", meaning the Cells engine will manage the slot. 
-Specifying NIL signifies that this slot is entirely 
+:cell is optional. The default is ":cell t", meaning the Cells engine will manage the slot to give
+it the spreadsheet-like characteristics. Specifying NIL signifies that this slot is entirely 
 outside any handling by the Cells engine; it is just a plain CLOS slot. 
 
-Specifying :ephemeral causes the Cells engine to reset the apparent slot 
+This next bit will not make sense until we have explained propagation of state change, but
+specifying :ephemeral causes the Cells engine to reset the apparent slot 
 value to NIL immediately and only after fully propagating any value assumed by the slot, either
 by assignment to an input Cell (the vastly more common case) or by a rule calculation.
 
@@ -92,7 +93,7 @@ Specifying :unchanged-if is optional. [Come to think of it, it should be an erro
 both :cell nil and :unchanged-if.] If specified, the named function is a predicate
 of two arguments, the new and old value in that order. The predicate determines if a subsequent
 slot value (either computed or assigned to an input) is unchanged in the sense that no propagation
-is necessary, either to dependent ruled cells or (getting ahead of ourselves) "on change" observers.
+is necessary, either to dependent ruled cells or (getting ahead of ourselves again) "on change" observers.
 The default unchanged test is EQL.
 
 Cell types
@@ -111,9 +112,9 @@ rule mediating the width so the widget can have a minimum width of 42(so it does
 yet grow based on text length and relevant font metrics to always leave room for one more character 
 (if the GUI design calls for that).
 
-To summarize, the class specification supplied with DEFMODEL specifies whether a slot can ever
-be managed by the Cells engine. For those that can, at and only at instance initialization time,
-different instances can have different Cell types mediating the same slot.
+To summarize, the class specification supplied with DEFMODEL specifies whether a slot can /ever/
+be managed by the Cells engine. For those that can, at and only at instance initialization time
+different instances can have different Cell types and rules specified to mediate the same slot.
 
 Input Cells
 -----------
@@ -121,7 +122,7 @@ A slot mediated by an input Cell may be assigned new values at runtime. These ar
 get data from the world outside the model -- it cannot be rules all the way down. Typically, these
 input assignements are made by code polling OS events via some GetNextEvent API call, or by callbacks
 registered with an event system such as win32 WindowProc functions. Other code may poll sockets or 
-serial inputs from some external device.
+serial inputs from an external device.
 
 Ruled Cells
 -----------
@@ -161,7 +162,7 @@ Cells read these. But then we cannot let these Cells vary and still guarantee da
 we no longer know who else to update in light of such variation. The optimization, by the way, extends to
 eliminating ruled Cells which, after any computation, end up not depending on any other cell.
 
-Again, note that this is different than specifying ":cell nil" for some slot. Here, the Cells engine
+Again, note that this is different from specifying ":cell nil" for some slot. Here, the Cells engine
 has been told to manage some slot, but for some instance the slot has been authored to bear some value
 for the lifetime of that instance.
 
@@ -247,6 +248,32 @@ update the screen. In Cells applications, a significant amount of application fu
 its outputs -- end up in cell observers. But as discussed above, this additional burden falls only on 
 the class designer when they decide to add a slot to a class. As instances are created and different rules
 specified for different slots to achieve custom behavior, the effort is the same as for the VisiCalc user.
+
+Model Building
+--------------
+Everything above could describe one instance of one class defined by DEFMODEL. Of course, we want multiples
+of both. In brief:
+
+-- cells can depend on other cells from any other instance. Since a rule gets passed only "self", Cell users
+need something like the Family class included with the Cells package effectively to turn a collection of
+instances into a network searchable by name or type.
+
+-- The overall model population must be maintainable by Cell slots such as the "kids" slot of the Family 
+class. The burden here is on the Cells engine to allow one cell of one child to ask for the value of a cell of
+another child and vice versa (with different Cells), when both children are the product of the same rule, 
+or different rules when "cousins" are exchanging information. So we must gracefully traverse the parent/kids 
+tree dispatching kids rules just in time to produce the other instance sought.
+
+-- kid-slotting: used almost exclusively so far for orderly GUI layout, a parent must be able to specify 
+rules for specific slots of kids. Example: a "stack" class wants to provide rules for child geometry
+specifying left, right, or centered alignment and vertical stacking (with optional spacing) one below 
+the other. The idea is that we want to other child instances without worrying about how they will
+be arranged in some container.
+
+-- finalization: when an instance appears in the "old kids" but not in the "new kids", a Cells engine
+may need to arrange for all Cells to "unsubscribe" from their dependents. Cells takes care of that if
+one calls "not-to-be" on an instance.
+
 
 Suggested Applications
 ----------------------
@@ -508,3 +535,5 @@ notifications are taking place.
 11. Weak Notification
    Automatically created inter-cell links must not inhibit garbage
 collection of either cell.  (Technically optional, but very easy to do.)
+
+

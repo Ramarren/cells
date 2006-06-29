@@ -81,8 +81,15 @@ See the Lisp Lesser GNU Public License for more details.
              (return-from calculate-and-set))
            
            (when (find c *call-stack*) ;; circularity
+             (trc "cell appears in call stack:" c)
+             (loop with caller-reiterated
+                   for caller in *call-stack*
+                   until caller-reiterated
+                   do (trc "caller:" caller)
+                   (pprint (cr-code c))
+                   (setf caller-reiterated (eq caller c)))
              (c-break ;; break is problem when testing cells on some CLs
-              "cell ~a midst askers: ~a" c *call-stack*))
+              "cell ~a midst askers (see above)" c))
   
            (multiple-value-bind (raw-value propagation-code)
                (calculate-and-link c)

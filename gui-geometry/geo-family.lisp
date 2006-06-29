@@ -16,6 +16,9 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :gui-geometry)
 
+(eval-when (compile load eval)
+  (export '(geo-inline-lazy)))
+
 ;--------------- geo-inline -----------------------------
 ;
 
@@ -53,6 +56,42 @@ See the Lisp Lesser GNU Public License for more details.
                                    (c? (^py-self-centered (justify .parent))))
                                  (mk-kid-slot (px)
                                    (c? (px-maintain-pl
+                                        (^prior-sib-pr self (spacing .parent)))))))))))
+
+(defmodel geo-inline-lazy (geo-zero-tl)
+  ((orientation :initarg :orientation :initform nil :accessor orientation
+     :documentation ":vertical (for a column) or :horizontal (row)")
+   (justify :initarg :justify :accessor justify
+     :initform (c_? (ecase (orientation self)
+                     (:vertical :left)
+                     (:horizontal :top))))
+   (spacing :initarg :spacing :initform 0 :accessor spacing))
+  (:default-initargs
+      :lr (c_? (+ (^outset)
+                (ecase (orientation self)
+                  (:vertical (loop for k in (^kids)
+                                 maximizing (l-width k)))
+                  (:horizontal (bif (lk (last1 (^kids)))
+                                 (pr lk) 0)))))
+    :lb (c_? (+ (downs (^outset))
+              (ecase (orientation self)
+                (:vertical (bif (lk (last1 (^kids)))
+                             (pb lk) 0))
+                (:horizontal (downs (loop for k in (^kids)
+                                        maximizing (l-height k)))))))
+    :kid-slots (lambda (self)
+                 (ecase (orientation .parent)
+                   (:vertical (list
+                               (mk-kid-slot (px :if-missing t)
+                                 (c_? (^px-self-centered (justify .parent))))
+                               (mk-kid-slot (py)
+                                 (c_? (py-maintain-pt
+                                      (^prior-sib-pb self (spacing .parent)))))))
+                   (:horizontal (list
+                                 (mk-kid-slot (py :if-missing t)
+                                   (c_? (^py-self-centered (justify .parent))))
+                                 (mk-kid-slot (px)
+                                   (c_? (px-maintain-pl
                                         (^prior-sib-pr self (spacing .parent)))))))))))
 
 

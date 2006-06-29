@@ -141,7 +141,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmethod print-object ((c cell) stream)
   (c-print-value c stream)
-  (format stream "=[~d]~a/~a]"
+  (format stream "=~d/~a/~a]"
     (c-pulse c)
     (symbol-name (or (c-slot-name c) :anoncell))
     (or (c-model c) :anonmd)))
@@ -151,7 +151,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmethod c-print-value ((c c-ruled) stream)
   (format stream "~a" (cond ((c-validp c) "<vld>")
                             ((c-unboundp c) "<unb>")
-                            ((not (c-currentp c)) "<obs>")
+                            ((not (c-currentp c)) "dirty")
                             (t "<err>"))))
 
 (defmethod c-print-value (c stream)

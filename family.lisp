@@ -46,8 +46,10 @@ See the Lisp Lesser GNU Public License for more details.
     (unless (md-name self)
       (setf (md-name self) (gentemp (string (c-class-name (class-of self)))))))
  
-  (when (fm-parent self)
-    (md-be-adopted self)))
+  (when (and (slot-boundp self '.fm-parent)
+          (fm-parent self)
+          (zerop (adopt-ct self)))
+      (md-be-adopted self)))
 
 (defmodel perishable ()
   ((expiration :initform nil :accessor expiration :initarg :expiration)))

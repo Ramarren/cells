@@ -27,7 +27,7 @@ See the Lisp Lesser GNU Public License for more details.
 (instance-slots (mkv2 1 2))
 
 (defmethod print-object ((self v2) s)
-  (format s "(~a ~a)" (v2-h self)(v2-v self)))
+  (format s "~a|~a" (v2-h self)(v2-v self)))
 
 (defun mkv2 (h v) (make-v2 :h h :v v))
 
@@ -36,17 +36,27 @@ See the Lisp Lesser GNU Public License for more details.
     (= (v2-h a)(v2-h b))
     (= (v2-v a)(v2-v b))))
 
-(defun v2-add (p1 p2)
-  (make-v2 :h (+ (v2-h p1) (v2-h p2))
-    :v (+ (v2-v p1) (v2-v p2))))
+(defun v2-add (p1 p2-or-x &optional y-or-p2-or-x-is-p2)
+  (if y-or-p2-or-x-is-p2
+      (make-v2 :h (+ (v2-h p1) p2-or-x)
+        :v (+ (v2-v p1) y-or-p2-or-x-is-p2))
+      (make-v2 :h (+ (v2-h p1) (v2-h p2-or-x))
+        :v (+ (v2-v p1) (v2-v p2-or-x)))))
 
-(defun v2-move (p1 x y)
-  (make-v2 :h (+ (v2-h p1) x)
-    :v (+ (v2-v p1) y)))
+(defun v2-subtract (p1 p2-or-x &optional y-or-p2-or-x-is-p2)
+  (if y-or-p2-or-x-is-p2
+      (make-v2 :h (- (v2-h p1) p2-or-x)
+        :v (- (v2-v p1) y-or-p2-or-x-is-p2))
+      (make-v2 :h (- (v2-h p1) (v2-h p2-or-x))
+        :v (- (v2-v p1) (v2-v p2-or-x)))))
 
-(defun v2-subtract (p1 p2)
-  (make-v2 :h (- (v2-h p1) (v2-h p2))
-    :v (- (v2-v p1) (v2-v p2))))
+(defun v2-nmove (p1 x &optional y)
+  (if y
+      (progn
+        (incf (v2-h p1) x)
+        (incf (v2-v p1) y))
+    (v2-move p1 (v2-h x)(v2-v x)))
+  p1)
 
 (defun v2-in-rect (v2 r)
   (mkv2 (min (r-right r) (max (r-left r) (v2-h v2)))

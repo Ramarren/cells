@@ -45,21 +45,22 @@ See the Lisp Lesser GNU Public License for more details.
   ; here we shuttle cells out of the slots and into a per-instance dictionary of cells,
   ; as well as tell the cells what slot and instance they are mediating.
   ;
-  (loop for esd in (class-slots (class-of self))
-      for sn = (slot-definition-name esd)
-      for sv = (when (slot-boundp self sn)
-                 (slot-value self sn))
-      ;;do (print (list self sn sv (typep sv 'cell)))
-      when (typep sv 'cell)
-      do (if (md-slot-cell-type (type-of self) sn)
-             (md-install-cell self sn sv)
-           (when *c-debug*
-             (trc "warning: cell ~a offered for non-cellular model/slot ~a/~a" sv self sn))))
-  ;
-  ; queue up for awakening
-  ;
-  (with-integrity (:awaken self)
-    (md-awaken self)))
+  (when (slot-boundp self '.md-state)
+    (loop for esd in (class-slots (class-of self))
+        for sn = (slot-definition-name esd)
+        for sv = (when (slot-boundp self sn)
+                   (slot-value self sn))
+          ;;do (print (list self sn sv (typep sv 'cell)))
+        when (typep sv 'cell)
+        do (if (md-slot-cell-type (type-of self) sn)
+               (md-install-cell self sn sv)
+             (when *c-debug*
+               (trc "warning: cell ~a offered for non-cellular model/slot ~a/~a" sv self sn))))
+    ;
+    ; queue up for awakening
+    ;
+    (with-integrity (:awaken self)
+      (md-awaken self))))
 
 (defun md-install-cell (self sn c &aux (c-isa-cell (typep c 'cell)))
   ;
