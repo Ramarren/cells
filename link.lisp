@@ -76,7 +76,7 @@ See the Lisp Lesser GNU Public License for more details.
                          (handle-used (incf rev-pos)))
                      (handle-used (setf rev-pos 0))))))
         (nail-unused (cd-useds c))
-        (setf (cd-useds c) (delete-if #'null (cd-useds c)))))))
+        (setf (cd-useds c) (delete nil (cd-useds c)))))))
 
 (defun c-caller-path-exists-p (from-used to-caller)
   (count-it :caller-path-exists-p)

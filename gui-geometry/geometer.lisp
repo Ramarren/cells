@@ -16,19 +16,16 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package #:gui-geometry)
 
-(defmodel geometer ()
-  ((inset :cell nil :initarg :inset :reader inset
-      :unchanged-if 'v2= :initform (mkv2 0 0))
-   (outset :initarg :outset :initform 0 :accessor outset)
-   (collapsed :initarg :collapsed :initform nil :accessor collapsed)
-   (px :initarg :px :initform nil :accessor px)
-   (py :initarg :py :initform nil :accessor py)
-   (ll :initarg :ll :initform nil :accessor ll)
-   (lt :initarg :lt :initform nil :accessor lt)
-   (lr :initarg :lr :initform nil :accessor lr)
-   (lb :initarg :lb :initform nil :accessor lb)
-   (w-box :cell nil :initform (mkr 0 0 0 0) :accessor w-box
-     :documentation "bbox in window coordinate system")))
+(eval-when (compile load eval)
+  (export '(outset ^outset)))
+
+(defmd geometer ()
+  px py ll lt lr lb
+  collapsed
+  (inset (mkv2 0 0) :unchanged-if 'v2=)
+  (outset 0)
+  (w-box (mkr 0 0 0 0) :cell nil :accessor w-box
+    :documentation "bbox in window coordinate system"))
 
 (defmethod collapsed (other)
   (declare (ignore other))
@@ -40,14 +37,14 @@ See the Lisp Lesser GNU Public License for more details.
    ()
    (:default-initargs
     :ll (c? (- (outset self))) 
-    :lt (c? (ups (outset self))) 
+    :lt (c? (+ (outset self))) 
     :lr (c? (geo-kid-wrap self 'pr)) 
     :lb (c? (geo-kid-wrap self 'pb))
     :kid-slots (def-kid-slots
                    (mk-kid-slot (px :if-missing t)
                      (c? (px-maintain-pl 0)))
                    (mk-kid-slot (py :if-missing t)
-                     (c? (py-maintain-pt 0))))))
+                     (c? (break)(py-maintain-pt 0))))))
 
 (defmodel geo-kid-sized (family) 
     ()
@@ -206,7 +203,7 @@ See the Lisp Lesser GNU Public License for more details.
    (- (lr self) (outset self)))
 
 (defun inset-lb (self)
-   (ups (lb self) (outset self)))
+   (+ (lb self) (outset self)))
 
 (defun inset-height (self)
    (- (l-height self) (outset self) (outset self)))
@@ -293,19 +290,14 @@ See the Lisp Lesser GNU Public License for more details.
   `(c? (lr-maintain-pr (- (inset-lr .parent)
                             ,padding))))
 
-(defmacro ^prior-sib-pb (self &optional (spacing 0))
-   (let ((kid (gensym))
-         (psib (gensym)))
-      `(let* ((,kid ,self)
-               (,psib (find-prior ,kid (kids (fm-parent ,kid))
-                        :test (lambda (sib)
-                                (not (collapsed sib)))))
-               )
-          ;(trc "^priorSib-pb > kid, sib" ,kid ,pSib)
-          (if ,psib
-              (+ (- (abs ,spacing)) ;; force spacing to minus(= down for OpenGL)
-                (pb ,psib))
-            0))))
+(defun ^prior-sib-pb (self &optional (spacing 0))
+  (bif (psib (find-prior self (kids .parent)
+               :test (lambda (sib)
+                       (not (collapsed sib)))))
+    (eko (nil "^prior-sib-pb spc pb-psib -lt" (- (abs spacing)) (pb psib) (- (^lt)))
+      (+ (- (abs spacing)) ;; force spacing to minus(= down for OpenGL)
+        (pb psib)))   
+      0))
 
 (defmacro ^prior-sib-pt (self &optional (spacing 0))
    (let ((kid (gensym))

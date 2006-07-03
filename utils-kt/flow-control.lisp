@@ -55,7 +55,7 @@ See the Lisp Lesser GNU Public License for more details.
     list))
 
 (defun packed-flat! (&rest u-nameit)
-   (delete-if #'null (list-flatten! u-nameit)))
+   (delete nil (list-flatten! u-nameit)))
 
 (defmacro with-dynamic-fn ((fn-name (&rest fn-args) &body fn-body) &body body)
   `(let ((,fn-name (lambda ,fn-args ,@fn-body)))

@@ -100,7 +100,6 @@ the defmodel form for ~a" ',class ',class))))
                            )
                       (setf (md-slot-cell-type class slotname) cell)
                       
-                      
                       `(progn
                          ,(when reader-fn
                             `(defmethod ,reader-fn ((self ,class))
@@ -173,7 +172,7 @@ the defmodel form for ~a" ',class ',class))))
                                        :accessor spec) slots)))
              finally
                (return (list* (nreverse slots)
-                         (delete-if 'null
+                         (delete nil
                            (list* `(:default-initargs ,@definitargs)
                              (nreverse class-options)))))))))
 

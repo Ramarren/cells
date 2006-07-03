@@ -21,7 +21,6 @@ See the Lisp Lesser GNU Public License for more details.
 
 ;--------------- geo-inline -----------------------------
 ;
-
 (defmodel geo-inline (geo-zero-tl)
   ((orientation :initarg :orientation :initform nil :accessor orientation
      :documentation ":vertical (for a column) or :horizontal (row)")
@@ -37,7 +36,7 @@ See the Lisp Lesser GNU Public License for more details.
                                  maximizing (l-width k)))
                   (:horizontal (bif (lk (last1 (^kids)))
                                  (pr lk) 0)))))
-    :lb (c? (+ (downs (^outset))
+    :lb (c? (+ (- (^outset))
               (ecase (orientation self)
                 (:vertical (bif (lk (last1 (^kids)))
                              (pb lk) 0))
@@ -73,7 +72,7 @@ See the Lisp Lesser GNU Public License for more details.
                                  maximizing (l-width k)))
                   (:horizontal (bif (lk (last1 (^kids)))
                                  (pr lk) 0)))))
-    :lb (c_? (+ (downs (^outset))
+    :lb (c_? (+ (- (^outset))
               (ecase (orientation self)
                 (:vertical (bif (lk (last1 (^kids)))
                              (pb lk) 0))
@@ -85,8 +84,10 @@ See the Lisp Lesser GNU Public License for more details.
                                (mk-kid-slot (px :if-missing t)
                                  (c_? (^px-self-centered (justify .parent))))
                                (mk-kid-slot (py)
-                                 (c_? (py-maintain-pt
-                                      (^prior-sib-pb self (spacing .parent)))))))
+                                 (c_? (eko (nil "py" self (^lt) (l-height self)(psib))
+                                        (py-maintain-pt
+                                         (eko (nil "psib-pb")
+                                           (^prior-sib-pb self (spacing .parent)))))))))
                    (:horizontal (list
                                  (mk-kid-slot (py :if-missing t)
                                    (c_? (^py-self-centered (justify .parent))))

@@ -16,6 +16,8 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :gui-geometry)
 
+(eval-when (compile load eval)
+  (export '(v2)))
 ;-----------------------------
 
 (defstruct v2 
@@ -55,7 +57,7 @@ See the Lisp Lesser GNU Public License for more details.
       (progn
         (incf (v2-h p1) x)
         (incf (v2-v p1) y))
-    (v2-move p1 (v2-h x)(v2-v x)))
+    (v2-nmove p1 (v2-h x)(v2-v x)))
   p1)
 
 (defun v2-in-rect (v2 r)
