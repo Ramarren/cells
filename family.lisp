@@ -141,7 +141,6 @@ See the Lisp Lesser GNU Public License for more details.
                 (md-install-cell self slot-name c-or-value)))))))))
 
 (defobserver .kids ((self family) new-kids old-kids)
-  (declare (ignorable usage))
   (c-assert (listp new-kids) () "New kids value for ~a not listp: ~a ~a" self (type-of new-kids) new-kids)
   (c-assert (listp old-kids))
   (c-assert (not (member nil old-kids)))

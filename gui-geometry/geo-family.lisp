@@ -16,7 +16,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :gui-geometry)
 
-(eval-when (compile load eval)
+(eval-now!
   (export '(geo-inline-lazy)))
 
 ;--------------- geo-inline -----------------------------

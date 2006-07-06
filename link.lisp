@@ -129,10 +129,3 @@ See the Lisp Lesser GNU Public License for more details.
           ;(c.trc "its ruled" c)
           (dolist (used (cd-useds c))
                (dump-useds used (+ 1 depth)))))
-
-
-(defun test-wk ()
-  (let ((h (make-hash-table :test 'eq :weak-keys t)))
-    (loop for n below 10
-          do (setf (gethash (make-cell :value n) h) n))
-    (maphash (lambda (k v) (print (list k v))) h)))

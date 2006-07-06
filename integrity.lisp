@@ -64,8 +64,7 @@ outside computation."
   (let ((*within-integrity* nil)
           *unfinished-business*
           *defer-changes*
-        *call-stack*
-        (*data-pulse-id* 0))
+        *call-stack*)
     (funcall action)))
 
 (defun ufb-queue (opcode)

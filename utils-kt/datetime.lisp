@@ -19,8 +19,9 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :utils-kt)
 
-(eval-when (compile load eval)
-  (export '(os-tickcount time-of-day now hour-min-of-day time-in-zone dd-mmm-yy mmm-dd-yyyy)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(os-tickcount time-of-day now hour-min-of-day
+            time-in-zone dd-mmm-yy mmm-dd-yyyy)))
 
 (defun os-tickcount ()
   (cl:get-internal-real-time))
@@ -74,8 +75,9 @@ See the Lisp Lesser GNU Public License for more details.
     (format nil "~A ~A, ~A" (month-abbreviation month)
             date year)))
 
-(eval-when (compile load eval)
-  (export '(month-abbreviation weekday-abbreviation week-time mdyy-yymd u-time u-date)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(month-abbreviation weekday-abbreviation week-time
+            mdyy-yymd u-time u-date)))
 
 (defun month-abbreviation (month)
   (elt '("Jan" "Feb" "Mar" "Apr" "May" "June"
@@ -131,7 +133,7 @@ See the Lisp Lesser GNU Public License for more details.
       year
       )))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (export '(u-day multiple-value-bind m/d/y mm/dd yyyy-mm-dd)))
 
 (defun u-day (&optional (i-time (get-universal-time)))
@@ -180,7 +182,7 @@ See the Lisp Lesser GNU Public License for more details.
     (format nil "~4,,,'0@A~2,,,'0@A~2,,,'0@A"
       year month date)))
 
-(eval-when (compile load eval)
+(eval-now!
   (export '(ymdhmsh)))
 
 (defun ymdhmsh (&optional (i-time (get-universal-time)))

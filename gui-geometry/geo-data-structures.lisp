@@ -16,7 +16,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :gui-geometry)
 
-(eval-when (compile load eval)
+(eval-now!
   (export '(v2)))
 ;-----------------------------
 
@@ -312,7 +312,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 ;;; --- Up / Down variability management ---
 
-(eval-when (compile load eval)
+(eval-now!
   (export '(*up-is-positive* ups ups-more ups-most downs downs-most downs-more)))
 
 (defparameter *up-is-positive* t

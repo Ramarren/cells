@@ -19,7 +19,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :utils-kt)
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (export '(case$ strloc$  make$  space$  char$  conc-list$  conc$
              left$  mid$  seg$  right$  insert$  remove$
              trim$  trunc$  abbrev$  empty$ find$  num$

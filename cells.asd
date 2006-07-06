@@ -30,7 +30,6 @@
                (:file "initialize")
                (:file "md-slot-value")
                (:file "slot-utilities")
-               (:file "optimization")
                (:file "link")
                (:file "propagate")
                (:file "model-object")

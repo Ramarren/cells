@@ -118,3 +118,24 @@
 
 #+(or) 
 (cv-test-lazy)
+
+(defparameter *lz1-count* 0)
+
+(defmd lz-simple ()
+  (lz1 (c?_ (incf *lz1-count*)
+          (* 2 (^lz2))))
+   (lz2 (c-in 0)))
+
+(defun lz-test ()
+  (cells-reset)
+  (let ((*lz1-count* 0)
+        (lz (make-instance 'lz-simple)))
+    (assert (zerop *lz1-count*))
+    (incf (lz2 lz))
+    (assert (zerop *lz1-count*))
+    (assert (= (lz1 lz) 2))
+    (assert (= 1 *lz1-count*))
+    lz))
+
+#+test
+(lz-test)

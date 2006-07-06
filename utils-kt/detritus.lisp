@@ -19,9 +19,20 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :utils-kt)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(eval-now!)))
+
 (defmacro wdbg (&body body)
   `(let ((*dbg* t))
      ,@body))
+
+(defmacro eval-now! (&body body)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     ,@body))
+
+(defmacro export! (&rest symbols)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (export ',symbols)))
 
 ;;;(defmethod class-slot-named ((classname symbol) slotname)
 ;;;  (class-slot-named (find-class classname) slotname))

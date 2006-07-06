@@ -18,7 +18,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :cells)
 
-(eval-when (compile load eval)
+(eval-now!
   (export '(c?n)))
 
 ;___________________ constructors _______________________________

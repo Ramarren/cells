@@ -22,7 +22,6 @@ See the Lisp Lesser GNU Public License for more details.
   (export '(mk-synapse f-delta f-sensitivity f-plusp f-zerop fdifferent)))
 
 (defmacro with-synapse (synapse-id (&rest closure-vars) &body body)
-  (declare (ignorable trcp))
   (let ((syn-id (gensym))(syn-caller (gensym)))
     `(let* ((,syn-id ,synapse-id)
             (,syn-caller (car *call-stack*))
