@@ -20,7 +20,7 @@ See the Lisp Lesser GNU Public License for more details.
 (in-package :utils-kt)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(eval-now!)))
+  (export '(eval-now! export!)))
 
 (defmacro wdbg (&body body)
   `(let ((*dbg* t))
