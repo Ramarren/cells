@@ -95,7 +95,7 @@ See the Lisp Lesser GNU Public License for more details.
                      
 (defmethod c-unlink-from-used ((caller c-dependent))
   (dolist (used (cd-useds caller))
-    #+dfdbg (trc caller "unlinking from used" caller used)
+    #+dfdbg (trc nil "unlinking from used" caller used)
     (c-unlink-caller used caller))
   ;; shouldn't be necessary (setf (cd-useds caller) nil)
   )

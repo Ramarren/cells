@@ -53,18 +53,21 @@ See the Lisp Lesser GNU Public License for more details.
           (funcall action)
         (finish-business)))))
 
-(defmacro without-integrity ((&optional dbg-info) &rest body)
+(export! with-integrity-bubble)
+
+(defmacro with-integrity-bubble ((&optional dbg-info) &rest body)
   "Whimsical name for launching a self-contained, dynamic integrity chunk, as with
 string-to-mx in the math-paper project, where everything is fully isolated from the
 outside computation."
-  `(call-without-integrity ,dbg-info (lambda () ,@body)))
+  `(call-with-integrity-bubble ,dbg-info (lambda () ,@body)))
 
-(defun call-without-integrity (dbg-info action)
+(defun call-with-integrity-bubble (dbg-info action)
   (declare (ignorable dbg-info))
   (let ((*within-integrity* nil)
           *unfinished-business*
           *defer-changes*
-        *call-stack*)
+        *call-stack*
+        (*data-pulse-id* 0))
     (funcall action)))
 
 (defun ufb-queue (opcode)

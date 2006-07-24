@@ -42,14 +42,15 @@ See the Lisp Lesser GNU Public License for more details.
   (if c
       (prog1
           (with-integrity ()
-            (ensure-value-is-current c))
+            (ensure-value-is-current c :mdsv nil))
         (when (car *call-stack*)
           (record-caller c)))
     (values (bd-slot-value self slot-name) nil)))
   
-(defun ensure-value-is-current (c)
+(defun ensure-value-is-current (c debug-id caller)
+  (declare (ignorable debug-id caller))
   (count-it :ensure-value-is-current)
-  (trc nil "ensure-value-is-current >" c)
+  (trc nil "ensure-value-is-current > entry" c :now-pulse *data-pulse-id* debug-id caller)
   (cond
    ((c-currentp c)(trc nil "c-currentp" c)) ;; used to follow c-inputp, but I am toying with letting ephemerals (inputs) fall obsolete
    ;; and then get reset here (ie, ((c-input-p c) (ephemeral-reset c))). ie, do not assume inputs are never obsolete
@@ -58,16 +59,17 @@ See the Lisp Lesser GNU Public License for more details.
 
    ((or (not (c-validp c))
       (some (lambda (used)
-              (ensure-value-is-current used)
-              (trc nil "comparing pulses (caller, used): " (c-pulse c)(c-pulse used))
+              (ensure-value-is-current used :nested c)
+              (trc nil "comparing pulses (caller, used, used-changed): "  c used (c-changed used))
               (when (and (c-changed used) (> (c-pulse used)(c-pulse c)))
-                 (trc nil "used changed" c used)
+                 (trc nil "used changed and newer !!!!!!" c used)
                 t))
         (cd-useds c)))
-    (trc nil "ensuring current calc-set of" (c-slot-name c) debug-id)
+    (trc nil "ensuring current calc-set of" (c-slot-name c))
     (calculate-and-set c))
 
-   (t (c-pulse-update c :valid-uninfluenced)))
+   (t (trc nil "ensuring current decided current, updating pulse" (c-slot-name c) )
+     (c-pulse-update c :valid-uninfluenced)))
 
   (when (c-unboundp c)
     (error 'unbound-cell :cell c :instance (c-model c) :name (c-slot-name c)))
@@ -143,6 +145,7 @@ See the Lisp Lesser GNU Public License for more details.
           ;
           ; --- data flow propagation -----------
           ;
+          
           (setf (c-changed c) t)
           (without-c-dependency
               (c-propagate c prior-value t)))))))
@@ -207,6 +210,7 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
         
         ; --- data flow propagation -----------
         (unless (eq propagation-code :no-propagate)
+          (trc nil "md-slot-value-assume flagging as changed" c)
           (setf (c-changed c) t)
           (c-propagate c prior-value (eq prior-state :valid)))  ;; until 06-02-13 was (not (eq prior-state :unbound))
         

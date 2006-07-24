@@ -46,7 +46,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun c-pulse-update (c key)
   (declare (ignorable key))
-  (trc nil "c-pulse-update updating" *data-pulse-id* c key)
+  (trc nil "c-pulse-update updating as unchanged!!!" *data-pulse-id* c key)
   (setf (c-changed c) nil
       (c-pulse c) *data-pulse-id*))
 
@@ -165,11 +165,11 @@ See the Lisp Lesser GNU Public License for more details.
       (with-integrity (:tell-dependents c)
         (assert (null *call-stack*))
         (let ((*causation* causation))
-          (trc nil "c-propagate-to-callers > notifying callers of" c (mapcar 'c-slot-name (c-callers c)))
+          (trc nil "c-propagate-to-callers > actually notifying callers of" c (mapcar 'c-slot-name (c-callers c)))
           (dolist (caller (c-callers c))
             (unless (member (cr-lazy caller) '(t :always :once-asked))
-              (trc nil "propagating to caller is (used,caller):" c caller)
-              (ensure-value-is-current caller))))))))
+              (trc nil "propagating to caller is caller:" caller)
+              (ensure-value-is-current caller :prop-from c))))))))
 
 
 

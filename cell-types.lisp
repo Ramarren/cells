@@ -45,9 +45,9 @@ See the Lisp Lesser GNU Public License for more details.
 (defun caller-drop (used caller)
   (fifo-delete (c-caller-store used) caller))
 
-(defmethod trcp ((c cell))
-  nil #+(or) (and (typep (c-model c) 'index)
-              (eql 'state (c-slot-name c))))
+;;;(defmethod trcp ((c cell))
+;;;  (and ;; (typep (c-model c) 'index)
+;;;   (find (c-slot-name c) '(celtk::state mathx::problem))))
 
 ; --- ephemerality --------------------------------------------------
 ; 
@@ -131,20 +131,23 @@ See the Lisp Lesser GNU Public License for more details.
 ;_____________________ print __________________________________
 
 (defmethod print-object :before ((c cell) stream)
- (declare (ignorable c))
-  (format stream "[~a~a:" (if (c-inputp c) "i" "?")
-    (cond
-     ((null (c-model c)) #\0)
-     ((eq :eternal-rest (md-state (c-model c))) #\_)
-     ((not (c-currentp c)) #\#)
-     (t #\space))))
+  (unless *print-readably*
+    (format stream "[~a~a:" (if (c-inputp c) "i" "?")
+      (cond
+       ((null (c-model c)) #\0)
+       ((eq :eternal-rest (md-state (c-model c))) #\_)
+       ((not (c-currentp c)) #\#)
+       (t #\space)))))
 
 (defmethod print-object ((c cell) stream)
-  (c-print-value c stream)
-  (format stream "=~d/~a/~a]"
-    (c-pulse c)
-    (symbol-name (or (c-slot-name c) :anoncell))
-    (or (c-model c) :anonmd)))
+  (if *print-readably*
+      (call-next-method)
+    (progn
+      (c-print-value c stream)
+      (format stream "=~d/~a/~a]"
+        (c-pulse c)
+        (symbol-name (or (c-slot-name c) :anoncell))
+        (or (c-model c) :anonmd)))))
 
 ;__________________
 

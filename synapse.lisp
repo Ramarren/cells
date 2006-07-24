@@ -39,7 +39,7 @@ See the Lisp Lesser GNU Public License for more details.
        (prog1
            (multiple-value-bind (v p)
                (with-integrity ()
-                 (ensure-value-is-current synapse))
+                 (ensure-value-is-current synapse :synapse (car *call-stack*)))
              (trc nil "with-synapse: synapse, v, prop" synapse v p)
              (values v p))
          (record-caller synapse)))))
