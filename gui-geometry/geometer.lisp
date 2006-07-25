@@ -44,7 +44,7 @@ See the Lisp Lesser GNU Public License for more details.
                    (mk-kid-slot (px :if-missing t)
                      (c? (px-maintain-pl 0)))
                    (mk-kid-slot (py :if-missing t)
-                     (c? (break)(py-maintain-pt 0))))))
+                     (c? (py-maintain-pt 0))))))
 
 (defmodel geo-kid-sized (family) 
     ()

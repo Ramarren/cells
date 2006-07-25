@@ -45,8 +45,8 @@ See the Lisp Lesser GNU Public License for more details.
   (trc nil "------ cell reset ----------------------------"))
 
 (defun c-stop (&optional why)
-  (format t "~&C-STOP> stopping because ~a" why)
-  (setf *stop* t))
+  (setf *stop* t)
+  (format t "~&C-STOP> stopping because ~a" why)  )
 
 (define-symbol-macro .stop
     (c-stop :user))
@@ -132,9 +132,12 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun c-break (&rest args)
   (unless *stop*
-    (c-stop args)
-    (format t "c-break > stopping > ~a" args)
-    (apply 'break args)))
+    (LET ((*print-level* 3)
+          (*print-circle* t)
+          )
+      (c-stop args)
+      (format t "c-break > stopping > ~a" args)
+      (apply 'break args))))
 
 
 

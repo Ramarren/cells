@@ -96,6 +96,8 @@ See the Lisp Lesser GNU Public License for more details.
   (format t "decrementing trc depth ~d" *trcdepth*)
   (decf *trcdepth*))
   
+(export! wtrc)
+
 (defmacro wtrc ((&optional (min 1) (max 50) &rest banner) &body body )
   `(let ((*trcdepth* (if *trcdepth*
                          (1+ *trcdepth*)

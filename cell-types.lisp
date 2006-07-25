@@ -45,9 +45,10 @@ See the Lisp Lesser GNU Public License for more details.
 (defun caller-drop (used caller)
   (fifo-delete (c-caller-store used) caller))
 
-;;;(defmethod trcp ((c cell))
-;;;  (and ;; (typep (c-model c) 'index)
-;;;   (find (c-slot-name c) '(celtk::state mathx::problem))))
+(defmethod trcp ((c cell))
+  #+not (and ;; (typep (c-model c) 'index)
+   (find (c-slot-name c) '(celtk::state mathx::problem))))
+
 
 ; --- ephemerality --------------------------------------------------
 ; 
@@ -131,7 +132,7 @@ See the Lisp Lesser GNU Public License for more details.
 ;_____________________ print __________________________________
 
 (defmethod print-object :before ((c cell) stream)
-  (unless *print-readably*
+  (unless (or *stop* *print-readably*)
     (format stream "[~a~a:" (if (c-inputp c) "i" "?")
       (cond
        ((null (c-model c)) #\0)
@@ -139,8 +140,9 @@ See the Lisp Lesser GNU Public License for more details.
        ((not (c-currentp c)) #\#)
        (t #\space)))))
 
+
 (defmethod print-object ((c cell) stream)
-  (if *print-readably*
+  (if (or *stop* *print-readably*)
       (call-next-method)
     (progn
       (c-print-value c stream)
@@ -148,6 +150,7 @@ See the Lisp Lesser GNU Public License for more details.
         (c-pulse c)
         (symbol-name (or (c-slot-name c) :anoncell))
         (or (c-model c) :anonmd)))))
+
 
 ;__________________
 
