@@ -147,7 +147,7 @@ the defmodel form for ~a" ',class ',class))))
      (when documentation-p (list :documentation documentation)))))
 
 (defmacro defmd (class superclasses &rest mdspec)
-  `(defmodel ,class ,superclasses
+  `(defmodel ,class (,@superclasses model)
      ,@(let (definitargs class-options slots)
          (loop with skip
              for (spec next) on mdspec

@@ -183,8 +183,9 @@ See the Lisp Lesser GNU Public License for more details.
      (declare (ignorable self))
      (list ,@slot-defs)))
 
-(defmethod md-name (symbol)
-     symbol)
+(defmethod md-name (other)
+  (trc "yep other md-name" other (type-of other))
+  other)
 
 (defmethod md-name ((nada null))
   (unless (c-stopped)

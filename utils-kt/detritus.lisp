@@ -26,14 +26,6 @@ See the Lisp Lesser GNU Public License for more details.
   `(let ((*dbg* t))
      ,@body))
 
-(defmacro eval-now! (&body body)
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
-     ,@body))
-
-(defmacro export! (&rest symbols)
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (export ',symbols)))
-
 ;;;(defmethod class-slot-named ((classname symbol) slotname)
 ;;;  (class-slot-named (find-class classname) slotname))
 ;;;
@@ -53,6 +45,11 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun xor (c1 c2)
   (if c1 (not c2) c2))
+
+(export! push-end)
+
+(defmacro push-end (item place )
+  `(setf ,place (nconc ,place (list ,item))))
 
 ;;; --- FIFO Queue -----------------------------
 
@@ -116,19 +113,6 @@ See the Lisp Lesser GNU Public License for more details.
     (loop until (fifo-empty q)
           do (print (fifo-pop q)))))
 
-(defmacro define-constant (name value &optional docstring)
-  "Define a constant properly.  If NAME is unbound, DEFCONSTANT
-it to VALUE.  If it is already bound, and it is EQUAL to VALUE,
-reuse the SYMBOL-VALUE of NAME.  Otherwise, DEFCONSTANT it again,
-resulting in implementation-specific behavior."
-  `(defconstant ,name
-     (if (not (boundp ',name))
-	 ,value
-	 (let ((value ,value))
-	   (if (equal value (symbol-value ',name))
-	       (symbol-value ',name)
-	       value)))
-     ,@(when docstring (list docstring))))
 
 #+allegro
 (defun line-count (path &optional show-files (depth 0))
@@ -164,4 +148,30 @@ resulting in implementation-specific behavior."
 (line-count (make-pathname
              :device "c"
              :directory `(:absolute "0dev" "Algebra")) t)
+
+(export! tree-includes tree-traverse tree-intersect)
+
+(defun tree-includes (sought tree &key (test 'eql))
+  (typecase tree
+    (null)
+    (atom (eko (nil "tree-inc? testing" sought tree)
+            (funcall test sought tree)))
+    (cons (loop for subtree in tree
+                when (tree-includes sought subtree :test test)
+                do (return-from tree-includes t)))))
+
+(defun tree-traverse (tree fn)
+  (typecase tree
+    (null)
+    (atom (funcall fn tree))
+    (cons (loop for subtree in tree
+                do (tree-traverse subtree fn))))
+  (values))
+
+(defun tree-intersect (t1 t2 &key (test 'eql))
+  (tree-traverse t1
+    (lambda (t1-node)
+      (eko (nil "treeinter?" t1-node t2)
+        (when (tree-includes t1-node t2 :test test)
+          (return-from tree-intersect t1-node))))))
 

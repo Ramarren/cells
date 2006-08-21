@@ -20,7 +20,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :utils-kt)
 
-(defparameter *trcdepth* 0)
+
 (defvar *count* nil)
 (defvar *counting* nil)
 (defvar *dbg*)
@@ -29,114 +29,10 @@ See the Lisp Lesser GNU Public License for more details.
 (defun utils-kt-reset ()
   (setf *count* nil
     *stop* nil
-    *dbg* nil
-    *trcdepth* 0)
+    *dbg* nil)
   (print "----------UTILSRESET----------------------------------"))
 
-;----------- trc -------------------------------------------
 
-(defun trcdepth-reset ()
-  (setf *trcdepth* 0))
-
-(defmacro trc (tgt-form &rest os
-                &aux (wrapper (if (macro-function 'without-c-dependency)
-                                  'without-c-dependency 'progn)))
-  (if (eql tgt-form 'nil)
-      '(progn)
-    (if (stringp tgt-form)
-        `(,wrapper
-          (call-trc t ,tgt-form ,@os))
-      (let ((tgt (gensym)))
-        `(,wrapper
-          (bif (,tgt ,tgt-form)
-            (if (trcp ,tgt)
-                (progn
-                  (assert (stringp ,(car os)))
-                  (call-trc t ,@os)) ;;,(car os) ,tgt ,@(cdr os)))
-              (progn
-                ;; (break "trcfailed")
-                (count-it :trcfailed)))
-            (count-it :tgtnileval)))))))
-
-(defun call-trc (stream s &rest os)
-  (if #+cormanlisp nil #-cormanlisp (and (boundp '*trcdepth*)
-                                      *trcdepth*)
-    (format stream "~&~v,,,'.<~d~>> " (mod *trcdepth* 100) *trcdepth*)
-    (format stream "~&"))
-  
-  (format stream "~a" s)
-  (let (pkwp)
-    (dolist (o os)
-      (format stream (if pkwp " ~s" " | ~s") o)
-      (setf pkwp (keywordp o))))
-  (force-output stream)
-  (values))
-  
-(defun call-trc-to-string (fmt$ &rest fmt-args)
-    (let ((o$ (make-array '(0) :element-type 'base-char
-                :fill-pointer 0 :adjustable t)))
-      (with-output-to-string (os-stream o$)
-        (apply 'call-trc os-stream fmt$ fmt-args))
-      o$))
-
-#+findtrcevalnils
-(defmethod trcp :around (other)
-  (unless (call-next-method other)(break)))
-
-(defmethod trcp (other)
-  (eq other t))
-  
-(defmethod trcp (($ string))
-  t)
-  
-(defun trcdepth-incf ()
-  (incf *trcdepth*))
-  
-(defun trcdepth-decf ()
-  (format t "decrementing trc depth ~d" *trcdepth*)
-  (decf *trcdepth*))
-  
-(export! wtrc)
-
-(defmacro wtrc ((&optional (min 1) (max 50) &rest banner) &body body )
-  `(let ((*trcdepth* (if *trcdepth*
-                         (1+ *trcdepth*)
-                       0)))
-     ,(when banner `(when (>= *trcdepth* ,min)
-                      (if (< *trcdepth* ,max)
-                          (trc ,@banner)
-                        (progn
-                          (break "excess trace notttt!!! ~d" *trcdepth*) ;; ,@banner)
-                          nil))))
-     (when (< *trcdepth* ,max)
-       ,@body)))
-
-(defmacro wnotrc ((&optional (min 1) (max 50) &rest banner) &body body )
-  (declare (ignore min max banner))
-  `(progn ,@body))
-  
-;------ eko --------------------------------------
-
-
-(defmacro eko ((&rest trcargs) &rest body)
-  (let ((result (gensym)))
-     `(let ((,result ,@body))
-         (trc ,(car trcargs) :=> ,result ,@(cdr trcargs))
-         ,result)))
-
-(defmacro eko-if ((test &rest trcargs) &rest body)
-  (let ((result (gensym)))
-     `(let ((,result ,@body))
-         (when ,test
-           (trc ,(car trcargs) :=> ,result ,@(cdr trcargs)))
-         ,result)))
-
-(defmacro ek (label &rest body)
-  (let ((result (gensym)))
-     `(let ((,result (,@body)))
-         (when ,label
-           (trc ,label ,result))
-         ,result)))
 
 ;------------- counting ---------------------------
 

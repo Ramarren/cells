@@ -30,7 +30,7 @@ See the Lisp Lesser GNU Public License for more details.
 ;___________________ birth / death__________________________________
   
 (defmethod not-to-be :around (self)
-  (trc nil "not-to-be clearing 1 fm-parent, eternal-rest" self)
+  (trc nil "not-to-be nailing" self)
   (c-assert (not (eq (md-state self) :eternal-rest)))
 
   (call-next-method)

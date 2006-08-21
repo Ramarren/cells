@@ -17,7 +17,7 @@ See the Lisp Lesser GNU Public License for more details.
 (in-package :gui-geometry)
 
 (eval-now!
-  (export '(v2)))
+  (export '(v2 mkv2)))
 ;-----------------------------
 
 (defstruct v2 

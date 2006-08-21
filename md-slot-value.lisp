@@ -47,10 +47,16 @@ See the Lisp Lesser GNU Public License for more details.
           (record-caller c)))
     (values (bd-slot-value self slot-name) nil)))
   
+(defun chk (s &optional (key 'anon))
+  (when (eq :eternal-rest (md-state s))
+    (break "model ~a is dead at ~a" s key)))
+
 (defun ensure-value-is-current (c debug-id caller)
   (declare (ignorable debug-id caller))
   (count-it :ensure-value-is-current)
   (trc nil "ensure-value-is-current > entry" c :now-pulse *data-pulse-id* debug-id caller)
+  (when (eq :eternal-rest (md-state (c-model c)))
+    (break "model ~a of cell ~a is dead" (c-model c) c))
   (cond
    ((c-currentp c)(trc nil "c-currentp" c)) ;; used to follow c-inputp, but I am toying with letting ephemerals (inputs) fall obsolete
    ;; and then get reset here (ie, ((c-input-p c) (ephemeral-reset c))). ie, do not assume inputs are never obsolete
@@ -82,10 +88,12 @@ See the Lisp Lesser GNU Public License for more details.
              (princ #\.)
              (return-from calculate-and-set))
            
-           (when (find c *call-stack*) ;; circularity
-             (trc "cell appears in call stack:" *stop*)
+           (bwhen (x (find c *call-stack*)) ;; circularity
+             (unless nil ;; *stop*
+               (let ((stack (copy-list *call-stack*)))
+                 (trc "calculating cell ~a appears in call stack: ~a" c x stack )))
              (setf *stop* t)
-             (break)
+             (c-break "yep" c)
              #+not (loop with caller-reiterated
                    for caller in *call-stack*
                    until caller-reiterated
@@ -105,7 +113,7 @@ See the Lisp Lesser GNU Public License for more details.
              
              (md-slot-value-assume c raw-value propagation-code))))
     (if nil ;; *dbg*
-        (ukt::wtrc (0 100 "calcnset" c) (body))
+        (wtrc (0 100 "calcnset" c) (body))
       (body))))
 
 (defun calculate-and-link (c)

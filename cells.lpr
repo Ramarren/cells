@@ -1,4 +1,4 @@
-;; -*- lisp-version: "8.0 [Windows] (Jul 24, 2006 15:27)"; cg: "1.81"; -*-
+;; -*- lisp-version: "8.0 [Windows] (Aug 17, 2006 12:24)"; cg: "1.81"; -*-
 
 (in-package :cg-user)
 
@@ -6,6 +6,7 @@
 
 (define-project :name :cells
   :modules (list (make-instance 'module :name "defpackage.lisp")
+                 (make-instance 'module :name "trc-eko.lisp")
                  (make-instance 'module :name "cells.lisp")
                  (make-instance 'module :name "integrity.lisp")
                  (make-instance 'module :name "cell-types.lisp")

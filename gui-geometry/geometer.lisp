@@ -17,7 +17,7 @@ See the Lisp Lesser GNU Public License for more details.
 (in-package #:gui-geometry)
 
 (eval-now!
-  (export '(outset ^outset)))
+  (export '(outset ^outset mkv2 g-offset g-offset-h g-offset-v)))
 
 (defmd geometer ()
   px py ll lt lr lb

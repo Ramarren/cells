@@ -32,6 +32,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defparameter *within-integrity* nil)
 (defparameter *client-queue-handler* nil)
 (defparameter *unfinished-business* nil)
+
 (defun cells-reset (&optional client-queue-handler)
   (utils-kt-reset)
   (setf 
@@ -41,7 +42,8 @@ See the Lisp Lesser GNU Public License for more details.
    *defer-changes* nil ;; should not be necessary, but cannot be wrong
    *client-queue-handler* client-queue-handler
    *within-integrity* nil
-   *unfinished-business* nil)
+   *unfinished-business* nil
+   *trcdepth* 0)
   (trc nil "------ cell reset ----------------------------"))
 
 (defun c-stop (&optional why)
@@ -132,7 +134,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun c-break (&rest args)
   (unless *stop*
-    (LET ((*print-level* 3)
+    (let ((*print-level* 3)
           (*print-circle* t)
           )
       (c-stop args)

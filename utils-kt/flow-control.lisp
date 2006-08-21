@@ -31,6 +31,8 @@ See the Lisp Lesser GNU Public License for more details.
 (defun min-if (v1 v2)
      (if v1 (if v2 (min v1 v2) v1) v2))
 
+(export! list-flatten!)
+
 (defun list-flatten! (&rest list)
   (if (consp list)
     (let (head work visited)

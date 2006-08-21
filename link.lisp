@@ -56,12 +56,17 @@ See the Lisp Lesser GNU Public License for more details.
 
 ;--- unlink unused --------------------------------
 
-(defun c-unlink-unused (c &aux (usage (cd-usage c)))
+(defun c-unlink-unused (c &aux (usage (cd-usage c))
+                         (usage-size (array-dimension (cd-usage c) 0))
+                         (dbg nil #+not (and (typep (c-model c) 'mathx::mx-solver-stack)
+                                (eq (c-slot-name c) '.kids))))
+  (declare (ignorable usage-size))
   (when (cd-useds c)
     (let (rev-pos)
       (labels ((nail-unused (useds)
                  (flet ((handle-used (rpos)
-                          (if (zerop (sbit usage rpos))
+                          (if (or (>= rpos usage-size)
+                                (zerop (sbit usage rpos)))
                               (progn
                                 (count-it :unlink-unused)
                                 (c-unlink-caller (car useds) c)
@@ -75,6 +80,7 @@ See the Lisp Lesser GNU Public License for more details.
                          (nail-unused (cdr useds))
                          (handle-used (incf rev-pos)))
                      (handle-used (setf rev-pos 0))))))
+        (trc dbg "cd-useds length" (length (cd-useds c)) c)
         (nail-unused (cd-useds c))
         (setf (cd-useds c) (delete nil (cd-useds c)))))))
 

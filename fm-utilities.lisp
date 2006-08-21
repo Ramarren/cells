@@ -195,6 +195,15 @@ See the Lisp Lesser GNU Public License for more details.
 ;; eventually fm-find-all needs a better name (as does fm-collect) and they
 ;; should be modified to go through 'gather', which should be the real fm-find-all
 ;;
+
+(export! fm-do-up)
+
+(defun fm-do-up (self &optional (fn 'identity))
+  (when self
+    (funcall fn self)
+    (if .parent (fm-do-up .parent fn) self))
+  (values))
+
 (defun fm-gather (family &key (test #'true-that))
      (packed-flat!
       (cons (when (funcall test family) family)
@@ -256,10 +265,11 @@ See the Lisp Lesser GNU Public License for more details.
         (when (funcall test-fn family)
           family))))
 
-(defun fm-prior-sib (self &optional (test-fn #'true-that)
-                      &aux (kids (kids (fm-parent self))))
+(defun fm-prior-sib (self &optional (test-fn #'true-that))
   "Find nearest preceding sibling passing TEST-FN"
-  (find-if test-fn kids :end (position self kids) :from-end t))
+  (chk self 'psib)
+  (let ((kids (kids (fm-parent self))))
+    (find-if test-fn kids :end (position self kids) :from-end t)))
 
 (defun fm-next-sib-if (self test-fn)
      (some test-fn (cdr (member self (kids (fm-parent self))))))
