@@ -21,6 +21,7 @@
                               (:file "strings")
                               (:file "datetime")))
                (:file "defpackage")
+               (:file "trc-eko")
                (:file "cells")
                (:file "integrity")
                (:file "constructors")
