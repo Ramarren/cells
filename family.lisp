@@ -123,13 +123,13 @@ See the Lisp Lesser GNU Public License for more details.
     (c-break "2nd adopt ~a, by ~a" self fm-parent))
 
   (incf (adopt-ct self))
-
+  (trc nil "getting adopted" self :by fm-parent)
   (bwhen (kid-slots-fn (kid-slots (fm-parent self)))
     (dolist (ks-def (funcall kid-slots-fn self) self)
       (let ((slot-name (ks-name ks-def)))
-        (trc nil "got ksdef " slot-name)
+        (trc nil "got ksdef " slot-name (ks-if-missing ks-def))
         (when (md-slot-cell-type selftype slot-name)
-          (trc nil "got cell type " slot-name)
+          (trc nil "got cell type " slot-name )
           (when (or (not (ks-if-missing ks-def))
                   (and (null (c-slot-value self slot-name))
                     (null (md-slot-cell self slot-name))))
