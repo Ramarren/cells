@@ -223,6 +223,8 @@ See the Lisp Lesser GNU Public License for more details.
                               (fm-traverse family traveller :global-search global-search)))))
         (when (and must-find (null matches))
            (setf *stop* t)
+          (fm-traverse family (lambda (node)
+                                (trc "known node" (md-name node))) :global-search global-search)
           (break "fm-find-all > *stop*ping...did not find ~a ~a ~a" family md-name global-search)
           ;; (error 'fm-not-found (list md-name family global-search))
           )
