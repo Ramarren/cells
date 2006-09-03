@@ -27,6 +27,9 @@ See the Lisp Lesser GNU Public License for more details.
 (defmethod md-release (other)
   (declare (ignorable other)))
 
+(export! md-dead)
+(defun md-dead (SELF)
+  (eq :eternal-rest (md-state SELF)))
 ;___________________ birth / death__________________________________
   
 (defmethod not-to-be :around (self)

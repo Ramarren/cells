@@ -46,7 +46,8 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun c-pulse-update (c key)
   (declare (ignorable key))
-  (trc nil "c-pulse-update updating as unchanged!!!" *data-pulse-id* c key)
+  (trc nil "c-pulse-update updating" *data-pulse-id* c key)
+  (assert (>= *data-pulse-id* (c-pulse c)))
   (setf (c-changed c) nil
       (c-pulse c) *data-pulse-id*))
 

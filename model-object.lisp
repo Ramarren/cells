@@ -68,6 +68,7 @@ See the Lisp Lesser GNU Public License for more details.
   ;
   (when c-isa-cell
     (count-it :md-install-cell)
+    
     (setf
      (c-model c) self
      (c-slot-name c) sn
@@ -103,7 +104,7 @@ See the Lisp Lesser GNU Public License for more details.
   (trc nil "md-awaken entry" self (md-state self))
   (c-assert (eql :nascent (md-state self)))
   (count-it :md-awaken)
-  ;;(count-it 'mdawaken (type-of self))
+  (count-it 'mdawaken)
   
   ; ---
 

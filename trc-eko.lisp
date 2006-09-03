@@ -46,12 +46,15 @@ See the Lisp Lesser GNU Public License for more details.
                 (count-it :trcfailed)))
             (count-it :tgtnileval)))))))
 
+(defparameter *last-trc* (get-internal-real-time))
+
 (defun call-trc (stream s &rest os)
   (if #+cormanlisp nil #-cormanlisp (and (boundp '*trcdepth*)
                                       *trcdepth*)
     (format stream "~&~v,,,'.<~d~>> " (mod *trcdepth* 100) *trcdepth*)
     (format stream "~&"))
-  
+  (format stream " ~a " (round (- (get-internal-real-time) *last-trc*) 10))
+  (setf *last-trc* (get-internal-real-time))
   (format stream "~a" s)
   (let (pkwp)
     (dolist (o os)
