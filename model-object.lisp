@@ -45,12 +45,13 @@ See the Lisp Lesser GNU Public License for more details.
   ; here we shuttle cells out of the slots and into a per-instance dictionary of cells,
   ; as well as tell the cells what slot and instance they are mediating.
   ;
+  
   (when (slot-boundp self '.md-state)
     (loop for esd in (class-slots (class-of self))
         for sn = (slot-definition-name esd)
         for sv = (when (slot-boundp self sn)
                    (slot-value self sn))
-          ;;do (print (list self sn sv (typep sv 'cell)))
+        ;; do (print (list self sn sv (typep sv 'cell)))
         when (typep sv 'cell)
         do (if (md-slot-cell-type (type-of self) sn)
                (md-install-cell self sn sv)
@@ -170,6 +171,21 @@ See the Lisp Lesser GNU Public License for more details.
     (if entry
         (setf (cdr entry) new-type)
       (push (cons slot-name new-type) (get class-name :cell-types)))))
+
+(defun md-slot-owning (class-name slot-name)
+  (bif (entry (assoc slot-name (get class-name :ownings)))
+    (cdr entry)
+    (dolist (super (class-precedence-list (find-class class-name)))
+      (bwhen (entry (assoc slot-name (get (c-class-name super) :ownings)))
+        (return (setf (md-slot-owning class-name slot-name) (cdr entry)))))))       
+
+(defun (setf md-slot-owning) (value class-name slot-name)
+  (let ((entry (assoc slot-name (get class-name :ownings))))
+    (if entry
+        (setf (cdr entry) value)
+      (push (cons slot-name value) (get class-name :ownings)))))
+
+
 
 (defmethod md-slot-value-store ((self model-object) slot-name new-value)
   (trc nil "md-slot-value-store" slot-name new-value)

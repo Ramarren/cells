@@ -31,7 +31,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defun min-if (v1 v2)
      (if v1 (if v2 (min v1 v2) v1) v2))
 
-(export! list-flatten!)
+(export! list-flatten! tree-flatten)
 
 (defun list-flatten! (&rest list)
   (if (consp list)
@@ -55,6 +55,9 @@ See the Lisp Lesser GNU Public License for more details.
         (link list))
       head)
     list))
+
+(defun tree-flatten (tree)
+  (list-flatten! (copy-tree tree)))
 
 (defun packed-flat! (&rest u-nameit)
    (delete nil (list-flatten! u-nameit)))

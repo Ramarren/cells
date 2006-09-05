@@ -95,20 +95,20 @@ See the Lisp Lesser GNU Public License for more details.
   `(if ,onp
        (prog1
            (time (progn ,@body))
-         (trc "timing was of" ,@trcargs))
+         (format t "timing was of ~{ ~a~}" ,@trcargs))
      (progn ,@body)))
 
 #+save
 (defun dbg-time-report (cpu-gc-user cpu-gc-sys cpu-tot-user cpu-tot-sys real-time conses other-bytes static-bytes)
-  (trc "cpu-gc-user" cpu-gc-user)
-  (trc "cpu-gc-sys" cpu-gc-sys)
-  (trc "cpu-tot-user" cpu-tot-user)
-  (trc "cpu-tot-sys" cpu-tot-sys)
-  (trc "<non-gc user cpu>" (- cpu-tot-user cpu-gc-user))
-  (trc "<non-gc sys cpu>" (- cpu-tot-sys cpu-gc-sys))
-  (trc "conses" conses)
-  (trc "other-bytes" other-bytes)
-  (trc "static-bytes" static-bytes)
+  (format t "~&cpu-gc-user ~a" cpu-gc-user)
+  (format t "~&cpu-gc-sys ~a" cpu-gc-sys)
+  (format t "~&cpu-tot-user ~a" cpu-tot-user)
+  (format t "~&cpu-tot-sys ~a" cpu-tot-sys)
+  (format t "~&<non-gc user cpu> ~a" (- cpu-tot-user cpu-gc-user))
+  (format t "~&<non-gc sys cpu> ~a" (- cpu-tot-sys cpu-gc-sys))
+  (format t "~&conses ~a" conses)
+  (format t "~&other-bytes ~a" other-bytes)
+  (format t "~&static-bytes ~a" static-bytes)
   (excl::time-report cpu-gc-user cpu-gc-sys cpu-tot-user cpu-tot-sys real-time conses other-bytes static-bytes))
 
 ;---------------- Metrics -------------------

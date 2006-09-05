@@ -94,6 +94,15 @@ See the Lisp Lesser GNU Public License for more details.
 
     (slot-value-observe (c-slot-name c) (c-model c)
       (c-value c) prior-value prior-value-supplied)
+    (when (and prior-value-supplied
+            prior-value
+            (md-slot-owning (type-of (c-model c)) (c-slot-name c)))
+      (bwhen (lost (set-difference prior-value (c-value c)))
+        (trc "bingo!!!!! lost nailing" lost)
+        (break "go")
+        (typecase lost
+          (atom (not-to-be lost))
+          (cons (mapcar 'not-to-be lost)))))
     ;
     ; with propagation done, ephemerals can be reset. we also do this in c-awaken, so
     ; let the fn decide if C really is ephemeral. Note that it might be possible to leave

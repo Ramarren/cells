@@ -26,13 +26,13 @@ See the Lisp Lesser GNU Public License for more details.
     #+openmcl-partial-mop #:openmcl-mop
     #+(and mcl (not openmcl-partial-mop))  #:ccl)
   (:export #:utils-kt-reset
-    #:eko #:count-it #:count-of #:trc #:trcp 
+     #:count-it #:count-of
     #:wdbg #:maptimes #:bwhen #:bif #:xor
     #:with-dynamic-fn #:last1 #:packed-flat! #:with-metrics 
     #:shortc
     #:intern$
     #:define-constant #:*count* #:*stop*
-    #:*dbg* #:*trcdepth*
+    #:*dbg*
     #:make-fifo-queue #:fifo-queue #:fifo-add #:fifo-delete
     #:fifo-empty #:fifo-pop #:fifo-clear
     #:fifo-map #:fifo-peek #:fifo-data #:with-fifo-map #:fifo-length

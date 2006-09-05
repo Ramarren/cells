@@ -140,8 +140,7 @@ See the Lisp Lesser GNU Public License for more details.
    (or (null s)
        (if (stringp s)
           (string-equal "" (trim$ s))
-          #+(or) (trc nil "empty$> sees non-string" (type-of s)))
-       ))
+          #+(or) (format t "empty$> sees non-string ~a" (type-of s)))))
 
 (defmacro find$ (it where &rest args)
   `(find ,it ,where ,@args :test #'string-equal))

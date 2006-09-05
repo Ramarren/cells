@@ -154,8 +154,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defun tree-includes (sought tree &key (test 'eql))
   (typecase tree
     (null)
-    (atom (eko (nil "tree-inc? testing" sought tree)
-            (funcall test sought tree)))
+    (atom (funcall test sought tree))
     (cons (loop for subtree in tree
                 when (tree-includes sought subtree :test test)
                 do (return-from tree-includes t)))))
@@ -171,7 +170,6 @@ See the Lisp Lesser GNU Public License for more details.
 (defun tree-intersect (t1 t2 &key (test 'eql))
   (tree-traverse t1
     (lambda (t1-node)
-      (eko (nil "treeinter?" t1-node t2)
-        (when (tree-includes t1-node t2 :test test)
-          (return-from tree-intersect t1-node))))))
+      (when (tree-includes t1-node t2 :test test)
+          (return-from tree-intersect t1-node)))))
 

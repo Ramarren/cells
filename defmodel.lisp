@@ -26,30 +26,32 @@ See the Lisp Lesser GNU Public License for more details.
      ;
      ; define slot macros before class so they can appear in initforms and default-initargs
      ;
-     ,@(loop for slotspec in slotspecs
-           collecting (destructuring-bind
+     ,@(delete nil
+         (loop for slotspec in slotspecs
+             nconcing (destructuring-bind
                           (slotname &rest slotargs
-                            &key (cell t) (accessor slotname) reader
+                            &key (cell t) owning (accessor slotname) reader
                             &allow-other-keys)
                           slotspec
                         
                         (declare (ignorable slotargs))
-                        (when cell
-                          (let* ((reader-fn (or reader accessor))
-                                 (deriver-fn (intern$ "^" (symbol-name reader-fn)))
-                                 )
-                            ;
-                            ; may as well do this here...
-                            ;
-                            ;;(trc nil "slot, deriverfn would be" slotname deriverfn)
-                            `(eval-when (:compile-toplevel :execute :load-toplevel)
-                               (setf (md-slot-cell-type ',class ',slotname) ,cell)
-                               (unless (macro-function ',deriver-fn)
-                                 (defmacro ,deriver-fn ()
-                                   `(,',reader-fn self)))
-                               )
-                            ))
-                        ))
+                        (list
+                         (when cell
+                           (let* ((reader-fn (or reader accessor))
+                                  (deriver-fn (intern$ "^" (symbol-name reader-fn)))
+                                  )
+                             ;
+                             ; may as well do this here...
+                             ;
+                             ;;(trc nil "slot, deriverfn would be" slotname deriverfn)
+                             `(eval-when (:compile-toplevel :execute :load-toplevel)
+                                (setf (md-slot-cell-type ',class ',slotname) ,cell)
+                                (unless (macro-function ',deriver-fn)
+                                  (defmacro ,deriver-fn ()
+                                    `(,',reader-fn self))))))
+                         (when owning
+                           `(eval-when (:compile-toplevel :execute :load-toplevel)
+                              (setf (md-slot-owning ',class ',slotname) ,owning)))))))
   
   ;
   ; -------  defclass ---------------  (^slot-value ,model ',',slotname)
@@ -66,6 +68,7 @@ See the Lisp Lesser GNU Public License for more details.
                        (remf ias :writer)
                        (remf ias :accessor))
                      (remf ias :cell)
+                     (remf ias :owning)
                      (remf ias :unchanged-if)
                      ias))) (mapcar #'copy-list slotspecs))
       (:documentation
@@ -123,6 +126,7 @@ the defmodel form for ~a" ',class ',class))))
 (defun defmd-canonicalize-slot (slotname
                                  &key
                                  (cell nil cell-p)
+                                (owning nil owning-p)
                                 (type nil type-p)
                                  (initform nil initform-p)
                                  (initarg (intern (symbol-name slotname) :keyword))
@@ -135,6 +139,7 @@ the defmodel form for ~a" ',class ',class))))
   (list* slotname :initarg initarg
     (append
      (when cell-p (list :cell cell))
+     (when owning-p (list :owning owning))
      (when type-p (list :type type))
      (when initform-p (list :initform initform))
      (when unchanged-if-p (list :unchanged-if unchanged-if))

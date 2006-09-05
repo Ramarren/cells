@@ -64,12 +64,13 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmodel family (model)
   ((.kid-slots :cell nil
-         :initform nil
-         :accessor kid-slots
-         :initarg :kid-slots)
+     :initform nil
+     :accessor kid-slots
+     :initarg :kid-slots)
    (.kids :initform (c-in nil) ;; most useful
-         :accessor kids
-         :initarg :kids)
+     :owning t
+     :accessor kids
+     :initarg :kids)
    ))
 
 (defvar *parent*)
@@ -152,11 +153,7 @@ See the Lisp Lesser GNU Public License for more details.
   (bwhen (sample (find-if-not 'fm-parent new-kids))
       (c-break "New as of Cells3: parent must be supplied to make-instance of ~a kid ~a"
         (type-of sample) sample))
-  (trc nil ".kids output > entry" new-kids (mapcar 'fm-parent new-kids))
-
-  (dolist (k (set-difference old-kids new-kids))
-    (trc nil "kids change nailing lost kid" k)
-    (not-to-be k)))
+  (trc nil ".kids output > entry" new-kids (mapcar 'fm-parent new-kids)))
 
 (defmethod kids ((other model-object))  nil)
 
