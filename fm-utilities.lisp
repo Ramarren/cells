@@ -118,9 +118,9 @@ See the Lisp Lesser GNU Public License for more details.
     max))
 
 
-(defun fm-traverse (family applied-fn &key skip-node skip-tree global-search opaque)
+(defun fm-traverse (family applied-fn &key skip-node skip-tree global-search opaque with-dependency)
    ;;(when *fmdbg* (trc "fm-traverse" family skipTree skipNode global-search))
-  (without-c-dependency
+
    (when family
      (labels ((tv-family (fm)
                 (etypecase fm
@@ -134,13 +134,18 @@ See the Lisp Lesser GNU Public License for more details.
                            (tv-family kid))
                          ;(tv-family (mdValue fm))
                          )))))))
-       (tv-family family)
-       (when global-search
-         (fm-traverse (fm-parent family) applied-fn 
-           :global-search t
-           :skip-tree family
-           :skip-node skip-node))))
-   nil))
+       (flet ((tv ()
+                (tv-family family)
+                (when global-search
+                  (fm-traverse (fm-parent family) applied-fn 
+                    :global-search t
+                    :skip-tree family
+                    :skip-node skip-node
+                    :with-dependency t)))) ;; t actually just defaults to outermost call
+         (if with-dependency
+             (tv)
+             (without-c-dependency (tv))))))
+  (values))
 
 (defun fm-ordered-p (n1 n2 &aux (top (fm-ascendant-common n1 n2)))
   (assert top)

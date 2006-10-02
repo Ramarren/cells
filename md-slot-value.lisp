@@ -55,8 +55,10 @@ See the Lisp Lesser GNU Public License for more details.
   (declare (ignorable debug-id caller))
   (count-it :ensure-value-is-current)
   (trc nil "ensure-value-is-current > entry" c :now-pulse *data-pulse-id* debug-id caller)
+
   (when (eq :eternal-rest (md-state (c-model c)))
     (break "model ~a of cell ~a is dead" (c-model c) c))
+
   (cond
    ((c-currentp c)(trc nil "c-currentp" c)) ;; used to follow c-inputp, but I am toying with letting ephemerals (inputs) fall obsolete
    ;; and then get reset here (ie, ((c-input-p c) (ephemeral-reset c))). ie, do not assume inputs are never obsolete
@@ -64,17 +66,27 @@ See the Lisp Lesser GNU Public License for more details.
    ((c-inputp c)(trc nil "c-inputp" c)) ;; always current (for now; see above)
 
    ((or (not (c-validp c))
-      (some (lambda (used)
-              (ensure-value-is-current used :nested c)
-              (trc nil "comparing pulses (caller, used, used-changed): "  c used (c-changed used))
-              (when (and (c-changed used) (> (c-pulse used)(c-pulse c)))
-                 (trc nil "used changed and newer !!!!!!" c used)
-                t))
-        (cd-useds c)))
-    (trc nil "ensuring current calc-set of" (c-slot-name c))
+      ;;
+      ;; new for 2006-09-21: a cell ended up checking slots of a dead instance, which would have been
+      ;; refreshed when checked, but was going to be checked last because it was the first used, useds
+      ;; being simply pushed onto a list as they come up. We may need fancier handling of dead instance/cells
+      ;; still being encountered by consulting the prior useds list, but checking now in same order as
+      ;; accessed seems Deeply Correct (and fixed the immediate problem nicely, always a Good Sign).
+      ;;
+      (labels ((check-reversed (useds)
+                 (when useds
+                   (or (check-reversed (cdr useds))
+                     (let ((used (car useds)))
+                       (ensure-value-is-current used :nested c)
+                       (trc nil "comparing pulses (caller, used, used-changed): "  c debug-id used (c-pulse-last-changed used))
+                       (when (> (c-pulse-last-changed used)(c-pulse c))
+                         (trc nil "used changed and newer !!!!!!" c debug-id used)
+                         t))))))
+        (check-reversed (cd-useds c))))
+    (trc nil "kicking off calc-set of" (c-slot-name c) :pulse *data-pulse-id*)
     (calculate-and-set c))
 
-   (t (trc nil "ensuring current decided current, updating pulse" (c-slot-name c) )
+   (t (trc nil "ensuring current decided current, updating pulse" (c-slot-name c) debug-id)
      (c-pulse-update c :valid-uninfluenced)))
 
   (when (c-unboundp c)
@@ -157,7 +169,7 @@ See the Lisp Lesser GNU Public License for more details.
           ; --- data flow propagation -----------
           ;
           
-          (setf (c-changed c) t)
+          (setf (c-pulse-last-changed c) *data-pulse-id*)
           (without-c-dependency
               (c-propagate c prior-value t)))))))
 
@@ -178,11 +190,16 @@ an :initarg -- should be wrapped in either macro C-IN or C-INPUT.
 In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
       slot-name self (slot-value self slot-name)))
 
-  (when *defer-changes*
+  (cond
+   ((find (c-lazy c) '(:once-asked :always t))
+    (md-slot-value-assume c new-value nil))
+
+   (*defer-changes*
     (c-break "SETF of ~a must be deferred by wrapping code in WITH-INTEGRITY" c))
 
-  (with-integrity (:change)
-    (md-slot-value-assume c new-value nil))
+   (t
+    (with-integrity (:change slot-name)
+      (md-slot-value-assume c new-value nil))))
 
   ;; new-value 
   ;; above line commented out 2006-05-01. It seems to me we want the value assumed by the slot
@@ -222,7 +239,7 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
         ; --- data flow propagation -----------
         (unless (eq propagation-code :no-propagate)
           (trc nil "md-slot-value-assume flagging as changed" c)
-          (setf (c-changed c) t)
+          (setf (c-pulse-last-changed c) *data-pulse-id*)
           (c-propagate c prior-value (eq prior-state :valid)))  ;; until 06-02-13 was (not (eq prior-state :unbound))
         
         absorbed-value)))

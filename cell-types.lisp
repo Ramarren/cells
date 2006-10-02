@@ -25,12 +25,13 @@ See the Lisp Lesser GNU Public License for more details.
   
   inputp ;; t for old c-variable class
   synaptic
-  changed
   (caller-store (make-fifo-queue) :type cons) ;; (C3) probably better to notify callers FIFO
   
   (state :nascent :type symbol) ;; :nascent, :awake, :optimized-away
   (value-state :unbound :type symbol) ;; {:unbound | :unevaluated | :valid}
   (pulse 0 :type fixnum)
+  (pulse-last-changed 0 :type fixnum) ;; lazys can miss changes by missing change of X followed by unchange of X in subsequent DP
+  lazy
   debug
   md-info)
 
@@ -46,9 +47,8 @@ See the Lisp Lesser GNU Public License for more details.
   (fifo-delete (c-caller-store used) caller))
 
 (defmethod trcp ((c cell))
-  #+not (and ;; (typep (c-model c) 'index)
-   (find (c-slot-name c) '(celtk::state mathx::problem))))
-
+   (and  #+not(typep (c-model c) 'index)
+     (find (c-slot-name c) '(mathx::line-breaks mathx::phrases))))
 
 ; --- ephemerality --------------------------------------------------
 ; 
@@ -86,15 +86,11 @@ See the Lisp Lesser GNU Public License for more details.
 (defstruct (c-ruled
             (:include cell)
             (:conc-name cr-))
-  lazy
   (code nil :type list) ;; /// feature this out on production build
   rule)
 
 (defun c-optimized-away-p (c)
   (eql :optimized-away (c-state c)))
-
-(defmethod c-lazy ((c c-ruled)) (cr-lazy c))
-(defmethod c-lazy (c) (declare (ignore c)) nil)
 
 ;----------------------------
 

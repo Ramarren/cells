@@ -25,6 +25,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defclass model-object ()
   ((.md-state :initform :nascent :accessor md-state) ; [nil | :nascent | :alive | :doomed]
+   (.awaken-on-init-p :initform nil :initarg :awaken-on-init-p :accessor awaken-on-init-p) ; [nil | :nascent | :alive | :doomed]
    (.cells :initform nil :accessor cells)
    (.cells-flushed :initform nil :accessor cells-flushed
                    :documentation "cells supplied but un-whenned or optimized-away")
@@ -51,17 +52,22 @@ See the Lisp Lesser GNU Public License for more details.
         for sn = (slot-definition-name esd)
         for sv = (when (slot-boundp self sn)
                    (slot-value self sn))
-        ;; do (print (list self sn sv (typep sv 'cell)))
+        ;; do (print (list (type-of self) sn sv (typep sv 'cell)))
         when (typep sv 'cell)
         do (if (md-slot-cell-type (type-of self) sn)
                (md-install-cell self sn sv)
              (when *c-debug*
-               (trc "warning: cell ~a offered for non-cellular model/slot ~a/~a" sv self sn))))
+               (break "warning: cell ~a offered for non-cellular model/slot ~a/~a" sv sn (type-of self)))))
     ;
     ; queue up for awakening
     ;
-    (with-integrity (:awaken self)
-      (md-awaken self))))
+    (if (awaken-on-init-p self)
+        (md-awaken self)
+      (with-integrity (:awaken self)
+        (md-awaken self)))
+    ))
+
+
 
 (defun md-install-cell (self sn c &aux (c-isa-cell (typep c 'cell)))
   ;
@@ -162,14 +168,18 @@ See the Lisp Lesser GNU Public License for more details.
 (defun md-slot-cell-type (class-name slot-name)
   (bif (entry (assoc slot-name (get class-name :cell-types)))
     (cdr entry)
-    (dolist (super (class-precedence-list (find-class class-name)))
+    (dolist (super (class-precedence-list (find-class class-name))
+              (setf (md-slot-cell-type class-name slot-name) nil))
       (bwhen (entry (assoc slot-name (get (c-class-name super) :cell-types)))
-        (return (setf (md-slot-cell-type class-name slot-name) (cdr entry)))))))       
+        (return-from md-slot-cell-type (setf (md-slot-cell-type class-name slot-name) (cdr entry)))))))       
 
 (defun (setf md-slot-cell-type) (new-type class-name slot-name)
   (let ((entry (assoc slot-name (get class-name :cell-types))))
     (if entry
-        (setf (cdr entry) new-type)
+        (progn
+          (setf (cdr entry) new-type)
+          (loop for c in (mop:class-direct-subclasses (find-class class-name))
+                do (setf (md-slot-cell-type (class-name c) slot-name) new-type)))
       (push (cons slot-name new-type) (get class-name :cell-types)))))
 
 (defun md-slot-owning (class-name slot-name)
@@ -182,10 +192,11 @@ See the Lisp Lesser GNU Public License for more details.
 (defun (setf md-slot-owning) (value class-name slot-name)
   (let ((entry (assoc slot-name (get class-name :ownings))))
     (if entry
-        (setf (cdr entry) value)
+        (progn
+          (setf (cdr entry) value)
+          (loop for c in (mop:class-direct-subclasses (find-class class-name))
+                do (setf (md-slot-owning (class-name c) slot-name) value)))
       (push (cons slot-name value) (get class-name :ownings)))))
-
-
 
 (defmethod md-slot-value-store ((self model-object) slot-name new-value)
   (trc nil "md-slot-value-store" slot-name new-value)

@@ -25,7 +25,6 @@ See the Lisp Lesser GNU Public License for more details.
 (defparameter *causation* nil)
 
 (defparameter *data-pulse-id* 0)
-(defparameter *data-pulses* nil)
 
 (defparameter *c-debug* nil)
 (defparameter *defer-changes* nil)
@@ -33,12 +32,12 @@ See the Lisp Lesser GNU Public License for more details.
 (defparameter *client-queue-handler* nil)
 (defparameter *unfinished-business* nil)
 
-(defun cells-reset (&optional client-queue-handler)
+(defun cells-reset (&optional client-queue-handler &key debug)
   (utils-kt-reset)
   (setf 
+   *c-debug* debug
    *c-prop-depth* 0
    *data-pulse-id* 0
-   *data-pulses* nil
    *defer-changes* nil ;; should not be necessary, but cannot be wrong
    *client-queue-handler* client-queue-handler
    *within-integrity* nil

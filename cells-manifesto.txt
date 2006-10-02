@@ -13,7 +13,7 @@ spreadsheets with pencil and slide rule. After he changed one value,
 he had to propagate that change to other cells by first remembering 
 which other ones included the changed cell in their computation. 
 Then he had to do the calculations for those, erase, enter...
-and then repeating that process to propagate those changes in a 
+and then repeat that process to propagate those changes in a 
 cascade across the paper.
 
 VisiCalc let my father take the formula he had in mind and 
@@ -61,7 +61,7 @@ property of software development, meaning by essential that there was no
 way around it, and thus his prediction that a software silver bullet was
 in principle impossible.
 
-Which brings us to Cells. See also [axiom] Phillip Eby's developiong axiomatic 
+Which brings us to Cells. See also [axiom] Phillip Eby's developing axiomatic 
 definition he is developing in support of Ryan Forseth's SoC project.
 
 DEFMODEL and Slot types
@@ -236,8 +236,8 @@ Natural decomposition of overall application complexity into so many simple rule
 Let's return for a moment to VisiCalc and its descendants. In even the most complex financial spreadsheet  
 model, no one cell rule accesses more than a relatively few other spreadsheet cells (counting a row or 
 column range as one reference). Yet the complex model emerges. All the work of tracking dependencies
-is handled by the spreadsheet software, which require no special declaration by the modeller. They simply 
-writes the Cell rule. In writing the rule, they are concerned only with the derivation of one datapoint from
+is handled by the spreadsheet software, which requires no special declaration by the modeller. They simply 
+write the Cell rule. In writing the rule, they are concerned only with the derivation of one datapoint from
 a population of other datapoints. No effort goes into arranging for the rule to get run at the right time,
 and certainly no energy is spent worrying about what other cells might be using the authored cell. That
 cell has certain semantics -- "account balance", perhaps -- and the modeller need only worry about writing
@@ -251,8 +251,8 @@ specified for different slots to achieve custom behavior, the effort is the same
 
 Model Building
 --------------
-Everything above could describe one instance of one class defined by DEFMODEL. Of course, we want multiples
-of both. In brief:
+Everything above could describe one instance of one class defined by DEFMODEL. A real application has 
+multiple instances of multiple classes. So...
 
 -- cells can depend on other cells from any other instance. Since a rule gets passed only "self", Cell users
 need something like the Family class included with the Cells package effectively to turn a collection of
@@ -312,6 +312,7 @@ See also:
  The dataflow paradigm: http://en.wikipedia.org/wiki/Dataflow
  Reactive programming: http://www.haskell.org/yampa/AFPLectureNotes.pdf
  Frame-based programming
+ Definitive-programming
 
 Commentary
 ----------

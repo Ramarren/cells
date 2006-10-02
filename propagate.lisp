@@ -46,10 +46,10 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun c-pulse-update (c key)
   (declare (ignorable key))
-  (trc nil "c-pulse-update updating" *data-pulse-id* c key)
-  (assert (>= *data-pulse-id* (c-pulse c)))
-  (setf (c-changed c) nil
-      (c-pulse c) *data-pulse-id*))
+  (trc nil "c-pulse-update updating" *data-pulse-id* c key :prior-pulse (c-pulse c))
+  (assert (>= *data-pulse-id* (c-pulse c)) ()
+    "Current DP ~a not GE pulse ~a of cell ~a" *data-pulse-id* (c-pulse c) c)
+  (setf (c-pulse c) *data-pulse-id*))
 
 ;--------------- propagate  ----------------------------
 
@@ -90,19 +90,19 @@ See the Lisp Lesser GNU Public License for more details.
     ; expected to have side-effects, so we want to propagate fully and be sure no rule
     ; wants a rollback before starting with the side effects.
     ; 
-    (c-propagate-to-callers c)
+    (unless nil #+not (member (c-lazy c) '(t :always :once-asked)) ;; 2006-09-26 still fuzzy on this 
+      (c-propagate-to-callers c))
 
     (slot-value-observe (c-slot-name c) (c-model c)
       (c-value c) prior-value prior-value-supplied)
+
     (when (and prior-value-supplied
             prior-value
             (md-slot-owning (type-of (c-model c)) (c-slot-name c)))
-      (bwhen (lost (set-difference prior-value (c-value c)))
-        (trc "bingo!!!!! lost nailing" lost)
-        (break "go")
-        (typecase lost
-          (atom (not-to-be lost))
-          (cons (mapcar 'not-to-be lost)))))
+      (flet ((listify (x) (if (listp x) x (list x))))
+        (bwhen (lost (set-difference (listify prior-value) (listify (c-value c))))
+          (trc "prop nailing owned" c (c-value c) prior-value lost)
+          (mapcar 'not-to-be lost))))
     ;
     ; with propagation done, ephemerals can be reset. we also do this in c-awaken, so
     ; let the fn decide if C really is ephemeral. Note that it might be possible to leave
@@ -113,8 +113,7 @@ See the Lisp Lesser GNU Public License for more details.
     ; would this be bad for persistent CLOS, in which a DB would think there was still a link
     ; between two records until the value actually got cleared?
     ;
-    (ephemeral-reset c)
-    ))
+    (ephemeral-reset c)))
 
 ; --- slot change -----------------------------------------------------------
 
@@ -177,7 +176,7 @@ See the Lisp Lesser GNU Public License for more details.
         (let ((*causation* causation))
           (trc nil "c-propagate-to-callers > actually notifying callers of" c (mapcar 'c-slot-name (c-callers c)))
           (dolist (caller (c-callers c))
-            (unless (member (cr-lazy caller) '(t :always :once-asked))
+            (unless (member (c-lazy caller) '(t :always :once-asked))
               (trc nil "propagating to caller is caller:" caller)
               (ensure-value-is-current caller :prop-from c))))))))
 

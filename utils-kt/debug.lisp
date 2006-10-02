@@ -30,7 +30,7 @@ See the Lisp Lesser GNU Public License for more details.
   (setf *count* nil
     *stop* nil
     *dbg* nil)
-  (print "----------UTILSRESET----------------------------------"))
+ (print "----------UTILSRESET----------------------------------"))
 
 
 

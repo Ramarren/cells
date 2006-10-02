@@ -48,8 +48,16 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmacro c?n (&body body)
   `(make-c-dependent
-    :code nil ;; `(without-c-dependency ,@,body)
+    :code '(without-c-dependency ,@body)
     :inputp t
+    :value-state :unevaluated
+    :rule (c-lambda (without-c-dependency ,@body))))
+
+(export! c?once)
+(defmacro c?once (&body body)
+  `(make-c-dependent
+    :code '(without-c-dependency ,@body)
+    :inputp nil
     :value-state :unevaluated
     :rule (c-lambda (without-c-dependency ,@body))))
 

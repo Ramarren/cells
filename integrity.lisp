@@ -30,6 +30,12 @@ See the Lisp Lesser GNU Public License for more details.
             "Invalid second value to with-integrity: ~a" opcode))
   `(call-with-integrity ,opcode ,defer-info (lambda () ,@body)))
 
+(export! with-c-change)
+
+(defmacro with-c-change (id &body body)
+  `(with-integrity (:change ,id)
+     ,@body))
+
 (defun integrity-managed-p ()
   *within-integrity*)
 
@@ -52,23 +58,6 @@ See the Lisp Lesser GNU Public License for more details.
       (prog1
           (funcall action)
         (finish-business)))))
-
-(export! with-integrity-bubble)
-
-(defmacro with-integrity-bubble ((&optional dbg-info) &rest body)
-  "Whimsical name for launching a self-contained, dynamic integrity chunk, as with
-string-to-mx in the math-paper project, where everything is fully isolated from the
-outside computation."
-  `(call-with-integrity-bubble ,dbg-info (lambda () ,@body)))
-
-(defun call-with-integrity-bubble (dbg-info action)
-  (declare (ignorable dbg-info))
-  (let ((*within-integrity* nil)
-          *unfinished-business*
-          *defer-changes*
-        *call-stack*
-        (*data-pulse-id* 0))
-    (funcall action)))
 
 (defun ufb-queue (opcode)
   (assert (find opcode *ufb-opcodes*))
@@ -115,9 +104,13 @@ outside computation."
     ; we do not go back to check for a need to :tell-dependents because (a) the original propagation
     ; and processing of the :tell-dependents queue is a full propagation; no rule can ask for a cell that
     ; then decides it needs to recompute and possibly propagate; and (b) the only rules forced awake during
-    ; awakening need that precisely because no one asked for their values, so their can be no dependents
+    ; awakening need that precisely because no one asked for their values, so there can be no dependents
     ; to "tell". I think. :) So...
     ;
+    (when (fifo-peek (ufb-queue :tell-dependents))
+      (DOlist (b (fifo-data (ufb-queue :tell-dependents)))
+        (trc "unhandled :tell-dependents" (car b) (c-callers (car b))))
+      (break "ufb"))
     (assert (null (fifo-peek (ufb-queue :tell-dependents))))
 
     ;--- process client queue ------------------------------
