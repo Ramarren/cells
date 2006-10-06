@@ -46,6 +46,17 @@ See the Lisp Lesser GNU Public License for more details.
                 (count-it :trcfailed)))
             (count-it :tgtnileval)))))))
 
+(export! trcx)
+
+(defmacro trcx (tgt-form &rest os)
+  (if (eql tgt-form 'nil)
+      '(progn)
+    `(without-c-dependency
+         (call-trc t ,(format nil "TX> ~(~a~)" tgt-form)
+           ,@(loop for obj in os
+                   nconcing (list (format nil "~a:" obj) obj))))))
+
+
 (defparameter *last-trc* (get-internal-real-time))
 
 (defun call-trc (stream s &rest os)
@@ -58,7 +69,7 @@ See the Lisp Lesser GNU Public License for more details.
   (format stream "~a" s)
   (let (pkwp)
     (dolist (o os)
-      (format stream (if pkwp " ~(~s~)" " __ ~(~s~)") o)
+      (format stream (if pkwp " ~(~s~)" " ~(~s~)") o) ;; save, used to insert divider, trcx dont like
       (setf pkwp (keywordp o))))
   (force-output stream)
   (values))
