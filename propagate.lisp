@@ -101,7 +101,7 @@ See the Lisp Lesser GNU Public License for more details.
             (md-slot-owning (type-of (c-model c)) (c-slot-name c)))
       (flet ((listify (x) (if (listp x) x (list x))))
         (bwhen (lost (set-difference (listify prior-value) (listify (c-value c))))
-          (trc "prop nailing owned" c (c-value c) prior-value lost)
+          (trc nil "prop nailing owned" c (c-value c) prior-value lost)
           (mapcar 'not-to-be lost))))
     ;
     ; with propagation done, ephemerals can be reset. we also do this in c-awaken, so

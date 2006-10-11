@@ -224,6 +224,8 @@ See the Lisp Lesser GNU Public License for more details.
 
 ;----------------------------------
 
+(export! geo-kid-wrap)
+
 (defun geo-kid-wrap (self bound)
   (funcall (ecase bound ((pl pb) '-)((pr pt) '+))
     (funcall (ecase bound

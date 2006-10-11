@@ -44,6 +44,11 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro upper (self &optional (type t))
   `(container-typed ,self ',type))
 
+(export! u^)
+
+(defmacro u^ (type)
+  `(upper self ,type))
+
 (defmethod container (self) (fm-parent self))
 
 (defmethod container-typed ((self model-object) type)

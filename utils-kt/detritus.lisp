@@ -46,10 +46,22 @@ See the Lisp Lesser GNU Public License for more details.
 (defun xor (c1 c2)
   (if c1 (not c2) c2))
 
-(export! push-end)
+(export! push-end collect collect-if)
 
 (defmacro push-end (item place )
   `(setf ,place (nconc ,place (list ,item))))
+
+(defun collect (x list &key (key 'identity) (test 'eql))
+  (loop for i in list
+        when (funcall test x (funcall key i))
+        collect i))
+
+(defun collect-if (test list)
+  (loop for i in list
+        when (funcall test i)
+        collect i))
+
+
 
 ;;; --- FIFO Queue -----------------------------
 

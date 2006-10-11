@@ -267,8 +267,8 @@ tree dispatching kids rules just in time to produce the other instance sought.
 -- kid-slotting: used almost exclusively so far for orderly GUI layout, a parent must be able to specify 
 rules for specific slots of kids. Example: a "stack" class wants to provide rules for child geometry
 specifying left, right, or centered alignment and vertical stacking (with optional spacing) one below 
-the other. The idea is that we want to other child instances without worrying about how they will
-be arranged in some container.
+the other. The idea is that we want to author classes of what might be GUI subcomponents without worrying 
+about how they will be arranged in some container.
 
 -- finalization: when an instance appears in the "old kids" but not in the "new kids", a Cells engine
 may need to arrange for all Cells to "unsubscribe" from their dependents. Cells takes care of that if
@@ -367,11 +367,11 @@ opposed to it being pulled declaratively), the actual set operation is
 deferred until all computed cells are up-to-date with the current state of 
 the universe."
 
-_______________
-Uncommentary :)
+_____________
+Uncommentary
 
 -- Peter Seibel, comp.lang.lisp:
-"I couldn't find anything that explained what it was and why I should care."
+"I couldn't find anything that explained what [Cells] was and why I should care."
 
 -- Alan Crowe, comp.lang.lisp:
 "Further confession: I'm bluffing. I've grasped that Cells is
