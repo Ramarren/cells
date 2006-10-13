@@ -401,6 +401,11 @@ See the Lisp Lesser GNU Public License for more details.
                 :global-search t
                 :test ,test))
 
+(export! fmv)
+
+(defmacro fmv (name)
+  `(md-value (fm-other ,name)))
+
 (defmacro fm-otherx (md-name &key (starting 'self) skip-tree)
    (if (eql starting 'self)
       `(or (fm-find-one ,starting ,(if (consp md-name)
