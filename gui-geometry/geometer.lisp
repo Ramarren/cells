@@ -137,8 +137,8 @@ See the Lisp Lesser GNU Public License for more details.
      (v-xlate outer (fm-parent inner)
                (- outer-v (py inner)))))
 
-(defmethod g-offset (self &optional (accum-h 0) (accum-v 0))
-  (declare (ignorable self))
+(defmethod g-offset (self &optional (accum-h 0) (accum-v 0) within)
+  (declare (ignorable self within))
   (mkv2 accum-h accum-v))
 
 (defun g-offset-h (geo)
@@ -336,12 +336,12 @@ See the Lisp Lesser GNU Public License for more details.
        (:right (- (inset-lr .parent) (l-width self))))))
 
 ; in use; same idea for pT
-(defmacro ^py-self-centered (justify)
-   `(py-maintain-pt
-     (ecase ,justify
-       (:top  0)
-       (:center (floor (- (inset-height .parent) (l-height self)) -2))
-       (:bottom (- (inset-height .parent) (l-height self))))))
+(defun py-self-centered (self justify)
+  (py-maintain-pt
+   (ecase justify
+     (:top  0)
+     (:center (floor (- (inset-height .parent) (l-height self)) -2))
+     (:bottom (- (inset-height .parent) (l-height self))))))
 
 (defmacro ^fill-parent-right (&optional (inset 0))
   `(lr-maintain-pr (- (inset-lr .parent) ,inset)))

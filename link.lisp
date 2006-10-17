@@ -25,7 +25,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defun record-caller (used &aux (caller (car *call-stack*)))
   (when (c-optimized-away-p used) ;; 2005-05-21 removed slow type check that used is cell
     (return-from record-caller nil))
-  (trc nil "record-caller entry: used=" used :caller caller)
+  (trc used "record-caller entry: used=" used :caller caller)
   (multiple-value-bind (used-pos useds-len)
       (loop with u-pos
           for known in (cd-useds caller)
@@ -37,7 +37,7 @@ See the Lisp Lesser GNU Public License for more details.
           finally (return (values (when u-pos (- length u-pos)) length)))
 
     (when (null used-pos)
-      (trc nil "c-link > new caller,used " caller used)
+      (trc caller "c-link > new caller,used " caller used)
       (count-it :new-used)
       (setf used-pos useds-len)
       (push used (cd-useds caller))
@@ -69,6 +69,7 @@ See the Lisp Lesser GNU Public License for more details.
                                 (zerop (sbit usage rpos)))
                               (progn
                                 (count-it :unlink-unused)
+                                (trc c "c-unlink-unused" c :dropping-used (car useds)) 
                                 (c-unlink-caller (car useds) c)
                                 (rplaca useds nil))
                             (progn

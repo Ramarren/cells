@@ -28,7 +28,13 @@ See the Lisp Lesser GNU Public License for more details.
   (caller-store (make-fifo-queue) :type cons) ;; (C3) probably better to notify callers FIFO
   
   (state :nascent :type symbol) ;; :nascent, :awake, :optimized-away
-  (value-state :unbound :type symbol) ;; {:unbound | :unevaluated | :valid}
+  (value-state :unbound :type symbol) ;; {:unbound | :unevaluated | :uncurrent | :valid}
+                                                       ; uncurrent (aka dirty) new for 06-10-15. we need this so
+                                                       ; c-quiesce can force a caller to update when asked
+                                                       ; in case the owner of the quiesced cell goes out of existence
+                                                       ; in a way the caller will not see via any kids dependency. Saw
+                                                       ; this one coming a long time ago: depending on cell X implies
+                                                       ; a dependency on the existence of instance owning X
   (pulse 0 :type fixnum)
   (pulse-last-changed 0 :type fixnum) ;; lazys can miss changes by missing change of X followed by unchange of X in subsequent DP
   lazy

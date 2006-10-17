@@ -70,6 +70,8 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun ufb-add (opcode continuation)
   (assert (find opcode *ufb-opcodes*))
+  (when (and *no-tell* (eq opcode :tell-dependents))
+    (break "truly queueing tell under no-tell"))
   (trc nil "ufb-add deferring" opcode (when (eql opcode :client)(car continuation)))
   (fifo-add (ufb-queue-ensure opcode) continuation))
 
@@ -81,7 +83,7 @@ See the Lisp Lesser GNU Public License for more details.
         while task
         do (trc nil "unfin task is" opcode task)
           (funcall task)))
-
+(defparameter *no-tell* nil)
 (defun finish-business ()
   (when *stop* (return-from finish-business))
   (tagbody
@@ -99,7 +101,14 @@ See the Lisp Lesser GNU Public License for more details.
     ; during their awakening to be handled along with those enqueued by cells of
     ; existing model instances.
     ;
-    (just-do-it :awaken) ;--- md-awaken new instances ---
+    (bwhen (uqp (fifo-peek (ufb-queue :tell-dependents)))
+      (trcx finish-business uqp)
+      (DOlist (b (fifo-data (ufb-queue :tell-dependents)))
+        (trc "unhandled :tell-dependents" (car b) (c-callers (car b))))
+      (break "unexpected 1> ufb needs to tell dependnents after telling dependents"))
+    (let ((*no-tell* t))
+      (just-do-it :awaken) ;--- md-awaken new instances ---
+       )
     ;
     ; we do not go back to check for a need to :tell-dependents because (a) the original propagation
     ; and processing of the :tell-dependents queue is a full propagation; no rule can ask for a cell that
@@ -107,10 +116,12 @@ See the Lisp Lesser GNU Public License for more details.
     ; awakening need that precisely because no one asked for their values, so there can be no dependents
     ; to "tell". I think. :) So...
     ;
-    (when (fifo-peek (ufb-queue :tell-dependents))
+    (bwhen (uqp (fifo-peek (ufb-queue :tell-dependents)))
+      (trcx finish-business uqp)
       (DOlist (b (fifo-data (ufb-queue :tell-dependents)))
         (trc "unhandled :tell-dependents" (car b) (c-callers (car b))))
-      (break "ufb"))
+      (break "unexpected 2> ufb needs to tell dependnents after awakening"))
+
     (assert (null (fifo-peek (ufb-queue :tell-dependents))))
 
     ;--- process client queue ------------------------------

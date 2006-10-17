@@ -72,7 +72,7 @@ See the Lisp Lesser GNU Public License for more details.
     (when *stop*
       (princ #\.)(princ #\!)
       (return-from c-propagate))    
-    (trc nil "c-propagate> propping" c (c-value c) :caller-ct (length (c-callers c)) c)
+    (trc c "c-propagate> !!!!!!!!!!!!!! propping" c (c-value c) :caller-ct (length (c-callers c)) c)
     
     (when *c-debug*
       (when (> *c-prop-depth* 250)
@@ -168,9 +168,12 @@ See the Lisp Lesser GNU Public License for more details.
   ;         but B is busy eagerly propagating. "This time" is important because it means
   ;         there is no way one can reliably be sure H will not ask for A
   ;
-  (when (c-callers c)
-    (trc nil "c-propagate-to-callers > queueing" c)
-    (let ((causation (cons c *causation*))) ;; in case deferred
+  (when (find-if-not (lambda (caller)
+                       (and (c-lazy caller) ;; slight optimization
+                         (member (c-lazy caller) '(t :always :once-asked))))
+          (c-callers c))
+    (let ((causation (cons c *causation*)) ;; in case deferred
+          )
       (with-integrity (:tell-dependents c)
         (assert (null *call-stack*))
         (let ((*causation* causation))

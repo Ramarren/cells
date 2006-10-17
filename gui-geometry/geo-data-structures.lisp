@@ -258,7 +258,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun nr-offset (r dh dv)
 ;;;   (declare (optimize (speed 3) (safety 0) (debug 0)))
-  (declare (type fixnum dh dv))
+  ;; (declare (type fixnum dh dv))
   (incf (r-left r) dh)
   (incf (r-right r) dh)
   (incf (r-top r) dv)

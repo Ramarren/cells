@@ -42,6 +42,7 @@
      #:class-precedence-list
      #-(and mcl (not openmcl-partial-mop)) #:class-slots
      #:slot-definition-name
+     #:class-direct-subclasses
      )
   (:export #:cell #:.md-name 
     #:c-input #:c-in #:c-in8

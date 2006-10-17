@@ -83,6 +83,17 @@ See the Lisp Lesser GNU Public License for more details.
     :lazy :until-asked
     :rule (c-lambda ,@body)))
 
+(export! c?dbg c_?dbg)
+
+(defmacro c_?dbg (&body body)
+  "Lazy until asked, then eagerly propagating"
+  `(make-c-dependent
+    :code ',body
+    :value-state :unevaluated
+    :lazy :until-asked
+    :rule (c-lambda ,@body)
+    :debug t))
+
 (defmacro c?? ((&key (tagp nil) (in nil) (out t))&body body)
   (let ((result (copy-symbol 'result))
         (thetag (gensym)))

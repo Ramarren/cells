@@ -126,6 +126,14 @@ See the Lisp Lesser GNU Public License for more details.
          (trc ,(car trcargs) :=> ,result ,@(cdr trcargs))
          ,result)))
 
+(defmacro ekx (ekx-id &rest body)
+  (let ((result (gensym)))
+     `(let ((,result (,@body)))
+         (trc ,(string-downcase (symbol-name ekx-id)) :=> ,result)
+         ,result)))
+
+(export! ekx)
+
 (defmacro eko-if ((&rest trcargs) &rest body)
   (let ((result (gensym)))
      `(let ((,result ,@body))

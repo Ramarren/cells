@@ -60,10 +60,12 @@ See the Lisp Lesser GNU Public License for more details.
     (break "model ~a of cell ~a is dead" (c-model c) c))
 
   (cond
-   ((c-currentp c)(trc nil "c-currentp" c)) ;; used to follow c-inputp, but I am toying with letting ephemerals (inputs) fall obsolete
+   ((c-currentp c)
+    (trc nil "c-currentp" c)) ;; used to follow c-inputp, but I am toying with letting ephemerals (inputs) fall obsolete
    ;; and then get reset here (ie, ((c-input-p c) (ephemeral-reset c))). ie, do not assume inputs are never obsolete
    ;;
-   ((c-inputp c)(trc nil "c-inputp" c)) ;; always current (for now; see above)
+   ((and (c-inputp c)
+      (c-validp c))) ;; a c?n (ruled-then-input) cell will not be valid at first
 
    ((or (not (c-validp c))
       ;;

@@ -178,7 +178,7 @@ See the Lisp Lesser GNU Public License for more details.
     (if entry
         (progn
           (setf (cdr entry) new-type)
-          (loop for c in (mop:class-direct-subclasses (find-class class-name))
+          (loop for c in (class-direct-subclasses (find-class class-name))
                 do (setf (md-slot-cell-type (class-name c) slot-name) new-type)))
       (push (cons slot-name new-type) (get class-name :cell-types)))))
 
@@ -194,7 +194,7 @@ See the Lisp Lesser GNU Public License for more details.
     (if entry
         (progn
           (setf (cdr entry) value)
-          (loop for c in (mop:class-direct-subclasses (find-class class-name))
+          (loop for c in (class-direct-subclasses (find-class class-name))
                 do (setf (md-slot-owning (class-name c) slot-name) value)))
       (push (cons slot-name value) (get class-name :ownings)))))
 

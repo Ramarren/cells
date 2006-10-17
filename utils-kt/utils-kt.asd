@@ -16,11 +16,13 @@
   :licence "MIT Style"
   :description "Kenny's Utilities"
   :long-description "Low-level utilities used by all of Kenny's projects"
+  :serial t
   :components ((:file "defpackage")
                (:file "debug")
-               (:file "detritus")
                (:file "flow-control")
-               (:file "strings")))
+               (:file "detritus")
+               (:file "strings")
+               (:file "datetime")))
 
 (defmethod perform ((o load-op) (c (eql (find-system :utils-kt))))
   ; (pushnew "CELLS" *modules* :test #'string=)

@@ -56,10 +56,11 @@ See the Lisp Lesser GNU Public License for more details.
 (defun c-quiesce (c)
   (typecase c
     (cell 
-     (trc nil "c-quiesce unlinking" c)
+     (trc c "c-quiesce unlinking" c)
      (c-unlink-from-used c)
      (when (typep c 'cell)
        (dolist (caller (c-callers c))
+         (setf (c-value-state caller) :uncurrent)
          (c-unlink-caller c caller)))
       (trc nil "cell quiesce nulled cell awake" c))))
 
@@ -70,6 +71,6 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmacro make-kid (class &rest initargs)
   `(make-instance ,class
-     :fm-parent (progn (assert self) self)
-     ,@initargs))
+     ,@initargs
+     :fm-parent (progn (assert self) self)))
 

@@ -53,7 +53,7 @@ See the Lisp Lesser GNU Public License for more details.
                                       (^prior-sib-pb self (spacing .parent)))))))
                    (:horizontal (list
                                  (mk-kid-slot (py :if-missing t)
-                                   (c? (^py-self-centered (justify .parent))))
+                                   (c? (py-self-centered self (justify .parent))))
                                  (mk-kid-slot (px)
                                    (c? (px-maintain-pl
                                         (^prior-sib-pr self (spacing .parent)))))))))))
@@ -91,7 +91,7 @@ See the Lisp Lesser GNU Public License for more details.
                                            (^prior-sib-pb self (spacing .parent)))))))))
                    (:horizontal (list
                                  (mk-kid-slot (py :if-missing t)
-                                   (c_? (^py-self-centered (justify .parent))))
+                                   (c_? (py-self-centered self (justify .parent))))
                                  (mk-kid-slot (px)
                                    (c_? (px-maintain-pl
                                         (^prior-sib-pr self (spacing .parent)))))))))))
