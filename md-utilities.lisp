@@ -33,13 +33,18 @@ See the Lisp Lesser GNU Public License for more details.
 ;___________________ birth / death__________________________________
   
 (defmethod not-to-be :around (self)
-  (trc nil "not-to-be nailing" self)
+  (trc nil "not-to-be nailing")
   (c-assert (not (eq (md-state self) :eternal-rest)))
 
   (call-next-method)
-  
+
   (setf (fm-parent self) nil
     (md-state self) :eternal-rest)
+
+  (md-map-cells self nil
+    (lambda (c)
+      (c-assert (eq :quiesced (c-state c))))) ;; fails if user obstructs not-to-be with primary method (use :before etc)
+
   (trc nil "not-to-be cleared 2 fm-parent, eternal-rest" self))
 
 (defmethod not-to-be ((self model-object))
@@ -47,7 +52,7 @@ See the Lisp Lesser GNU Public License for more details.
   (md-quiesce self))
 
 (defun md-quiesce (self)
-  (trc nil "md-quiesce doing" self (type-of self))
+  (trc nil "md-quiesce nailing cells" self (type-of self))
   (md-map-cells self nil (lambda (c)
                            (trc nil "quiescing" c)
                            (c-assert (not (find c *call-stack*)))
@@ -56,13 +61,13 @@ See the Lisp Lesser GNU Public License for more details.
 (defun c-quiesce (c)
   (typecase c
     (cell 
-     (trc c "c-quiesce unlinking" c)
+     (trc nil "c-quiesce unlinking" c)
      (c-unlink-from-used c)
-     (when (typep c 'cell)
-       (dolist (caller (c-callers c))
-         (setf (c-value-state caller) :uncurrent)
-         (c-unlink-caller c caller)))
-      (trc nil "cell quiesce nulled cell awake" c))))
+     (dolist (caller (c-callers c))
+       (setf (c-value-state caller) :uncurrent)
+       (c-unlink-caller c caller))
+     (setf (c-state c) :quiesced) ;; 20061024 for debugging for now, might break some code tho
+     )))
 
 (defmethod not-to-be (other)
   other)

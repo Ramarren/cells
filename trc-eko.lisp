@@ -85,9 +85,11 @@ See the Lisp Lesser GNU Public License for more details.
 (defmethod trcp :around (other)
   (unless (call-next-method other)(break)))
 
+(export! trcp)
+
 (defmethod trcp (other)
   (eq other t))
-  
+
 (defmethod trcp (($ string))
   t)
   

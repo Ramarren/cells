@@ -38,8 +38,13 @@ See the Lisp Lesser GNU Public License for more details.
   (pulse 0 :type fixnum)
   (pulse-last-changed 0 :type fixnum) ;; lazys can miss changes by missing change of X followed by unchange of X in subsequent DP
   lazy
+  (optimize t)
   debug
   md-info)
+
+(defmethod trcp :around ((c cell))
+  (or (c-debug c)
+    (call-next-method)))
 
 (defun c-callers (c)
   "Make it easier to change implementation"
@@ -96,7 +101,7 @@ See the Lisp Lesser GNU Public License for more details.
   rule)
 
 (defun c-optimized-away-p (c)
-  (eql :optimized-away (c-state c)))
+  (eq :optimized-away (c-state c)))
 
 ;----------------------------
 

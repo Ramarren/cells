@@ -65,7 +65,9 @@ See the Lisp Lesser GNU Public License for more details.
    ;; and then get reset here (ie, ((c-input-p c) (ephemeral-reset c))). ie, do not assume inputs are never obsolete
    ;;
    ((and (c-inputp c)
-      (c-validp c))) ;; a c?n (ruled-then-input) cell will not be valid at first
+      (c-validp c) ;; a c?n (ruled-then-input) cell will not be valid at first
+      (not (and (eq (cd-optimize c) :when-value-t)
+             (null (c-value c))))))
 
    ((or (not (c-validp c))
       ;;
@@ -236,7 +238,11 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
          (c-value-state c) :valid
          (c-state c) :awake)
         
-        (c-optimize-away?! c) ;;; put optimize test here to avoid needless linking
+        
+        (case (cd-optimize c)
+          ((t) (c-optimize-away?! c)) ;;; put optimize test here to avoid needless linking
+          (:when-value-t (when (c-value c)
+                           (c-unlink-from-used c))))
         
         ; --- data flow propagation -----------
         (unless (eq propagation-code :no-propagate)
@@ -251,24 +257,29 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
 
 (defun c-optimize-away?! (c)
   (when (and (typep c 'c-dependent)
+          (null (cd-useds c))
+          (cd-optimize c)
           (not (c-optimized-away-p c)) ;; c-streams (FNYI) may come this way repeatedly even if optimized away
-          (c-validp c)
+          (c-validp c) ;; /// when would this not be the case?
           (not (c-synaptic c)) ;; no slot to cache invariant result, so they have to stay around)
-          ;; chop (every (lambda (lbl-syn) (null (cd-useds (cdr lbl-syn)))) (cd-synapses c))
-          (not (c-inputp c))
-          (null (cd-useds c)))
-         
-    (trc nil "optimizing away" c (c-state c))
+          (not (c-inputp c)) ;; yes, dependent cells can be inputp
+          )
+    (when (trcp c) (break "go optimizing ~a" c))
+    (trc c "optimizing away" c (c-state c))
     (count-it :c-optimized)
     
     (setf (c-state c) :optimized-away)
-       
+    
     (let ((entry (rassoc c (cells (c-model c))))) ; move from cells to cells-flushed
+      (unless entry
+        (describe c))
       (c-assert entry)
+      (trc c "c-optimize-away?! moving cell to flushed list" c)
       (setf (cells (c-model c)) (delete entry (cells (c-model c))))
       (push entry (cells-flushed (c-model c))))
-       
+    
     (dolist (caller (c-callers c))
+      (break "got opti of called")
       (setf (cd-useds caller) (delete c (cd-useds caller)))
       (c-optimize-away?! caller) ;; rare but it happens when rule says (or .cache ...)
       )))

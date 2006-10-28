@@ -78,6 +78,8 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro without-c-dependency (&body body)
   `(let (*call-stack*) ,@body))
 
+(export! .cause)
+
 (define-symbol-macro .cause
     (car *causation*))
 

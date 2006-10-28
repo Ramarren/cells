@@ -158,6 +158,12 @@ See the Lisp Lesser GNU Public License for more details.
 (defun r-top-left (r)
   (mkv2 (r-left r) (r-top r)))
 
+(export! r-center)
+
+(defun r-center (r)
+  (mkv2 (/ (+ (r-left r)(r-right r)) 2)
+    (/ (+ (r-top r)(r-bottom r)) 2)))
+
 (defun r-bottom-right (r)
   (mkv2 (r-bottom r) (r-right r)))
 

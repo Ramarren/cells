@@ -17,7 +17,7 @@ See the Lisp Lesser GNU Public License for more details.
 (in-package #:gui-geometry)
 
 (eval-now!
-  (export '(outset ^outset mkv2 g-offset g-offset-h g-offset-v)))
+  (export '(outset ^outset mkv2 g-offset g-offset-h g-offset-v collapsed ^collapsed)))
 
 (defmd geometer ()
   px py ll lt lr lb
@@ -341,7 +341,7 @@ See the Lisp Lesser GNU Public License for more details.
    (ecase justify
      (:top  0)
      (:center (floor (- (inset-height .parent) (l-height self)) -2))
-     (:bottom (- (inset-height .parent) (l-height self))))))
+     (:bottom (downs (- (inset-height .parent) (l-height self)))))))
 
 (defmacro ^fill-parent-right (&optional (inset 0))
   `(lr-maintain-pr (- (inset-lr .parent) ,inset)))

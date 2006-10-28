@@ -24,8 +24,10 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun record-caller (used &aux (caller (car *call-stack*)))
   (when (c-optimized-away-p used) ;; 2005-05-21 removed slow type check that used is cell
+    (trc nil "caller not being recorded because used optimized away" caller (c-value used) :used used)
     (return-from record-caller nil))
-  (trc used "record-caller entry: used=" used :caller caller)
+  (trc nil "record-caller entry: used=" used :caller caller)
+  
   (multiple-value-bind (used-pos useds-len)
       (loop with u-pos
           for known in (cd-useds caller)

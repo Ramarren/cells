@@ -40,7 +40,7 @@ See the Lisp Lesser GNU Public License for more details.
               (ecase (orientation self)
                 (:vertical (loop for k in (^kids)
                                  unless (collapsed k)
-                                 maximizing (pb k)))
+                                 minimizing (pb k)))
                 (:horizontal (downs (loop for k in (^kids)
                                         maximizing (l-height k)))))))
     :kid-slots (lambda (self)
