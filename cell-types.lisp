@@ -42,6 +42,28 @@ See the Lisp Lesser GNU Public License for more details.
   debug
   md-info)
 
+;_____________________ print __________________________________
+
+(defmethod print-object :before ((c cell) stream)
+  (unless (or *stop* *print-readably*)
+    (format stream "[~a~a:" (if (c-inputp c) "i" "?")
+      (cond
+       ((null (c-model c)) #\0)
+       ((eq :eternal-rest (md-state (c-model c))) #\_)
+       ((not (c-currentp c)) #\#)
+       (t #\space)))))
+
+
+(defmethod print-object ((c cell) stream)
+  (if (or *stop* *print-readably*)
+      (call-next-method)
+    (progn
+      (c-print-value c stream)
+      (format stream "=~d/~a/~a]"
+        (c-pulse c)
+        (symbol-name (or (c-slot-name c) :anoncell))
+        (or (and (c-model c)(md-name (c-model c))) :anonmd)))))
+
 (defmethod trcp :around ((c cell))
   (or (c-debug c)
     (call-next-method)))
@@ -135,28 +157,6 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun c-unboundp (c)
   (eql :unbound (c-value-state c)))
-
-;_____________________ print __________________________________
-
-(defmethod print-object :before ((c cell) stream)
-  (unless (or *stop* *print-readably*)
-    (format stream "[~a~a:" (if (c-inputp c) "i" "?")
-      (cond
-       ((null (c-model c)) #\0)
-       ((eq :eternal-rest (md-state (c-model c))) #\_)
-       ((not (c-currentp c)) #\#)
-       (t #\space)))))
-
-
-(defmethod print-object ((c cell) stream)
-  (if (or *stop* *print-readably*)
-      (call-next-method)
-    (progn
-      (c-print-value c stream)
-      (format stream "=~d/~a/~a]"
-        (c-pulse c)
-        (symbol-name (or (c-slot-name c) :anoncell))
-        (or (c-model c) :anonmd)))))
 
 
 ;__________________

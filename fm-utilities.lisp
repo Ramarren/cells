@@ -295,12 +295,11 @@ See the Lisp Lesser GNU Public License for more details.
              (car (cdr (member ,s (kids (fm-parent ,s))))))))
 
 (defun find-prior (self sibs &key (test #'true-that))
-  (c-assert (member self sibs)) ;; got this by accidentally having toolbar kids dependent..on second calc,
-  ;;                             all newkids got over, and when old kids tried to recalculate...not in sibs!!
+  (c-assert (member self sibs) () "find-prior of ~a does not find it in sibs arg ~a" self sibs)
   (unless (eql self (car sibs))
     (labels
         ((fpsib (rsibs &aux (psib (car rsibs)))
-                (c-assert rsibs () "~&find-prior > fpsib > self ~s not found to prior off" self)
+                (c-assert rsibs () "find-prior > fpsib > self ~s not found to prior off" self)
                 (if (eql self (cadr rsibs))
                    (when (funcall test psib) psib)
                    (or (fpsib (cdr rsibs))

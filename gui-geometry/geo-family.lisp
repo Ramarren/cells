@@ -16,8 +16,8 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :gui-geometry)
 
-(eval-now!
-  (export '(geo-inline-lazy)))
+(export! geo-inline-lazy ^px-self-centered justify py-maintain-pt
+                       ^prior-sib-pb spacing lr-maintain-pr)
 
 ;--------------- geo-inline -----------------------------
 ;

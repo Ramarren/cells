@@ -66,7 +66,8 @@ See the Lisp Lesser GNU Public License for more details.
    ;;
    ((and (c-inputp c)
       (c-validp c) ;; a c?n (ruled-then-input) cell will not be valid at first
-      (not (and (eq (cd-optimize c) :when-value-t)
+      (not (and (typep c 'c-dependent)
+             (eq (cd-optimize c) :when-value-t)
              (null (c-value c))))))
 
    ((or (not (c-validp c))
@@ -86,6 +87,7 @@ See the Lisp Lesser GNU Public License for more details.
                        (when (> (c-pulse-last-changed used)(c-pulse c))
                          (trc nil "used changed and newer !!!!!!" c debug-id used)
                          t))))))
+        (assert (typep c 'c-dependent))
         (check-reversed (cd-useds c))))
     (trc nil "kicking off calc-set of" (c-slot-name c) :pulse *data-pulse-id*)
     (calculate-and-set c))
@@ -135,6 +137,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defun calculate-and-link (c)
   (let ((*call-stack* (cons c *call-stack*))
         (*defer-changes* t))
+    (assert (typep c 'c-ruled))
     (cd-usage-clear-all c)
     (multiple-value-prog1
         (funcall (cr-rule c) c)
@@ -246,9 +249,10 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
         
         ; --- data flow propagation -----------
         (unless (eq propagation-code :no-propagate)
-          (trc nil "md-slot-value-assume flagging as changed" c)
+          (trc nil "md-slot-value-assume flagging as changed: prior state, value:" prior-state prior-value )
           (setf (c-pulse-last-changed c) *data-pulse-id*)
-          (c-propagate c prior-value (eq prior-state :valid)))  ;; until 06-02-13 was (not (eq prior-state :unbound))
+          (c-propagate c prior-value (or (eq prior-state :valid)
+                                       (eq prior-state :uncurrent))))  ;; until 06-02-13 was (not (eq prior-state :unbound))
         
         absorbed-value)))
 
@@ -260,7 +264,7 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
           (null (cd-useds c))
           (cd-optimize c)
           (not (c-optimized-away-p c)) ;; c-streams (FNYI) may come this way repeatedly even if optimized away
-          (c-validp c) ;; /// when would this not be the case?
+          (c-validp c) ;; /// when would this not be the case? and who cares?
           (not (c-synaptic c)) ;; no slot to cache invariant result, so they have to stay around)
           (not (c-inputp c)) ;; yes, dependent cells can be inputp
           )

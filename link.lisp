@@ -39,7 +39,7 @@ See the Lisp Lesser GNU Public License for more details.
           finally (return (values (when u-pos (- length u-pos)) length)))
 
     (when (null used-pos)
-      (trc caller "c-link > new caller,used " caller used)
+      (trc nil "c-link > new caller,used " caller used)
       (count-it :new-used)
       (setf used-pos useds-len)
       (push used (cd-useds caller))
@@ -62,7 +62,7 @@ See the Lisp Lesser GNU Public License for more details.
                          (usage-size (array-dimension (cd-usage c) 0))
                          (dbg nil)) ;; #+not (and (typep (c-model c) 'mathx::mx-solver-stack)
                                 ;;(eq (c-slot-name c) '.kids))))
-  (declare (ignorable usage-size))
+  (declare (ignorable dbg usage-size))
   (when (cd-useds c)
     (let (rev-pos)
       (labels ((nail-unused (useds)
@@ -71,7 +71,7 @@ See the Lisp Lesser GNU Public License for more details.
                                 (zerop (sbit usage rpos)))
                               (progn
                                 (count-it :unlink-unused)
-                                (trc c "c-unlink-unused" c :dropping-used (car useds)) 
+                                (trc nil "c-unlink-unused" c :dropping-used (car useds)) 
                                 (c-unlink-caller (car useds) c)
                                 (rplaca useds nil))
                             (progn
@@ -83,7 +83,7 @@ See the Lisp Lesser GNU Public License for more details.
                          (nail-unused (cdr useds))
                          (handle-used (incf rev-pos)))
                      (handle-used (setf rev-pos 0))))))
-        (trc dbg "cd-useds length" (length (cd-useds c)) c)
+        (trc nil "cd-useds length" (length (cd-useds c)) c)
         (nail-unused (cd-useds c))
         (setf (cd-useds c) (delete nil (cd-useds c)))))))
 
@@ -104,7 +104,7 @@ See the Lisp Lesser GNU Public License for more details.
                      
 (defmethod c-unlink-from-used ((caller c-dependent))
   (dolist (used (cd-useds caller))
-    #+dfdbg (trc nil "unlinking from used" caller used)
+    (trc nil "unlinking from used" caller used)
     (c-unlink-caller used caller))
   ;; shouldn't be necessary (setf (cd-useds caller) nil)
   )
@@ -115,7 +115,7 @@ See the Lisp Lesser GNU Public License for more details.
 ;----------------------------------------------------------
 
 (defun c-unlink-caller (used caller)
-  (trc nil "caller unlinking from used" caller used)
+  (trc caller "(1) caller unlinking from (2) used" caller used)
   (caller-drop used caller)
   (c-unlink-used caller used))
 

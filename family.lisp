@@ -36,8 +36,8 @@ See the Lisp Lesser GNU Public License for more details.
   new-value)
 
 (defmethod print-object ((self model) s)
-  (format s "~a" (type-of self))
-  #+shhh (format s "~a" (or (md-name self) (type-of self))))
+  #+shhh (format s "~a" (type-of self))
+  (format s "~a" (or (md-name self) (type-of self))))
 
 (define-symbol-macro .parent (fm-parent self))
 

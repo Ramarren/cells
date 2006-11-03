@@ -65,6 +65,7 @@ See the Lisp Lesser GNU Public License for more details.
      (c-unlink-from-used c)
      (dolist (caller (c-callers c))
        (setf (c-value-state caller) :uncurrent)
+       (trc nil "c-quiesce unlinking caller" c)
        (c-unlink-caller c caller))
      (setf (c-state c) :quiesced) ;; 20061024 for debugging for now, might break some code tho
      )))

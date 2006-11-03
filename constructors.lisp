@@ -53,13 +53,14 @@ See the Lisp Lesser GNU Public License for more details.
     :value-state :unevaluated
     :rule (c-lambda (without-c-dependency ,@body))))
 
-(defmacro c?n-until (&body body)
+(defmacro c?n-until (args &body body)
   `(make-c-dependent
     :optimize :when-value-t
     :code ',body
     :inputp t
     :value-state :unevaluated
-    :rule (c-lambda ,@body)))
+    :rule (c-lambda ,@body)
+    ,@args))
 
 (export! c?once c?n-until)
 (defmacro c?once (&body body)
