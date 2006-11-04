@@ -99,19 +99,19 @@ subclass for them?)
 ;; test huge number of useds by one rule
 
 (defmd m-index (family)
-  :md-value (c? (bwhen (ks (^kids))
-                  ;(trc "chya" (mapcar 'md-value ks))
-                  (apply '+ (mapcar 'md-value ks)))))
+  :value (c? (bwhen (ks (^kids))
+                  ;(trc "chya" (mapcar 'value ks))
+                  (apply '+ (mapcar 'value ks)))))
 
 (def-cell-test many-useds
     (let ((i (make-instance 'm-index)))
       (loop for n below 100
           do (push (make-instance 'model
                      :fm-parent i
-                     :md-value (c-in n))
+                     :value (c-in n))
                (kids i)))
-      (trc "index total" (md-value i))
-      (ct-assert (= 4950 (md-value i)))))
+      (trc "index total" (value i))
+      (ct-assert (= 4950 (value i)))))
 
 #+test
 (many-useds)

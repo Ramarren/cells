@@ -129,26 +129,26 @@
                                        (eko ("kidnos")(when (numberp mdv)
                                          (loop for kn from 1 to (floor mdv)
                                               collecting kn))))
-                        :md-value (c-in 5)
-                        :kv-key #'md-value
+                        :value (c-in 5)
+                        :kv-key #'value
                         :kid-factory (lambda (f kv)
                                       (incf kf-calls)
                                       (trc "making kid" kv)
                                       (make-instance 'bottle
                                         :fm-parent f
-                                        :md-value kv
+                                        :value kv
                                         :label (c? (format nil "bottle ~d out of ~d on the wall"
-                                                       (^md-value)
+                                                       (^value)
                                                        (length (kids f)))))))))
     (ct-assert (eql 5 kf-calls))
    
     (setq kf-calls 0)
-    (decf (md-value wall))
+    (decf (value wall))
     (ct-assert (eql 4 (length (kids wall))))
     (ct-assert (zerop kf-calls))
 
     (setq kf-calls 0)
-    (incf (md-value wall))
+    (incf (value wall))
     (ct-assert (eql 5 (length (kids wall))))
     (ct-assert (eql 1 kf-calls))
 

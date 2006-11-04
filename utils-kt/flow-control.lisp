@@ -31,7 +31,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defun min-if (v1 v2)
      (if v1 (if v2 (min v1 v2) v1) v2))
 
-(export! list-flatten! tree-flatten)
+(export! list-flatten! tree-flatten list-insertf subseq-contiguous-p)
 
 (defun list-flatten! (&rest list)
   (if (consp list)
@@ -66,6 +66,22 @@ See the Lisp Lesser GNU Public License for more details.
   `(let ((,fn-name (lambda ,fn-args ,@fn-body)))
      (declare (dynamic-extent ,fn-name))
      ,@body))
+
+(defmacro list-insertf (place item &key after)
+  (let ((list (gensym))
+        (afterv (gensym))
+        (afters (gensym)))
+    `(let* ((,list ,place)
+            (,afterv ,after)
+            (,afters (when ,afterv (member ,after ,list))))
+       (assert (or (null ,afterv) ,afters) () "list-insertf after ~a not in list ~a" ,afterv ,list)
+       (setf ,place
+         (if ,afterv
+             (append (ldiff ,list ,afters)
+               (list ,afterv)
+               (list ,item)
+               (cdr ,afters))
+           (append ,list (list ,item)))))))
 
 (defun intern$ (&rest strings)
   (intern  (apply #'concatenate 'string strings)))

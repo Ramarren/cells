@@ -30,11 +30,17 @@ See the Lisp Lesser GNU Public License for more details.
             "Invalid second value to with-integrity: ~a" opcode))
   `(call-with-integrity ,opcode ,defer-info (lambda () ,@body)))
 
-(export! with-c-change)
+(export! with-c-change with-c-changes)
 
 (defmacro with-c-change (id &body body)
   `(with-integrity (:change ,id)
      ,@body))
+
+(defmacro with-c-changes (id &rest change-forms)
+  `(with-c-change ,id
+     ,(car change-forms)
+     ,(when (cdr change-forms)
+        `(with-c-changes ,id ,@(cdr change-forms)))))
 
 (defun integrity-managed-p ()
   *within-integrity*)
@@ -68,6 +74,8 @@ See the Lisp Lesser GNU Public License for more details.
   (or (ufb-queue opcode)
     (cdr (car (push (cons opcode (make-fifo-queue)) *unfinished-business*)))))
 
+(defparameter *no-tell* nil)
+
 (defun ufb-add (opcode continuation)
   (assert (find opcode *ufb-opcodes*))
   (when (and *no-tell* (eq opcode :tell-dependents))
@@ -83,7 +91,7 @@ See the Lisp Lesser GNU Public License for more details.
         while task
         do (trc nil "unfin task is" opcode task)
           (funcall task)))
-(defparameter *no-tell* nil)
+
 (defun finish-business ()
   (when *stop* (return-from finish-business))
   (tagbody

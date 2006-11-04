@@ -309,10 +309,10 @@ the family class and its slot kids. every model-object has a
 parent slot, which gets used along with a family's kids slot to
 form simple trees navigable up and down.
 
-model-objects also have slots for md-name and md-value (don't
+model-objects also have slots for md-name and value (don't
 worry camelcase-haters, that is a declining feature of my code).
 md-name lets the family trees we build be treated as namespaces.
-md-value just turns out to be very handy for a lot of things. for
+value just turns out to be very handy for a lot of things. for
 example, a check-box instance needs some place to indicate its 
 boolean state. 
 
@@ -323,7 +323,7 @@ it happens transparently, following the dataflow implicit in the
 rules we write, and the side-effects we specify via observer functions.
 
 the silly example below just shows the summer (that which sums) getting
-a new md-value as the kids change, along with some observer output. in real-world 
+a new value as the kids change, along with some observer output. in real-world 
 applications, where kids represent gui elements often dependent on
 each other, vastly more can transpire before a simple push into a kids
 slot has run its course.
@@ -335,15 +335,15 @@ evaluate:
   ()
   (:default-initargs
       :kids (c-in nil) ;; or we cannot add any addend kids later
-    :md-value (c? (reduce #'+ (kids self)
+    :value (c? (reduce #'+ (kids self)
                    :initial-value 0
-                   :key #'md-value))))
+                   :key #'value))))
 
-(defobserver md-value ((self summer))
+(defobserver value ((self summer))
   (trc "the sum of the values of the kids is" new-value))
 
 (defobserver .kids ((self summer))
-  (trc "the values of the kids are" (mapcar #'md-value new-value)))
+  (trc "the values of the kids are" (mapcar #'value new-value)))
 
 ;-----------------------------------------------------------
 ; now just evaluate each of the following forms one by one,
@@ -364,7 +364,7 @@ observe:
 
 (push (make-instance 'model
         :fm-parent *f1*
-        :md-value 1) (kids *f1*))
+        :value 1) (kids *f1*))
 
 #| observe:
 0> the values of the kids are (1)
@@ -376,7 +376,7 @@ observe:
 
 (push (make-instance 'model
         :fm-parent *f1*
-        :md-value 2) (kids *f1*))
+        :value 2) (kids *f1*))
 
 #| observe:
 0> the values of the kids are (2 1)

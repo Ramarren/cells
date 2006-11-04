@@ -19,12 +19,12 @@ See the Lisp Lesser GNU Public License for more details.
 (in-package :cells)
 
 (eval-when (:compile-toplevel :execute :load-toplevel)
-  (export '(model md-value family kids kid1 ^k1 kid2 ^k2 last-kid ^k-last perishable)))
+  (export '(model value family kids kid1 ^k1 kid2 ^k2 last-kid ^k-last perishable)))
 
 (defmodel model ()
   ((.md-name :cell nil :initform nil :initarg :md-name :accessor md-name)
    (.fm-parent :cell nil :initform nil :initarg :fm-parent :accessor fm-parent)
-   (.md-value :initform nil :accessor md-value :initarg :md-value)))
+   (.value :initform nil :accessor value :initarg :value)))
 
 
 (defmethod fm-parent (other)
@@ -90,6 +90,11 @@ See the Lisp Lesser GNU Public License for more details.
        (if (typep ,self ',type) ,self (upper ,self ,type)))))
 
 (defun kid1 (self) (car (kids self)))
+
+(export! first-born-p)
+(defun first-born-p (self)
+  (eq self (kid1 .parent)))
+
 (defun kid2 (self) (cadr (kids self)))
 (defmacro ^k1 () `(kid1 self))
 (defmacro ^k2 () `(kid2 self))

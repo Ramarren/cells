@@ -30,7 +30,7 @@ See the Lisp Lesser GNU Public License for more details.
      :reader kv-collector)
    
    (kid-values :initform (c? (when (kv-collector self)
-                               (funcall (kv-collector self) (^md-value))))
+                               (funcall (kv-collector self) (^value))))
      :accessor kid-values
      :initarg :kid-values)
    

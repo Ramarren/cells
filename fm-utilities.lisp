@@ -403,7 +403,7 @@ See the Lisp Lesser GNU Public License for more details.
 (export! fmv)
 
 (defmacro fmv (name)
-  `(md-value (fm-other ,name)))
+  `(value (fm-other ,name)))
 
 (defmacro fm-otherx (md-name &key (starting 'self) skip-tree)
    (if (eql starting 'self)
@@ -448,7 +448,7 @@ See the Lisp Lesser GNU Public License for more details.
       :global-search t)))
 
 (defmacro fm^v (id)
-  `(md-value (fm^ ,id)))
+  `(value (fm^ ,id)))
 
 (defmacro fm? (md-name &optional (starting 'self) (global-search t))
     `(fm-find-one ,starting ,(if (consp md-name)
@@ -466,7 +466,7 @@ See the Lisp Lesser GNU Public License for more details.
         :global-search nil)))
 
 (defmacro fm!v (id)
-  `(md-value (fm! ,id)))
+  `(value (fm! ,id)))
 
 (defmacro fm-other?! (md-name &optional (starting 'self))
    `(fm-find-one ,starting ,(if (consp md-name)

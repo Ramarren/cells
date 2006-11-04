@@ -97,16 +97,16 @@ subclass for them?)
 (defmodel m-index (family)
   ()
   (:default-initargs
-      :md-value (c? (bwhen (ks (^kids))
-                      (apply '+ (mapcar 'md-value ks))))))
+      :value (c? (bwhen (ks (^kids))
+                      (apply '+ (mapcar 'value ks))))))
 
 (def-cell-test many-useds
     (let ((i (make-instance 'm-index)))
       (loop for n below 100
             do (push (make-instance 'model
-                       :md-value (c-in n))
+                       :value (c-in n))
                  (kids i)))
-      (trc "index total" (md-value i))))
+      (trc "index total" (value i))))
 
 (defmodel m-null ()
   ((aa :initform nil :cell nil :initarg :aa :accessor aa)))

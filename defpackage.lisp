@@ -52,7 +52,7 @@
     #:defmodel #:defmd #:defobserver #:slot-value-observe #:def-c-unchanged-test
     #:new-value #:old-value #:old-value-boundp #:c...
     #:md-awaken
-    #:mkpart #:make-kid #:the-kids #:nsib #:md-value #:^md-value #:.md-value #:kids #:^kids #:.kids
+    #:mkpart #:make-kid #:the-kids #:nsib #:value #:^value #:.value #:kids #:^kids #:.kids
     #:cells-reset #:upper #:fm-max #:nearest #:fm-min-kid #:fm-max-kid #:mk-kid-slot 
     #:def-kid-slots #:find-prior #:fm-pos #:kid-no #:fm-includes #:fm-ascendant-common 
     #:fm-kid-containing #:fm-find-if #:fm-ascendant-if #:c-abs #:fm-collect-if #:psib
