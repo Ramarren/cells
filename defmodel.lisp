@@ -118,18 +118,18 @@ the defmodel form for ~a" ',class ',class))))
        (find-class ',class))))
 
 (defun defmd-canonicalize-slot (slotname
-                                 &key
-                                 (cell nil cell-p)
+                                &key
+                                (cell nil cell-p)
                                 (owning nil owning-p)
                                 (type nil type-p)
-                                 (initform nil initform-p)
-                                 (initarg (intern (symbol-name slotname) :keyword))
-                                 (documentation nil documentation-p)
-                                 (unchanged-if nil unchanged-if-p)
-                                 (reader slotname reader-p)
-                                 (writer `(setf ,slotname) writer-p)
-                                 (accessor slotname accessor-p)
-                                 (allocation nil allocation-p))
+                                (initform nil initform-p)
+                                (initarg (intern (symbol-name slotname) :keyword))
+                                (documentation nil documentation-p)
+                                (unchanged-if nil unchanged-if-p)
+                                (reader slotname reader-p)
+                                (writer `(setf ,slotname) writer-p)
+                                (accessor slotname accessor-p)
+                                (allocation nil allocation-p))
   (list* slotname :initarg initarg
     (append
      (when cell-p (list :cell cell))

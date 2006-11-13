@@ -84,7 +84,9 @@ See the Lisp Lesser GNU Public License for more details.
   (slot-boundp self slot-name))
 
 (defun bd-slot-makunbound (self slot-name)
-  (slot-makunbound self slot-name))
+  (if slot-name ;; not in def-c-variable
+    (slot-makunbound self slot-name)
+    (makunbound self)))
 
 #| sample incf
 (defmethod c-value-incf ((base fpoint) delta)

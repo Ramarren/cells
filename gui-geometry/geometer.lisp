@@ -17,7 +17,7 @@ See the Lisp Lesser GNU Public License for more details.
 (in-package #:gui-geometry)
 
 (eval-now!
-  (export '(outset ^outset mkv2 g-offset g-offset-h g-offset-v collapsed ^collapsed)))
+  (export '(outset ^outset mkv2 g-offset g-offset-h g-offset-v collapsed ^collapsed inset ^inset)))
 
 (defmd geometer ()
   px py ll lt lr lb
@@ -59,6 +59,8 @@ See the Lisp Lesser GNU Public License for more details.
    (mkr (ll geo) (lt geo) (lr geo) (lb geo)))
 
 ;---------- gOffset -------------------
+
+(export! offset-within)
 ;
 (defun offset-within (inner outer &optional dbg)
   (declare (ignorable dbg))

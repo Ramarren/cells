@@ -31,6 +31,8 @@ See the Lisp Lesser GNU Public License for more details.
                    :documentation "cells supplied but un-whenned or optimized-away")
    (adopt-ct :initform 0 :accessor adopt-ct)))
 
+(defmethod md-state ((self symbol))
+  :alive)
 ;;; --- md obj initialization ------------------
 
 (defmethod shared-initialize :after ((self model-object) slotnames
@@ -67,31 +69,34 @@ See the Lisp Lesser GNU Public License for more details.
         (md-awaken self)))
     ))
 
-
-
-(defun md-install-cell (self sn c &aux (c-isa-cell (typep c 'cell)))
+(defun md-install-cell (self slot-name c &aux (c-isa-cell (typep c 'cell)))
   ;
   ; iff cell, init and move into dictionary
   ;
   (when c-isa-cell
     (count-it :md-install-cell)
-    
     (setf
      (c-model c) self
-     (c-slot-name c) sn
-     (md-slot-cell self sn) c))
+     (c-slot-name c) slot-name
+     (md-slot-cell self slot-name) c))
   ;
   ; now have the slot really be the slot
   ;
   (if c-isa-cell
       (if (c-unboundp c)
-          (bd-slot-makunbound self sn)
-        (setf (slot-value self sn)
-          (if (c-inputp c)
-                  (c-value c)
-                nil)))
-    (setf (slot-value self sn) c))) ;; (in which case "c" is not actually a cell)
-
+          (bd-slot-makunbound self slot-name)
+        (if self
+            (setf (slot-value self slot-name)
+              (when (c-inputp c) (c-value c)))
+          (setf (symbol-value slot-name)
+            (when (c-inputp c) (c-value c)))))
+    ;; note that in this else branch  "c" is a misnomer since
+    ;; the value is not actually a cell
+    (if self
+        (setf (slot-value self slot-name) c)
+      (setf (symbol-value slot-name) c))))
+  
+  
 ;;; --- awaken --------
 ;
 ; -- do initial evaluation of all ruled slots
@@ -163,44 +168,61 @@ See the Lisp Lesser GNU Public License for more details.
   (slot-value self slot))
 
 (defmethod md-slot-cell (self slot-name)
-  (cdr (assoc slot-name (cells self))))
+  (if self
+      (cdr (assoc slot-name (cells self)))
+    (get slot-name 'cell)))
 
 (defun md-slot-cell-type (class-name slot-name)
-  (bif (entry (assoc slot-name (get class-name :cell-types)))
-    (cdr entry)
-    (dolist (super (class-precedence-list (find-class class-name))
-              (setf (md-slot-cell-type class-name slot-name) nil))
-      (bwhen (entry (assoc slot-name (get (c-class-name super) :cell-types)))
-        (return-from md-slot-cell-type (setf (md-slot-cell-type class-name slot-name) (cdr entry)))))))       
+  (assert class-name)
+  (if (eq class-name 'null)
+      (get slot-name :cell-type)
+    (bif (entry (assoc slot-name (get class-name :cell-types)))
+      (cdr entry)
+      (dolist (super (class-precedence-list (find-class class-name))
+                (setf (md-slot-cell-type class-name slot-name) nil))
+        (bwhen (entry (assoc slot-name (get (c-class-name super) :cell-types)))
+          (return-from md-slot-cell-type (setf (md-slot-cell-type class-name slot-name) (cdr entry))))))))
 
 (defun (setf md-slot-cell-type) (new-type class-name slot-name)
-  (let ((entry (assoc slot-name (get class-name :cell-types))))
-    (if entry
-        (progn
-          (setf (cdr entry) new-type)
-          (loop for c in (class-direct-subclasses (find-class class-name))
+  (assert class-name)
+  (if (eq class-name 'null) ;; not def-c-variable
+      (setf (get slot-name :cell-type) new-type)
+    (let ((entry (assoc slot-name (get class-name :cell-types))))
+      (if entry
+          (progn
+            (setf (cdr entry) new-type)
+            (loop for c in (class-direct-subclasses (find-class class-name))
                 do (setf (md-slot-cell-type (class-name c) slot-name) new-type)))
-      (push (cons slot-name new-type) (get class-name :cell-types)))))
+        (push (cons slot-name new-type) (get class-name :cell-types))))))
 
 (defun md-slot-owning (class-name slot-name)
-  (bif (entry (assoc slot-name (get class-name :ownings)))
-    (cdr entry)
-    (dolist (super (class-precedence-list (find-class class-name)))
-      (bwhen (entry (assoc slot-name (get (c-class-name super) :ownings)))
-        (return (setf (md-slot-owning class-name slot-name) (cdr entry)))))))       
+  (assert class-name)
+  (if (eq class-name 'null)
+      (get slot-name :owning)
+    (bif (entry (assoc slot-name (get class-name :ownings)))
+      (cdr entry)
+      (dolist (super (class-precedence-list (find-class class-name)))
+        (bwhen (entry (assoc slot-name (get (c-class-name super) :ownings)))
+          (return (setf (md-slot-owning class-name slot-name) (cdr entry))))))))     
 
 (defun (setf md-slot-owning) (value class-name slot-name)
-  (let ((entry (assoc slot-name (get class-name :ownings))))
-    (if entry
-        (progn
-          (setf (cdr entry) value)
-          (loop for c in (class-direct-subclasses (find-class class-name))
+  (assert class-name)
+  (if (eq class-name 'null)
+      (setf (get slot-name :owning) value)
+    
+    (let ((entry (assoc slot-name (get class-name :ownings))))
+      (if entry
+          (progn
+            (setf (cdr entry) value)
+            (loop for c in (class-direct-subclasses (find-class class-name))
                 do (setf (md-slot-owning (class-name c) slot-name) value)))
-      (push (cons slot-name value) (get class-name :ownings)))))
+        (push (cons slot-name value) (get class-name :ownings))))))
 
-(defmethod md-slot-value-store ((self model-object) slot-name new-value)
-  (trc nil "md-slot-value-store" slot-name new-value)
-  (setf (slot-value self slot-name) new-value))
+(defun md-slot-value-store (self slot-name new-value)
+  (trc nil "md-slot-value-store" self slot-name new-value)
+  (if self
+    (setf (slot-value self slot-name) new-value)
+    (setf (symbol-value slot-name) new-value)))
 
 (defun md-slot-cell-flushed (self slot-name)
   (cdr (assoc slot-name (cells-flushed self))))
@@ -220,17 +242,19 @@ See the Lisp Lesser GNU Public License for more details.
 (defmethod cell-when (other) (declare (ignorable other)) nil)
 
 (defun (setf md-slot-cell) (new-cell self slot-name)
-  (bif (entry (assoc slot-name (cells self)))
-    (let ((old (cdr entry))) ;; s/b being supplanted by kid-slotter
-      (declare (ignorable old))
-      (c-assert (null (c-callers old)))
-      (c-assert (null (cd-useds old)))
-      (trc nil "replacing in model .cells" old new-cell self)
-      (rplacd entry new-cell))
-    (progn
-      (trc nil "adding to model .cells" new-cell self)
-      (push (cons slot-name new-cell)
-        (cells self)))))
+  (if self ;; not on def-c-variables
+      (bif (entry (assoc slot-name (cells self)))
+        (let ((old (cdr entry))) ;; s/b being supplanted by kid-slotter
+          (declare (ignorable old))
+          (c-assert (null (c-callers old)))
+          (c-assert (null (cd-useds old)))
+          (trc nil "replacing in model .cells" old new-cell self)
+          (rplacd entry new-cell))
+        (progn
+          (trc nil "adding to model .cells" new-cell self)
+          (push (cons slot-name new-cell)
+            (cells self))))
+    (setf (get slot-name 'cell) new-cell)))
 
 (defun md-map-cells (self type celldo)
   (map type (lambda (cell-entry)

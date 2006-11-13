@@ -24,23 +24,21 @@ See the Lisp Lesser GNU Public License for more details.
                                  :ephemeral-reset
                                  :change))
 
-(defmacro with-integrity ((&optional opcode defer-info) &rest body)
+(defmacro with-integrity ((&optional opcode defer-info debug) &rest body)
   (when opcode
     (assert (find opcode *ufb-opcodes*) ()
             "Invalid second value to with-integrity: ~a" opcode))
-  `(call-with-integrity ,opcode ,defer-info (lambda () ,@body)))
+  `(call-with-integrity ,opcode ,defer-info (lambda (opcode defer-info)
+                                              (declare (ignorable opcode defer-info))
+                                              ,(when debug
+                                                `(trc "integrity action entry" opcode defer-info ',body))
+                                              ,@body)))
 
-(export! with-c-change with-c-changes)
+(export! with-cc)
 
-(defmacro with-c-change (id &body body)
+(defmacro with-cc (id &body body)
   `(with-integrity (:change ,id)
      ,@body))
-
-(defmacro with-c-changes (id &rest change-forms)
-  `(with-c-change ,id
-     ,(car change-forms)
-     ,(when (cdr change-forms)
-        `(with-c-changes ,id ,@(cdr change-forms)))))
 
 (defun integrity-managed-p ()
   *within-integrity*)
@@ -51,7 +49,7 @@ See the Lisp Lesser GNU Public License for more details.
   (if *within-integrity*
       (if opcode
           (ufb-add opcode (cons defer-info action))
-        (funcall action))
+        (funcall action opcode defer-info))
     (let ((*within-integrity* t)
           *unfinished-business*
           *defer-changes*)
@@ -62,7 +60,7 @@ See the Lisp Lesser GNU Public License for more details.
         (eko (nil "!!! New pulse, event" *data-pulse-id* defer-info)
           (data-pulse-next (cons opcode defer-info))))
       (prog1
-          (funcall action)
+          (funcall action opcode defer-info)
         (finish-business)))))
 
 (defun ufb-queue (opcode)
@@ -87,10 +85,10 @@ See the Lisp Lesser GNU Public License for more details.
                                        (ufb-queue op-or-q)
                                      op-or-q)))
   (trc nil "just do it doing" op-or-q)
-  (loop for (nil . task) = (fifo-pop q)
+  (loop for (defer-info . task) = (fifo-pop q)
         while task
         do (trc nil "unfin task is" opcode task)
-          (funcall task)))
+          (funcall task op-or-q defer-info)))
 
 (defun finish-business ()
   (when *stop* (return-from finish-business))
@@ -169,7 +167,7 @@ See the Lisp Lesser GNU Public License for more details.
       (destructuring-bind (defer-info . task-fn) task-info
         (trc nil "finbiz: deferred state change" defer-info)
         (data-pulse-next (list :finbiz defer-info))
-        (funcall task-fn)
+        (funcall task-fn :change defer-info)
         ;
         ; to finish this state change we could recursively call (finish-business), but
         ; a goto let's us not use the stack. Someday I envision code that keeps on

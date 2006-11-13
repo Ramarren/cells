@@ -92,7 +92,7 @@ See the Lisp Lesser GNU Public License for more details.
     :lazy :until-asked
     :rule (c-lambda ,@body)))
 
-(export! c?dbg c_?dbg)
+(export! c?dbg c_?dbg c-input-dbg)
 
 (defmacro c_?dbg (&body body)
   "Lazy until asked, then eagerly propagating"

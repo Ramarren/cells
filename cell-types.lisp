@@ -44,8 +44,10 @@ See the Lisp Lesser GNU Public License for more details.
 
 ;_____________________ print __________________________________
 
+#+sigh
 (defmethod print-object :before ((c cell) stream)
-  (unless (or *stop* *print-readably*)
+  (declare (ignorable stream))
+  #+shhh (unless (or *stop* *print-readably*)
     (format stream "[~a~a:" (if (c-inputp c) "i" "?")
       (cond
        ((null (c-model c)) #\0)
@@ -53,16 +55,19 @@ See the Lisp Lesser GNU Public License for more details.
        ((not (c-currentp c)) #\#)
        (t #\space)))))
 
-
 (defmethod print-object ((c cell) stream)
-  (if (or *stop* *print-readably*)
-      (call-next-method)
-    (progn
-      (c-print-value c stream)
-      (format stream "=~d/~a/~a]"
-        (c-pulse c)
-        (symbol-name (or (c-slot-name c) :anoncell))
-        (or (and (c-model c)(md-name (c-model c))) :anonmd)))))
+  (declare (ignorable stream))
+  (unless *stop*
+    (let ((*print-circle* t))
+      #+failsafe (format stream "~a/~a" (c-model c)(c-slot-name c))
+      (if *print-readably*
+          (call-next-method)
+        (progn
+          (c-print-value c stream)
+          (format stream "=~d/~a/~a]"
+            (c-pulse c)
+            (symbol-name (or (c-slot-name c) :anoncell))
+            (bwhen (md (c-model c)) (md-name md) :anonmd)))))))
 
 (defmethod trcp :around ((c cell))
   (or (c-debug c)
@@ -100,13 +105,11 @@ See the Lisp Lesser GNU Public License for more details.
     ;
     ; ;; good q: what does (setf <ephem> 'x) return? historically nil, but...?
     ;
+    ;;(trcx bingo-ephem c)
     (with-integrity (:ephemeral-reset c)
       (trc nil "!!!!!!!!!!!!!! ephemeral-reset resetting:" c)
       (md-slot-value-store (c-model c) (c-slot-name c) nil)
-      (setf (c-value c) nil)
-      #+notsureaboutthis
-      (loop for caller in (c-callers c)
-            do (calculate-and-link caller)))))
+      (setf (c-value c) nil))))
 
 ; -----------------------------------------------------
 
@@ -169,6 +172,4 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmethod c-print-value (c stream)
   (declare (ignore c stream)))
-
-
 

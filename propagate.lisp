@@ -73,7 +73,7 @@ See the Lisp Lesser GNU Public License for more details.
     (when *stop*
       (princ #\.)(princ #\!)
       (return-from c-propagate))    
-    (trc nil "c-propagate> !!!!!!! propping" c (c-value c) :caller-ct (length (c-callers c)) c)
+    (trc c "c-propagate> !!!!!!! propping" c (c-value c) :caller-ct (length (c-callers c)) c)
     (trc nil "c-propagate> !!!! new value" (c-value c) :prior-value prior-value :caller-ct (length (c-callers c)) c)
     (when *c-debug*
       (when (> *c-prop-depth* 250)

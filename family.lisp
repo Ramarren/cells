@@ -41,6 +41,17 @@ See the Lisp Lesser GNU Public License for more details.
 
 (define-symbol-macro .parent (fm-parent self))
 
+(defmethod md-name (other)
+  (trc "yep other md-name" other (type-of other))
+  other)
+
+(defmethod md-name ((nada null))
+  (unless (c-stopped)
+    (c-stop :md-name-on-null)
+    (break "md-name called on nil")))
+
+(defmethod md-name ((sym symbol)) sym)
+
 (defmethod shared-initialize :around ((self model) slotnames &rest initargs &key fm-parent)
   (declare (ignorable initargs slotnames fm-parent))
 
@@ -189,12 +200,5 @@ See the Lisp Lesser GNU Public License for more details.
      (declare (ignorable self))
      (list ,@slot-defs)))
 
-(defmethod md-name (other)
-  (trc "yep other md-name" other (type-of other))
-  other)
 
-(defmethod md-name ((nada null))
-  (unless (c-stopped)
-    (c-stop :md-name-on-null)
-    (break "md-name called on nil")))
 

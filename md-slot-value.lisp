@@ -40,12 +40,16 @@ See the Lisp Lesser GNU Public License for more details.
   
   ;; (count-it :md-slot-value slot-name)
   (if c
-      (prog1
-          (with-integrity ()
-            (ensure-value-is-current c :mdsv nil))
-        (when (car *call-stack*)
-          (record-caller c)))
+      (cell-read c)
     (values (bd-slot-value self slot-name) nil)))
+
+(defun cell-read (c)
+  (assert (typep c 'cell))
+  (prog1
+      (with-integrity ()
+        (ensure-value-is-current c :c-read nil))
+    (when (car *call-stack*)
+      (record-caller c))))
   
 (defun chk (s &optional (key 'anon))
   (when (eq :eternal-rest (md-state s))
@@ -56,12 +60,12 @@ See the Lisp Lesser GNU Public License for more details.
   (count-it :ensure-value-is-current)
   (trc nil "ensure-value-is-current > entry" c :now-pulse *data-pulse-id* debug-id caller)
 
-  (when (eq :eternal-rest (md-state (c-model c)))
+  (when (and (not (symbolp (c-model c)))(eq :eternal-rest (md-state (c-model c))))
     (break "model ~a of cell ~a is dead" (c-model c) c))
 
   (cond
    ((c-currentp c)
-    (trc nil "c-currentp" c)) ;; used to follow c-inputp, but I am toying with letting ephemerals (inputs) fall obsolete
+    (trc c "c-currentp" c)) ;; used to follow c-inputp, but I am toying with letting ephemerals (inputs) fall obsolete
    ;; and then get reset here (ie, ((c-input-p c) (ephemeral-reset c))). ie, do not assume inputs are never obsolete
    ;;
    ((and (c-inputp c)
@@ -112,11 +116,11 @@ See the Lisp Lesser GNU Public License for more details.
                  (trc "calculating cell ~a appears in call stack: ~a" c x stack )))
              (setf *stop* t)
              (c-break "yep" c)
-             #+not (loop with caller-reiterated
-                   for caller in *call-stack*
-                   until caller-reiterated
-                   do (trc "caller:" caller)
-                   (pprint (cr-code c))
+             (loop with caller-reiterated
+                 for caller in *call-stack*
+                 until caller-reiterated
+                 do (trc "caller:" caller)
+                   ;; not necessary (pprint (cr-code c))
                    (setf caller-reiterated (eq caller c)))
              (c-break ;; break is problem when testing cells on some CLs
               "cell ~a midst askers (see above)" c)
@@ -138,6 +142,7 @@ See the Lisp Lesser GNU Public License for more details.
   (let ((*call-stack* (cons c *call-stack*))
         (*defer-changes* t))
     (assert (typep c 'c-ruled))
+    (trc nil "calculate-and-link" c)
     (cd-usage-clear-all c)
     (multiple-value-prog1
         (funcall (cr-rule c) c)
