@@ -146,6 +146,7 @@ See the Lisp Lesser GNU Public License for more details.
            (expt (v2-v to) 2))))
 ;-------------------------------------------------
 
+(export! rect)
 (defstruct (rect (:conc-name r-))
   (left 0 )
   (top 0 )

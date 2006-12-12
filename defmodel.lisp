@@ -23,10 +23,14 @@ See the Lisp Lesser GNU Public License for more details.
   (assert (not (find class directsupers))() "~a cannot be its own superclass" class)
   `(progn
      (eval-when (:compile-toplevel :execute :load-toplevel)
-       (setf (get ',class :cell-types) nil))
-     ;
-     ; define slot macros before class so they can appear in initforms and default-initargs
-     ;
+       (setf (get ',class :cell-types) nil)
+       (setf (get ',class 'slots-excluded-from-persistence)
+             ',(loop for slotspec in slotspecs
+                     unless (and (getf (cdr slotspec) :ps t)
+                                 (getf (cdr slotspec) :persistable t))
+                     collect (car slotspec)))) 
+     ;; define slot macros before class so they can appear in
+     ;; initforms and default-initargs
      ,@(delete nil
          (loop for slotspec in slotspecs
              nconcing (destructuring-bind
@@ -54,6 +58,8 @@ See the Lisp Lesser GNU Public License for more details.
          ,(mapcar (lambda (s)
                     (list* (car s)
                       (let ((ias (cdr s)))
+                        (remf ias :persistable)
+                        (remf ias :ps)
                         ;; We handle accessor below
                         (when (getf ias :cell t)
                           (remf ias :reader)
@@ -120,6 +126,8 @@ the defmodel form for ~a" ',class ',class))))
 (defun defmd-canonicalize-slot (slotname
                                 &key
                                 (cell nil cell-p)
+                                (ps t ps-p)
+                                (persistable t persistable-p)
                                 (owning nil owning-p)
                                 (type nil type-p)
                                 (initform nil initform-p)
@@ -133,6 +141,8 @@ the defmodel form for ~a" ',class ',class))))
   (list* slotname :initarg initarg
     (append
      (when cell-p (list :cell cell))
+     (when ps-p (list :ps ps))
+     (when persistable-p (list :persistable persistable))
      (when owning-p (list :owning owning))
      (when type-p (list :type type))
      (when initform-p (list :initform initform))
@@ -158,7 +168,7 @@ the defmodel form for ~a" ',class ',class))))
                          ((keywordp (car spec))
                           (assert (find (car spec) '(:documentation :metaclass)))
                           (push spec class-options))
-                         ((find (cadr spec) '(:initarg :type :cell :initform :allocation :reader :writer :accessor :documentation))
+                         ((find (cadr spec) '(:initarg :type :ps :persistable :cell :initform :allocation :reader :writer :accessor :documentation))
                           (push (apply 'defmd-canonicalize-slot spec) slots))
                          (t ;; shortform (slotname initform &rest slotdef-key-values)
                           (push (apply 'defmd-canonicalize-slot

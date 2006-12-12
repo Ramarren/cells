@@ -42,6 +42,8 @@ See the Lisp Lesser GNU Public License for more details.
   debug
   md-info)
 
+
+
 ;_____________________ print __________________________________
 
 #+sigh
@@ -67,7 +69,7 @@ See the Lisp Lesser GNU Public License for more details.
           (format stream "=~d/~a/~a]"
             (c-pulse c)
             (symbol-name (or (c-slot-name c) :anoncell))
-            (bwhen (md (c-model c)) (md-name md) :anonmd)))))))
+            (bwhen (md (c-model c)) (or (md-name md) :anonmd))))))))
 
 (defmethod trcp :around ((c cell))
   (or (c-debug c)
@@ -79,6 +81,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun caller-ensure (used new-caller)
   (unless (find new-caller (c-callers used))
+    (trc nil "caller-ensure fifo-adding new-caller" new-caller :used used)
     (fifo-add (c-caller-store used) new-caller)))
 
 (defun caller-drop (used caller)

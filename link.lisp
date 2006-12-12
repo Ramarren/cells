@@ -22,12 +22,18 @@ See the Lisp Lesser GNU Public License for more details.
 (eval-when (compile load)
  (proclaim '(optimize (speed 3) (safety 0) (space 0) (debug 0))))
 
+
 (defun record-caller (used &aux (caller (car *call-stack*)))
   (when (c-optimized-away-p used) ;; 2005-05-21 removed slow type check that used is cell
     (trc nil "caller not being recorded because used optimized away" caller (c-value used) :used used)
     (return-from record-caller nil))
   (trc nil "record-caller entry: used=" used :caller caller)
-  
+;;;  (when (trcp caller)
+;;;
+;;;    ;;(when (eq (c-slot-name caller) 'mathx::phrases)
+;;;    (when (eq (c-slot-name used) 'mathx::opnds)
+;;;      (break "bingo")))
+
   (multiple-value-bind (used-pos useds-len)
       (loop with u-pos
           for known in (cd-useds caller)

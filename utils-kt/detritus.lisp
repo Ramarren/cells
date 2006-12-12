@@ -20,11 +20,14 @@ See the Lisp Lesser GNU Public License for more details.
 (in-package :utils-kt)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(eval-now! export!)))
+  (export '(eval-now! export! assocd rassoca)))
 
 (defmacro wdbg (&body body)
   `(let ((*dbg* t))
      ,@body))
+
+(defun assocd (x y) (cdr (assoc x y)))
+(defun rassoca (x y) (car (assoc x y)))
 
 ;;;(defmethod class-slot-named ((classname symbol) slotname)
 ;;;  (class-slot-named (find-class classname) slotname))

@@ -15,7 +15,8 @@
                  (make-instance 'module :name "flow-control.lisp")
                  (make-instance 'module :name "detritus.lisp")
                  (make-instance 'module :name "strings.lisp")
-                 (make-instance 'module :name "datetime.lisp"))
+                 (make-instance 'module :name "datetime.lisp")
+                 (make-instance 'module :name "split-sequence.lisp"))
   :projects nil
   :libraries nil
   :distributed-files nil

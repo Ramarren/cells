@@ -76,7 +76,11 @@ See the Lisp Lesser GNU Public License for more details.
           `t))))
 
 (defmacro without-c-dependency (&body body)
-  `(let (*call-stack*) ,@body))
+  `(call-without-c-dependency (lambda () ,@body)))
+
+(defun call-without-c-dependency (fn)
+  (let (*call-stack*); *no-tell*)
+    (funcall fn)))
 
 (export! .cause)
 

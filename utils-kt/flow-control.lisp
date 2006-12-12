@@ -149,3 +149,33 @@ See the Lisp Lesser GNU Public License for more details.
 (defmethod instance-slots (self)
   (class-slots (class-of self))) ;; acl has this for structs
 
+;;; ---- without-repeating ----------------------------------------------
+
+;; Returns a function that generates an elements from ALL each time it
+;; is called. When a certain element is generated it will take at
+;; least DECENT-INTERVAL calls before it is generated again.  
+;;
+;; note: order of ALL is important for first few calls, could be fixed
+
+(defun without-repeating-generator (decent-interval all)
+  (let ((len (length all))
+        (head (let ((v (copy-list all)))
+                (nconc v v))))
+    (lambda ()
+      (if (< len 2)
+          (car all)
+        (prog2
+          (rotatef (car head)
+            (car (nthcdr (random (- len decent-interval))
+                   head)))
+            (car head)
+          (setf head (cdr head)))))))
+
+(export! without-repeating)
+
+(let ((generators (make-hash-table :test 'equalp)))
+  (defun without-repeating (key all &optional (decent-interval (floor (length all) 2)))
+    (funcall (or (gethash key generators)
+               (setf (gethash key generators)
+                 (without-repeating-generator decent-interval all))))))
+

@@ -55,10 +55,14 @@ See the Lisp Lesser GNU Public License for more details.
   (when (eq :eternal-rest (md-state s))
     (break "model ~a is dead at ~a" s key)))
 
-(defun ensure-value-is-current (c debug-id caller)
-  (declare (ignorable debug-id caller))
+(defun ensure-value-is-current (c debug-id ensurer)
+  ;
+  ; ensurer can be used cell propagating to callers, or an existing caller who wants to make sure
+  ; dependencies are up-to-date before deciding if it itself is up-to-date
+  ;
+  (declare (ignorable debug-id ensurer))
   (count-it :ensure-value-is-current)
-  (trc nil "ensure-value-is-current > entry" c :now-pulse *data-pulse-id* debug-id caller)
+  (trc nil "ensure-value-is-current > entry" c :now-pulse *data-pulse-id* debug-id ensurer)
 
   (when (and (not (symbolp (c-model c)))(eq :eternal-rest (md-state (c-model c))))
     (break "model ~a of cell ~a is dead" (c-model c) c))
@@ -87,7 +91,7 @@ See the Lisp Lesser GNU Public License for more details.
                    (or (check-reversed (cdr useds))
                      (let ((used (car useds)))
                        (ensure-value-is-current used :nested c)
-                       (trc nil "comparing pulses (caller, used, used-changed): "  c debug-id used (c-pulse-last-changed used))
+                       (trc nil "comparing pulses (ensurer, used, used-changed): "  c debug-id used (c-pulse-last-changed used))
                        (when (> (c-pulse-last-changed used)(c-pulse c))
                          (trc nil "used changed and newer !!!!!!" c debug-id used)
                          t))))))
@@ -246,8 +250,8 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
          (c-value-state c) :valid
          (c-state c) :awake)
         
-        
-        (case (cd-optimize c)
+        (case (and (typep c 'c-dependent)
+                   (cd-optimize c))
           ((t) (c-optimize-away?! c)) ;;; put optimize test here to avoid needless linking
           (:when-value-t (when (c-value c)
                            (c-unlink-from-used c))))
@@ -273,8 +277,8 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
           (not (c-synaptic c)) ;; no slot to cache invariant result, so they have to stay around)
           (not (c-inputp c)) ;; yes, dependent cells can be inputp
           )
-    (when (trcp c) (break "go optimizing ~a" c))
-    (trc c "optimizing away" c (c-state c))
+    ;; (when (trcp c) (break "go optimizing ~a" c))
+    (trc nil "optimizing away" c (c-state c))
     (count-it :c-optimized)
     
     (setf (c-state c) :optimized-away)
@@ -283,7 +287,7 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
       (unless entry
         (describe c))
       (c-assert entry)
-      (trc c "c-optimize-away?! moving cell to flushed list" c)
+      (trc nil "c-optimize-away?! moving cell to flushed list" c)
       (setf (cells (c-model c)) (delete entry (cells (c-model c))))
       (push entry (cells-flushed (c-model c))))
     
