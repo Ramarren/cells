@@ -23,8 +23,7 @@
                  (make-instance 'module :name "md-utilities.lisp")
                  (make-instance 'module :name "family.lisp")
                  (make-instance 'module :name "fm-utilities.lisp")
-                 (make-instance 'module :name "family-values.lisp")
-                 (make-instance 'module :name "variables.lisp"))
+                 (make-instance 'module :name "family-values.lisp"))
   :projects (list (make-instance 'project-module :name
                                  "utils-kt\\utils-kt"))
   :libraries nil

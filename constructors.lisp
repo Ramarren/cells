@@ -62,11 +62,20 @@ See the Lisp Lesser GNU Public License for more details.
     :rule (c-lambda ,@body)
     ,@args))
 
-(export! c?once c?n-until c?1)
+(export! c?once c?n-until c?1 c_1)
+
 (defmacro c?once (&body body)
   `(make-c-dependent
     :code '(without-c-dependency ,@body)
     :inputp nil
+    :value-state :unevaluated
+    :rule (c-lambda (without-c-dependency ,@body))))
+
+(defmacro c_1 (&body body)
+  `(make-c-dependent
+    :code '(without-c-dependency ,@body)
+    :inputp nil
+    :lazy t
     :value-state :unevaluated
     :rule (c-lambda (without-c-dependency ,@body))))
 
