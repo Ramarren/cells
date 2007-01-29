@@ -52,9 +52,9 @@ See the Lisp Lesser GNU Public License for more details.
   (if (eql tgt-form 'nil)
       '(progn)
     `(without-c-dependency
-         (call-trc t ,(format nil "TX> ~(~a~)" tgt-form)
+         (call-trc t ,(format nil "TX> ~(~s~)" tgt-form)
            ,@(loop for obj in os
-                   nconcing (list (format nil "~a:" obj) obj))))))
+                   nconcing (list (intern (format nil "~a" obj) :keyword) obj))))))
 
 
 (defparameter *last-trc* (get-internal-real-time))

@@ -44,7 +44,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro upper (self &optional (type t))
   `(container-typed ,self ',type))
 
-(export! u^)
+(export! u^ fm-descendant-if)
 
 (defmacro u^ (type)
   `(upper self ,type))
@@ -92,6 +92,13 @@ See the Lisp Lesser GNU Public License for more details.
      (or (when (funcall if-function self)
            self)
          (fm-ascendant-if .parent if-function))))
+
+(defun fm-descendant-if (self test)
+  (when (and self test)
+    (or (when (funcall test self)
+          self)
+      (loop for k in (^kids)
+          thereis (fm-descendant-if k test)))))
 
 (defun fm-ascendant-common (d1 d2)
   (fm-ascendant-some d1 (lambda (node)
@@ -440,11 +447,11 @@ See the Lisp Lesser GNU Public License for more details.
     :must-find t
     :global-search global-search))
 
-(defmacro fm^ (md-name &key (skip-tree 'self))
+(defmacro fm^ (md-name &key (skip-tree 'self) (must-find t))
   `(without-c-dependency
     (fm-find-one (fm-parent self) ,md-name
       :skip-tree ,skip-tree
-      :must-find t
+      :must-find ,must-find
       :global-search t)))
 
 (defmacro fm^v (id)
@@ -494,7 +501,7 @@ See the Lisp Lesser GNU Public License for more details.
                  :must-find nil
                  :global-search ,global-search)))
 ;---------------------------------------------------------------
-
+(export! fm-top)
 (defun fm-top (fm &optional (test #'true-that) &aux (fm-parent (fm-parent fm)))
     (cond ((null fm-parent) fm)
                 ((not (funcall test fm-parent)) fm)

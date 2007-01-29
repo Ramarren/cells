@@ -27,29 +27,39 @@ See the Lisp Lesser GNU Public License for more details.
 (defmethod md-release (other)
   (declare (ignorable other)))
 
-(export! md-dead)
-(defun md-dead (SELF)
-  (eq :eternal-rest (md-state SELF)))
+(export! mdead)
 ;___________________ birth / death__________________________________
   
-(defmethod not-to-be :around (self)
-  (trc nil "not-to-be nailing")
-  (c-assert (not (eq (md-state self) :eternal-rest)))
+(defgeneric mdead (self)
 
-  (call-next-method)
+  (:method ((self model-object))
+    (eq :eternal-rest (md-state SELF)))
 
-  (setf (fm-parent self) nil
-    (md-state self) :eternal-rest)
+  (:method (self)
+    (declare (ignore self))
+    nil))
 
-  (md-map-cells self nil
-    (lambda (c)
-      (c-assert (eq :quiesced (c-state c))))) ;; fails if user obstructs not-to-be with primary method (use :before etc)
+(defgeneric not-to-be (self)
 
-  (trc nil "not-to-be cleared 2 fm-parent, eternal-rest" self))
+  (:method ((self model-object))
+    (md-quiesce self))
 
-(defmethod not-to-be ((self model-object))
-  (trc nil "not to be!!!" self)
-  (md-quiesce self))
+  (:method :around ((self model-object))
+    (declare (ignorable self))
+    (trc nil #+not (typep self '(or mathx::problem mathx::prb-solvers mathx::prb-solver))
+      "not-to-be nailing" self)
+    (c-assert (not (eq (md-state self) :eternal-rest)))
+
+    (call-next-method)
+
+    (setf (fm-parent self) nil
+      (md-state self) :eternal-rest)
+
+    (md-map-cells self nil
+      (lambda (c)
+        (c-assert (eq :quiesced (c-state c))))) ;; fails if user obstructs not-to-be with primary method (use :before etc)
+
+    (trc nil "not-to-be cleared 2 fm-parent, eternal-rest" self)))
 
 (defun md-quiesce (self)
   (trc nil "md-quiesce nailing cells" self (type-of self))
@@ -70,8 +80,7 @@ See the Lisp Lesser GNU Public License for more details.
      (setf (c-state c) :quiesced) ;; 20061024 for debugging for now, might break some code tho
      )))
 
-(defmethod not-to-be (other)
-  other)
+
 
 (defparameter *to-be-dbg* nil)
 

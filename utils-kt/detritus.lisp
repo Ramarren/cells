@@ -170,16 +170,15 @@ See the Lisp Lesser GNU Public License for more details.
   (typecase tree
     (null)
     (atom (funcall test sought tree))
-    (cons (loop for subtree in tree
-                when (tree-includes sought subtree :test test)
-                do (return-from tree-includes t)))))
+    (cons (or (tree-includes sought (car tree) :test test)
+            (tree-includes sought (cdr tree) :test test)))))
 
 (defun tree-traverse (tree fn)
   (typecase tree
     (null)
     (atom (funcall fn tree))
-    (cons (loop for subtree in tree
-                do (tree-traverse subtree fn))))
+    (cons (tree-traverse (car tree) fn)
+      (tree-traverse (cdr tree) fn)))
   (values))
 
 (defun tree-intersect (t1 t2 &key (test 'eql))

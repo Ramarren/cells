@@ -60,6 +60,7 @@ See the Lisp Lesser GNU Public License for more details.
 #+test
 (def-c-variable *kenny* (c-in nil))
 
+
 #+test
 (defmd kenny-watcher ()
   (twice (c? (bwhen (k *kenny*)

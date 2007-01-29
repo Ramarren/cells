@@ -26,10 +26,13 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro c-lambda (&body body)
   `(c-lambda-var (slot-c) ,@body))
 
+(export! .cache-bound-p)
+
 (defmacro c-lambda-var ((c) &body body)
   `(lambda (,c &aux (self (c-model ,c))
-             (.cache (c-value ,c)))
-     (declare (ignorable .cache self))
+             (.cache (c-value ,c))
+             (.cache-bound-p (cache-bound-p ,c)))
+     (declare (ignorable .cache .cache-bound-p self))
      ,@body))
 
 (defmacro with-c-cache ((fn) &body body)

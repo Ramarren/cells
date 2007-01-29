@@ -87,9 +87,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defun caller-drop (used caller)
   (fifo-delete (c-caller-store used) caller))
 
-;;;(defmethod trcp ((c cell))
-;;;   (and  (typep (c-model c) 'index)
-;;;     (find (c-slot-name c) '(mathx::line-breaks mathx::phrases))))
+
 
 ; --- ephemerality --------------------------------------------------
 ; 

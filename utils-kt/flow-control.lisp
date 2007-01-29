@@ -31,7 +31,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defun min-if (v1 v2)
      (if v1 (if v2 (min v1 v2) v1) v2))
 
-(export! list-flatten! tree-flatten list-insertf subseq-contiguous-p)
+(export! list-flatten! tree-flatten list-insertf subseq-contiguous-p pair-off)
 
 (defun list-flatten! (&rest list)
   (if (consp list)
@@ -58,6 +58,17 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun tree-flatten (tree)
   (list-flatten! (copy-tree tree)))
+
+(defun pair-off (list &optional (test 'eql))
+  (loop with pairs and copy = (copy-list list)
+      while (cdr copy)
+      do (let ((pair (find (car copy) (cdr copy) :test test)))
+           (if pair
+               (progn
+                 (push-end (cons (car copy) pair) pairs)
+                 (setf copy (delete pair (cdr copy) :count 1)))
+             (setf copy (cdr copy))))
+      finally (return pairs)))
 
 (defun packed-flat! (&rest u-nameit)
   (delete nil (list-flatten! u-nameit)))
@@ -172,6 +183,7 @@ See the Lisp Lesser GNU Public License for more details.
           (setf head (cdr head)))))))
 
 (export! without-repeating)
+
 
 (let ((generators (make-hash-table :test 'equalp)))
   (defun without-repeating (key all &optional (decent-interval (floor (length all) 2)))

@@ -116,7 +116,7 @@ See the Lisp Lesser GNU Public License for more details.
   (trc nil "md-awaken entry" self (md-state self))
   (c-assert (eql :nascent (md-state self)))
   (count-it :md-awaken)
-  (count-it 'mdawaken)
+  ;(count-it 'mdawaken (type-of self))
   
   ; ---
 

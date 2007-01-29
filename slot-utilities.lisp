@@ -36,7 +36,7 @@ See the Lisp Lesser GNU Public License for more details.
         ;; cv-test handles errors, so don't set *stop* (c-stop)
         (c-break "unadopted ~a for self ~a spec ~a" c self slot-name)
         (error 'c-unadopted :cell c))
-      (typecase c
+      #+whocares (typecase c
         (c-dependent
          ;(trc "setting c-dependent" c newvalue)
          (format t "c-setting-debug > ruled  ~a in ~a may not be setf'ed"

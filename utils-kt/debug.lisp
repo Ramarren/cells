@@ -30,6 +30,7 @@ See the Lisp Lesser GNU Public License for more details.
   (setf *count* nil
     *stop* nil
     *dbg* nil)
+  
  (print "----------UTILSRESET----------------------------------"))
 
 
@@ -93,9 +94,10 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmacro timex ((onp &rest trcargs) &body body)
   `(if ,onp
-       (prog1
+       (prog2
+           (format t "~&Starting timing run of ~{ ~a~}" (list ,@trcargs))
            (time (progn ,@body))
-         (format t "timing was of ~{ ~a~}" ,@trcargs))
+         (format t "~&Above timing was of ~{ ~a~}" (list ,@trcargs)))
      (progn ,@body)))
 
 #+save

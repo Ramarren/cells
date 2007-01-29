@@ -21,6 +21,9 @@ See the Lisp Lesser GNU Public License for more details.
 (defparameter *ide-app-hard-to-kill* t)
 
 (defun md-slot-value (self slot-name &aux (c (md-slot-cell self slot-name)))
+  (when (mdead self)
+    (trc "md-slot-value passed dead self, returning NIL" self)
+    (return-from md-slot-value nil))
   (tagbody
     retry
     (when *stop*
@@ -55,6 +58,12 @@ See the Lisp Lesser GNU Public License for more details.
   (when (eq :eternal-rest (md-state s))
     (break "model ~a is dead at ~a" s key)))
 
+;;;(defmethod trcp ((c cell))
+;;;  (and *dbg*
+;;;    (case (c-slot-name c)
+;;;      (mathx::show-time t)
+;;;      (ctk::app-time t))))
+
 (defun ensure-value-is-current (c debug-id ensurer)
   ;
   ; ensurer can be used cell propagating to callers, or an existing caller who wants to make sure
@@ -69,7 +78,7 @@ See the Lisp Lesser GNU Public License for more details.
 
   (cond
    ((c-currentp c)
-    (trc c "c-currentp" c)) ;; used to follow c-inputp, but I am toying with letting ephemerals (inputs) fall obsolete
+    (trc nil "c-currentp" c)) ;; used to follow c-inputp, but I am toying with letting ephemerals (inputs) fall obsolete
    ;; and then get reset here (ie, ((c-input-p c) (ephemeral-reset c))). ie, do not assume inputs are never obsolete
    ;;
    ((and (c-inputp c)
@@ -106,7 +115,12 @@ See the Lisp Lesser GNU Public License for more details.
   (when (c-unboundp c)
     (error 'unbound-cell :cell c :instance (c-model c) :name (c-slot-name c)))
 
-  (c-value c))
+  (bwhen (v (c-value c))
+    (if (mdead v)
+        (progn
+          (trc "ensure-value not returning dead model object value" v)
+          nil)
+      v)))
 
 (defun calculate-and-set (c)
   (flet ((body ()
@@ -260,10 +274,16 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
         (unless (eq propagation-code :no-propagate)
           (trc nil "md-slot-value-assume flagging as changed: prior state, value:" prior-state prior-value )
           (setf (c-pulse-last-changed c) *data-pulse-id*)
-          (c-propagate c prior-value (or (eq prior-state :valid)
-                                       (eq prior-state :uncurrent))))  ;; until 06-02-13 was (not (eq prior-state :unbound))
+          (c-propagate c prior-value (cache-state-bound-p prior-state)))  ;; until 06-02-13 was (not (eq prior-state :unbound))
         
         absorbed-value)))
+
+(defun cache-bound-p (c)
+  (cache-state-bound-p (c-value-state c)))
+
+(defun cache-state-bound-p (value-state)
+  (or (eq value-state :valid)
+    (eq value-state :uncurrent)))
 
 ;---------- optimizing away cells whose dependents all turn out to be constant ----------------
 ;

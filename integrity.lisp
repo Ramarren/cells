@@ -84,7 +84,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defun just-do-it (op-or-q &aux (q (if (keywordp op-or-q)
                                        (ufb-queue op-or-q)
                                      op-or-q)))
-  (trc nil "just do it doing" op-or-q)
+  (trc nil "----------------------------just do it doing---------------------" op-or-q)
   (loop for (defer-info . task) = (fifo-pop q)
         while task
         do (trc nil "unfin task is" opcode task)
@@ -165,7 +165,7 @@ See the Lisp Lesser GNU Public License for more details.
     (bwhen (task-info (fifo-pop (ufb-queue :change)))
       (trc nil "!!! finbiz --- CHANGE ---- (first of)" (fifo-length (ufb-queue :change)))
       (destructuring-bind (defer-info . task-fn) task-info
-        (trc nil "finbiz: deferred state change" defer-info)
+        (trc nil  "finbiz: deferred state change" defer-info)
         (data-pulse-next (list :finbiz defer-info))
         (funcall task-fn :change defer-info)
         ;
@@ -177,4 +177,5 @@ See the Lisp Lesser GNU Public License for more details.
         ; want to inspect the history on the stack.
         ;
         (go tell-dependents)))))
+
 

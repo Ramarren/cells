@@ -17,7 +17,7 @@ See the Lisp Lesser GNU Public License for more details.
 |#
 
 (eval-when (compile load)
-  (proclaim '(optimize (speed 2) (safety 3) (space 1) (debug 3))))
+  (proclaim '(optimize (speed 2) (safety 1) (space 1) (debug 3))))
 
 (in-package :cells)
 
@@ -79,7 +79,7 @@ See the Lisp Lesser GNU Public License for more details.
   `(call-without-c-dependency (lambda () ,@body)))
 
 (defun call-without-c-dependency (fn)
-  (let (*call-stack*); *no-tell*)
+  (let (*call-stack*)
     (funcall fn)))
 
 (export! .cause)
