@@ -156,7 +156,7 @@ See the Lisp Lesser GNU Public License for more details.
           )
       (c-stop args)
       (format t "c-break > stopping > ~a" args)
-      (apply 'break args))))
+      (apply 'error args))))
 
 
 

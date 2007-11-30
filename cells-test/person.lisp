@@ -167,8 +167,8 @@
     ;;    - all cells accessed are constant.
     ;;
     (ct-assert (null (md-slot-cell p 'speech)))
-    (ct-assert (md-slot-cell-flushed  p 'speech))
-    (ct-assert (c-optimized-away-p (md-slot-cell-flushed p 'speech)))   
+    (ct-assert (assoc 'speech (cells-flushed  p)))
+    (ct-assert (c-optimized-away-p (cdr (assoc 'speech (cells-flushed  p)))))
     
     (ct-assert (not (c-optimized-away-p (md-slot-cell p 'thought)))) ;; pulse is variable, so cannot opti
     (ct-assert (eql 1 (length (cd-useds (md-slot-cell p 'thought))))) ;; but speech is opti, so only 1 used
@@ -205,7 +205,7 @@
                            (length (names self)))))
          nil)
      (t (error)
-        (trc "error" error)
+        (describe  error)
        (setf *stop* nil)
         t)))
   )

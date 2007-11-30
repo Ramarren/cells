@@ -44,9 +44,6 @@ See the Lisp Lesser GNU Public License for more details.
   *within-integrity*)
 
 (defun call-with-integrity (opcode defer-info action)
-  (when (eq opcode :change)
-    (when (eq defer-info :focus)
-      (break "cwi focus change")))
   (when *stop*
     (return-from call-with-integrity))
   (if *within-integrity*

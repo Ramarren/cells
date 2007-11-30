@@ -71,7 +71,7 @@ subclass for them?)
 
 (defun test-cells ()
   (loop for test in (reverse *cell-tests*)
-        when (eq 'm-syn-bool test)
+        when t ; (eq 'cv-test-person-5 test)
         do (cell-test-init test)
         (funcall test))
   (print (make-string 40 :initial-element #\*))

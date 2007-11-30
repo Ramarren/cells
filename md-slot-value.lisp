@@ -153,7 +153,7 @@ See the Lisp Lesser GNU Public License for more details.
                    (setf caller-reiterated (eq caller c)))
              (c-break ;; break is problem when testing cells on some CLs
               "cell ~a midst askers (see above)" c)
-             (break "see listener for cell rule cycle diagnotics"))
+             (error "see listener for cell rule cycle diagnotics"))
   
            (multiple-value-bind (raw-value propagation-code)
                (calculate-and-link c)
