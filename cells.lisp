@@ -19,7 +19,11 @@ See the Lisp Lesser GNU Public License for more details.
 (eval-when (compile load)
   (proclaim '(optimize (speed 2) (safety 1) (space 1) (debug 3))))
 
+
+
 (in-package :cells)
+
+
 
 (defparameter *c-prop-depth* 0)
 (defparameter *causation* nil)
@@ -31,6 +35,9 @@ See the Lisp Lesser GNU Public License for more details.
 (defparameter *within-integrity* nil)
 (defparameter *client-queue-handler* nil)
 (defparameter *unfinished-business* nil)
+
+#+test
+(cells-reset)
 
 (defun cells-reset (&optional client-queue-handler &key debug)
   (utils-kt-reset)
@@ -54,6 +61,11 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun c-stopped ()
   *stop*)
+
+(export! .stopped)
+
+(define-symbol-macro .stopped
+    (c-stopped))
 
 (defmacro c-assert (assertion &optional places fmt$ &rest fmt-args)
   (declare (ignorable assertion places fmt$ fmt-args))

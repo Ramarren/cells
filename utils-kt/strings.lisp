@@ -90,6 +90,9 @@ See the Lisp Lesser GNU Public License for more details.
 (defun left$ (s n)
    (subseq s 0 (max (min n (length s)) 0)))
 
+(export! cc$)
+(defun cc$ (code) (string (code-char code)))
+
 (defun mid$ (s offset length)
   (let* ((slen (length s))
          (start (min slen (max offset 0)))

@@ -22,8 +22,6 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defparameter *trcdepth* 0)
 
-(export! trc wtrc eko)
-
 (defun trcdepth-reset ()
   (setf *trcdepth* 0))
 
@@ -35,18 +33,31 @@ See the Lisp Lesser GNU Public License for more details.
         `(without-c-dependency
           (call-trc t ,tgt-form ,@os))
       (let ((tgt (gensym)))
+        ;(break "slowww? ~a" tgt-form)
         `(without-c-dependency
           (bif (,tgt ,tgt-form)
             (if (trcp ,tgt)
                 (progn
-                  (assert (stringp ,(car os)))
+                  (assert (stringp ,(car os)) () "trc with test expected string second, got ~a" ,(car os))
                   (call-trc t ,@os)) ;;,(car os) ,tgt ,@(cdr os)))
               (progn
-                ;; (break "trcfailed")
+                ;(trc "trcfailed")
                 (count-it :trcfailed)))
             (count-it :tgtnileval)))))))
 
-(export! trcx)
+(export! brk brkx .bgo)
+
+
+(define-symbol-macro .bgo (break "go"))
+
+(defun brk (&rest args)
+  #+its-alive! (print args)
+  #-its-alive! (progn
+                 ;;(setf *ctk-dbg* t)
+                 (apply 'break args)))
+
+(defmacro brkx (msg)
+  `(break "At ~a: OK?" ',msg))
 
 (defmacro trcx (tgt-form &rest os)
   (if (eql tgt-form 'nil)
@@ -60,6 +71,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defparameter *last-trc* (get-internal-real-time))
 
 (defun call-trc (stream s &rest os)
+  ;(break)
   (if #+cormanlisp nil #-cormanlisp (and (boundp '*trcdepth*)
                                       *trcdepth*)
     (format stream "~&~v,,,'.<~d~>> " (mod *trcdepth* 100) *trcdepth*)
@@ -85,8 +97,6 @@ See the Lisp Lesser GNU Public License for more details.
 (defmethod trcp :around (other)
   (unless (call-next-method other)(break)))
 
-(export! trcp)
-
 (defmethod trcp (other)
   (eq other t))
 
@@ -99,8 +109,6 @@ See the Lisp Lesser GNU Public License for more details.
 (defun trcdepth-decf ()
   (format t "decrementing trc depth ~d" *trcdepth*)
   (decf *trcdepth*))
-  
-(export! wtrc eko-if)
 
 (defmacro wtrc ((&optional (min 1) (max 50) &rest banner) &body body )
   `(let ((*trcdepth* (if *trcdepth*
@@ -121,11 +129,12 @@ See the Lisp Lesser GNU Public License for more details.
   
 ;------ eko --------------------------------------
 
-
 (defmacro eko ((&rest trcargs) &rest body)
   (let ((result (gensym)))
      `(let ((,result ,@body))
-         (trc ,(car trcargs) :=> ,result ,@(cdr trcargs))
+        ,(if (stringp (car trcargs))
+             `(trc ,(car trcargs) :=> ,result ,@(cdr trcargs))
+           `(trc ,(car trcargs) ,(cadr trcargs) :=> ,result ,@(cddr trcargs)))
          ,result)))
 
 (defmacro ekx (ekx-id &rest body)
@@ -133,8 +142,6 @@ See the Lisp Lesser GNU Public License for more details.
      `(let ((,result (,@body)))
          (trc ,(string-downcase (symbol-name ekx-id)) :=> ,result)
          ,result)))
-
-(export! ekx)
 
 (defmacro eko-if ((&rest trcargs) &rest body)
   (let ((result (gensym)))
@@ -149,3 +156,4 @@ See the Lisp Lesser GNU Public License for more details.
          (when ,label
            (trc ,label ,result))
          ,result)))
+

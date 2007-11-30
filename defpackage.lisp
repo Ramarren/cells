@@ -58,6 +58,6 @@
     #:fm-kid-containing #:fm-find-if #:fm-ascendant-if #:c-abs #:fm-collect-if #:psib
     #:not-to-be #:ssibno
     #:c-debug #:c-break #:c-assert #:c-stop #:c-stopped #:c-assert #:.stop    #:delta-diff
-    )
+    #:wtrc #:wnotrc #:eko-if #:trc #:wtrc #:eko #:ekx #:trcp #:trcx)
   #+allegro (:shadowing-import-from #:excl #:fasl-write #:fasl-read #:gc)
   )

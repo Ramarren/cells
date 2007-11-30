@@ -44,6 +44,9 @@ See the Lisp Lesser GNU Public License for more details.
   *within-integrity*)
 
 (defun call-with-integrity (opcode defer-info action)
+  (when (eq opcode :change)
+    (when (eq defer-info :focus)
+      (break "cwi focus change")))
   (when *stop*
     (return-from call-with-integrity))
   (if *within-integrity*
@@ -76,7 +79,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun ufb-add (opcode continuation)
   (assert (find opcode *ufb-opcodes*))
-  (when (and *no-tell* (eq opcode :tell-dependents))
+  #+trythis (when (and *no-tell* (eq opcode :tell-dependents))
     (break "truly queueing tell under no-tell"))
   (trc nil "ufb-add deferring" opcode (when (eql opcode :client)(car continuation)))
   (fifo-add (ufb-queue-ensure opcode) continuation))
@@ -109,27 +112,38 @@ See the Lisp Lesser GNU Public License for more details.
     ;
     (bwhen (uqp (fifo-peek (ufb-queue :tell-dependents)))
       (trcx finish-business uqp)
-      (DOlist (b (fifo-data (ufb-queue :tell-dependents)))
+      (dolist (b (fifo-data (ufb-queue :tell-dependents)))
         (trc "unhandled :tell-dependents" (car b) (c-callers (car b))))
       (break "unexpected 1> ufb needs to tell dependnents after telling dependents"))
     (let ((*no-tell* t))
       (just-do-it :awaken) ;--- md-awaken new instances ---
-       )
+      )
     ;
-    ; we do not go back to check for a need to :tell-dependents because (a) the original propagation
+    ; OLD THINKING, preserved for the record, but NO LONGER TRUE:
+    ;  we do not go back to check for a need to :tell-dependents because (a) the original propagation
     ; and processing of the :tell-dependents queue is a full propagation; no rule can ask for a cell that
     ; then decides it needs to recompute and possibly propagate; and (b) the only rules forced awake during
     ; awakening need that precisely because no one asked for their values, so there can be no dependents
     ; to "tell". I think. :) So...
+    ; END OF OLD THINKING
     ;
+    ; We now allow :awaken to change things so more dependents need to be told. The problem is the implicit 
+    ; dependence on the /life/ of a model whenever there is a dependence on any /cell/ of that model. 
+    ; md-quiesce currently just flags such slots as uncurrent -- maybe /that/ should change and those should 
+    ; recalculate at once -- and then an /observer/ can run and ask for a new value from such an uncurrent cell, 
+    ; which now knows it must recalculate. And that recalculation of course can and likely will come up with a new value
+    ; and perforce need to tell its dependents. So...
+    ;
+    ; I /could/ explore something other than the "uncurrent" kludge, but NCTM 2007 is coming up and
+    ; to be honest the idea of not allowing nested tells was enforcing a /guess/ that that should not
+    ; arise, and there was not even any perceived integrity whole being closed, it was just a gratuitous
+    ; QA trick, and indeed for a long time many nested tells were avoidable. But the case of the quiesced
+    ; dependent reverses the arrow and puts the burden on the prosecution to prove nested tells are a problem.
+    
     (bwhen (uqp (fifo-peek (ufb-queue :tell-dependents)))
-      (trcx finish-business uqp)
-      (DOlist (b (fifo-data (ufb-queue :tell-dependents)))
-        (trc "unhandled :tell-dependents" (car b) (c-callers (car b))))
-      (break "unexpected 2> ufb needs to tell dependnents after awakening"))
-
-    (assert (null (fifo-peek (ufb-queue :tell-dependents))))
-
+      (trc "retelling dependenst, one new one being" uqp)
+      (go tell-dependents))
+    
     ;--- process client queue ------------------------------
     ;
     (when *stop* (return-from finish-business))
@@ -141,7 +155,7 @@ See the Lisp Lesser GNU Public License for more details.
         (just-do-it clientq))
       (when (fifo-peek (ufb-queue :client))
         #+shhh (ukt::fifo-browse (ufb-queue :client) (lambda (entry)
-                                                (trc "surprise client" entry)))
+                                                       (trc "surprise client" entry)))
         (go handle-clients)))
     ;--- now we can reset ephemerals --------------------
     ;

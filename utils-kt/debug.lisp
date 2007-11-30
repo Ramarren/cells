@@ -27,6 +27,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defvar *stop* nil)
 
 (defun utils-kt-reset ()
+  (clock-off :ukt-reset)
   (setf *count* nil
     *stop* nil
     *dbg* nil)
@@ -120,4 +121,22 @@ See the Lisp Lesser GNU Public License for more details.
      (timex (,timep ,@trcargs)
        ,form-measured)
      ,@postlude))
+
+(export! clock clock-0 clock-off)
+
+(defvar *clock*)
+
+(defun clock-off (key)
+  (when (boundp '*clock*)
+    (print (list :clock-off key))
+    (makunbound '*clock*)))
+
+(defun clock-0 (key &aux (now (get-internal-real-time)))
+  (setf *clock* (cons now now))
+  (print (list :clock-initialized-by key)))
+
+(defun clock (&rest keys &aux (now (get-internal-real-time)))
+  (when (boundp '*clock*)
+    (print (list* :clock (- now (cdr *clock*)) :tot (- now (car *clock*)) :at keys))
+    (setf (cdr *clock*) now)))
 

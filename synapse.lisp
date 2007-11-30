@@ -19,7 +19,7 @@ See the Lisp Lesser GNU Public License for more details.
 (in-package :cells)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(mk-synapse f-delta f-sensitivity f-plusp f-zerop fdifferent)))
+  (export '(mk-synapse f-delta f-sensitivity f-plusp f-zerop fdifferent with-synapse)))
 
 (defmacro with-synapse (synapse-id (&rest closure-vars) &body body)
   (let ((syn-id (gensym))(syn-caller (gensym)))
@@ -40,7 +40,6 @@ See the Lisp Lesser GNU Public License for more details.
            (multiple-value-bind (v p)
                (with-integrity ()
                  (ensure-value-is-current synapse :synapse (car *call-stack*)))
-             (trc nil "with-synapse: synapse, v, prop" synapse v p)
              (values v p))
          (record-caller synapse)))))
 

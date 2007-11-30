@@ -28,7 +28,6 @@ See the Lisp Lesser GNU Public License for more details.
    (.value :initform nil :accessor value :initarg :value)
    (zdbg :initform nil :accessor dbg :initarg :dbg)))
 
-
 (defmethod fm-parent (other)
   (declare (ignore other))
   nil)

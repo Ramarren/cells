@@ -17,6 +17,9 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :cl-user)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (setf *features* (delete :its-alive! *features*)))
+
 (defpackage :utils-kt
   (:nicknames #:ukt)
   (:use #:common-lisp
@@ -41,26 +44,3 @@ See the Lisp Lesser GNU Public License for more details.
     #+(and mcl (not openmcl-partial-mop)) #:class-slots
     ))
 
-(in-package :utils-kt)
-
-(defmacro eval-now! (&body body)
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
-     ,@body))
-
-(defmacro export! (&rest symbols)
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (export ',symbols)))
-
-(defmacro define-constant (name value &optional docstring)
-  "Define a constant properly.  If NAME is unbound, DEFCONSTANT
-it to VALUE.  If it is already bound, and it is EQUAL to VALUE,
-reuse the SYMBOL-VALUE of NAME.  Otherwise, DEFCONSTANT it again,
-resulting in implementation-specific behavior."
-  `(defconstant ,name
-     (if (not (boundp ',name))
-	 ,value
-	 (let ((value ,value))
-	   (if (equal value (symbol-value ',name))
-	       (symbol-value ',name)
-	       value)))
-     ,@(when docstring (list docstring))))

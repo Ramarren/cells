@@ -143,8 +143,11 @@ See the Lisp Lesser GNU Public License for more details.
           ;; next is an indirect and brittle way to determine that a slot has already been output,
           ;; but I think anything better creates a run-time hit.
           ;;
-          (unless (md-slot-cell-flushed self slot-name) ;; slot will have been propagated just after cell was flushed
-            (slot-value-observe slot-name self (bd-slot-value self slot-name) nil nil)))
+          ;; until 2007-10 (unless (cdr (assoc slot-name (cells-flushed self))) ;; make sure not flushed
+          ;; but first I worried about it being slow keeping the flushed list /and/ searching, then
+          ;; I wondered why a flushed cell should not be observed, constant cells are. So Just Observe It
+          (slot-value-observe slot-name self (bd-slot-value self slot-name) nil nil))
+
 
          ((find (c-lazy c) '(:until-asked :always t))
           (trc nil "md-awaken deferring c-awaken since lazy" 
@@ -223,9 +226,6 @@ See the Lisp Lesser GNU Public License for more details.
   (if self
     (setf (slot-value self slot-name) new-value)
     (setf (symbol-value slot-name) new-value)))
-
-(defun md-slot-cell-flushed (self slot-name)
-  (cdr (assoc slot-name (cells-flushed self))))
 
 ;----------------- navigation: slot <> initarg <> esd <> cell -----------------
 

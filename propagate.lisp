@@ -46,7 +46,8 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun c-pulse-update (c key)
   (declare (ignorable key))
-  (trc nil "!!!!!!! c-pulse-update updating !!!!!!!!!!" *data-pulse-id* c key :prior-pulse (c-pulse c))
+  (unless (find key '(:valid-uninfluenced))
+    (trc nil "!!!!!!! c-pulse-update updating !!!!!!!!!!" *data-pulse-id* c key :prior-pulse (c-pulse c)))
   (assert (>= *data-pulse-id* (c-pulse c)) ()
     "Current DP ~a not GE pulse ~a of cell ~a" *data-pulse-id* (c-pulse c) c)
   (setf (c-pulse c) *data-pulse-id*))
@@ -74,7 +75,7 @@ See the Lisp Lesser GNU Public License for more details.
       (princ #\.)(princ #\!)
       (return-from c-propagate))    
     (trc nil  "c-propagate> !!!!!!! propping" c (c-value c) :caller-ct (length (c-callers c)))
-    (trc nil "c-propagate> !!!! new value" (c-value c) :prior-value prior-value :caller-ct (length (c-callers c)) c)
+    #+slow (trc c "c-propagate> !!!! new value" (c-value c) :prior-value prior-value :caller-ct (length (c-callers c)) c)
     (when *c-debug*
       (when (> *c-prop-depth* 250)
         (trc nil "c-propagate deep" *c-prop-depth* (c-model c) (c-slot-name c) #+nah c))
@@ -83,7 +84,7 @@ See the Lisp Lesser GNU Public License for more details.
     
     ; --- manifest new value as needed ---
     ;
-    ; 20061030 Trying not-to-be first because doomed instances may be interested in callers
+    ; 20061030 Trying not.to.be first because doomed instances may be interested in callers
     ; who will decide to propagate. If a family instance kids slot is changing, a doomed kid
     ; will be out of the kids but not yet quiesced. If the propagation to this rule asks the kid
     ; to look at its siblings (say a view instance being deleted from a stack who looks to the psib
@@ -95,7 +96,7 @@ See the Lisp Lesser GNU Public License for more details.
             (md-slot-owning (type-of (c-model c)) (c-slot-name c)))
       (trc nil "c-propagate> contemplating lost")
       (flet ((listify (x) (if (listp x) x (list x))))
-        (bIf (lost (set-difference (listify prior-value) (listify (c-value c))))
+        (bif (lost (set-difference (listify prior-value) (listify (c-value c))))
           (progn
             (trc nil "prop nailing owned!!!!!!!!!!!" c :lost lost :leaving (c-value c))
             (mapcar 'not-to-be lost))
@@ -169,6 +170,8 @@ See the Lisp Lesser GNU Public License for more details.
 
 ; --- recalculate dependents ----------------------------------------------------
 
+
+
 (defun c-propagate-to-callers (c)
   ;
   ;  We must defer propagation to callers because of an edge case in which:
@@ -186,26 +189,27 @@ See the Lisp Lesser GNU Public License for more details.
                          (member (c-lazy caller) '(t :always :once-asked))))
           (c-callers c))
     (let ((causation (cons c *causation*))) ;; in case deferred
-      (TRC nil "c-propagate-to-callers > queueing notifying callers" (c-callers c))
+      #+slow (TRC c "c-propagate-to-callers > queueing notifying callers" (c-callers c))
       (with-integrity (:tell-dependents c)
         (assert (null *call-stack*))
         (let ((*causation* causation))
           (trc nil "c-propagate-to-callers > actually notifying callers of" c (c-callers c))
           #+c-debug (dolist (caller (c-callers c))
                       (assert (find c (cd-useds caller)) () "test 1 failed ~a ~a" c caller))
-          (dolist (caller (copy-list (c-callers c))) ;; following code may modify c-callers list...
-            (trc nil "PRE-prop-CHECK " c :caller caller (c-state caller) (c-lazy caller))
-            (unless (or (eq (c-state caller) :quiesced) ;; ..so watch for quiesced
-                      (member (c-lazy caller) '(t :always :once-asked)))
-              (assert (find c (cd-useds caller))() "Precheck Caller ~a of ~a does not have it as used" caller c)
-              ))
+          #+c-debug (dolist (caller (copy-list (c-callers c))) ;; following code may modify c-callers list...
+                      (trc nil "PRE-prop-CHECK " c :caller caller (c-state caller) (c-lazy caller))
+                      (unless (or (eq (c-state caller) :quiesced) ;; ..so watch for quiesced
+                                (member (c-lazy caller) '(t :always :once-asked)))
+                        (assert (find c (cd-useds caller))() "Precheck Caller ~a of ~a does not have it as used" caller c)
+                        ))
           (dolist (caller (progn #+not copy-list (c-callers c))) ;; following code may modify c-callers list...
             (trc nil "propagating to caller iterates" c :caller caller (c-state caller) (c-lazy caller))
             (unless (or (eq (c-state caller) :quiesced) ;; ..so watch for quiesced
                       (member (c-lazy caller) '(t :always :once-asked)))
               (assert (find c (cd-useds caller))() "Caller ~a of ~a does not have it as used" caller c)
-              (trc nil "propagating to caller is used" c :caller caller)
-              (ensure-value-is-current caller :prop-from c))))))))
+              #+slow (trc c "propagating to caller is used" c :caller caller (c-currentp c))
+              (let ((*trc-ensure* (trcp c)))
+                (ensure-value-is-current caller :prop-from c)))))))))
 
 
 

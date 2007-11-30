@@ -26,7 +26,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro c-lambda (&body body)
   `(c-lambda-var (slot-c) ,@body))
 
-(export! .cache-bound-p)
+(export! .cache-bound-p c?+n)
 
 (defmacro c-lambda-var ((c) &body body)
   `(lambda (,c &aux (self (c-model ,c))
@@ -45,6 +45,13 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmacro c? (&body body)
   `(make-c-dependent
+    :code ',body
+    :value-state :unevaluated
+    :rule (c-lambda ,@body)))
+
+(defmacro c?+n (&body body)
+  `(make-c-dependent
+    :inputp t
     :code ',body
     :value-state :unevaluated
     :rule (c-lambda ,@body)))

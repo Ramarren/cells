@@ -33,7 +33,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defgeneric mdead (self)
 
   (:method ((self model-object))
-    (eq :eternal-rest (md-state SELF)))
+    (eq :eternal-rest (md-state self)))
 
   (:method (self)
     (declare (ignore self))
@@ -47,19 +47,19 @@ See the Lisp Lesser GNU Public License for more details.
   (:method :around ((self model-object))
     (declare (ignorable self))
     (trc nil #+not (typep self '(or mathx::problem mathx::prb-solvers mathx::prb-solver))
-      "not-to-be nailing" self)
-    (c-assert (not (eq (md-state self) :eternal-rest)))
+      "not.to-be nailing" self)
+    ;;showpanic (c-assert (not (eq (md-state self) :eternal-rest)))
+    (unless (eq (md-state self) :eternal-rest)
+      (call-next-method)
 
-    (call-next-method)
+      (setf (fm-parent self) nil
+        (md-state self) :eternal-rest)
 
-    (setf (fm-parent self) nil
-      (md-state self) :eternal-rest)
+      (md-map-cells self nil
+        (lambda (c)
+          (c-assert (eq :quiesced (c-state c))))) ;; fails if user obstructs not.to-be with primary method (use :before etc)
 
-    (md-map-cells self nil
-      (lambda (c)
-        (c-assert (eq :quiesced (c-state c))))) ;; fails if user obstructs not-to-be with primary method (use :before etc)
-
-    (trc nil "not-to-be cleared 2 fm-parent, eternal-rest" self)))
+      (trc nil "not.to-be cleared 2 fm-parent, eternal-rest" self))))
 
 (defun md-quiesce (self)
   (trc nil "md-quiesce nailing cells" self (type-of self))
@@ -75,12 +75,10 @@ See the Lisp Lesser GNU Public License for more details.
      (c-unlink-from-used c)
      (dolist (caller (c-callers c))
        (setf (c-value-state caller) :uncurrent)
-       (trc nil "c-quiesce unlinking caller" c)
+       (trc nil "c-quiesce unlinking caller and making uncurrent" :q c :caller caller)
        (c-unlink-caller c caller))
      (setf (c-state c) :quiesced) ;; 20061024 for debugging for now, might break some code tho
      )))
-
-
 
 (defparameter *to-be-dbg* nil)
 

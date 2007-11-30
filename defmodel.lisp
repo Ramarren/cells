@@ -17,7 +17,6 @@ See the Lisp Lesser GNU Public License for more details.
 |#
 
 (in-package :cells)
-
 (defmacro defmodel (class directsupers slotspecs &rest options)
   ;;(print `(defmodel sees directsupers ,directsupers using ,(or directsupers :model-object)))
   (assert (not (find class directsupers))() "~a cannot be its own superclass" class)
@@ -197,3 +196,6 @@ the defmodel form for ~a" ',class ',class))))
     (ddd (c-in nil) :cell :ephemeral)
     :superx 42 ;; default-initarg
     (:documentation "as if!")))
+
+
+

@@ -33,6 +33,29 @@
 (defobserver m-syn-b ()
   (print `(output m-syn-b ,self ,new-value ,old-value)))
 
+(def-cell-test m-syn-bool
+    (let* ((delta-ct 0)
+           (m (make-instance 'm-syn
+                :m-syn-a (c-in nil)
+                :m-syn-b (c? (incf delta-ct)
+                           (trc "syn-b containing rule firing!!!!!!!!!!!!!!" delta-ct)
+                           (bwhen (msg (with-synapse :xyz42 ()
+                                         (trc "synapse fires!!! ~a" (^m-syn-a))
+                                         (bIF (k (find (^m-syn-a) '(:one :two :three)))
+                                           (values k :propagate)
+                                           (values NIL :no-propagate))))
+                             msg)))))
+      (ct-assert (= 1 delta-ct))
+      (ct-assert (null (m-syn-b m)))
+      (setf (m-syn-a m) :nine)
+      (ct-assert (= 1 delta-ct))
+      (ct-assert (null (m-syn-b m)))
+      (setf (m-syn-a m) :one)
+      (ct-assert (= 2 delta-ct))
+      (ct-assert (eq :one (m-syn-b m)))
+      (setf (m-syn-a m) :nine)
+      (ct-assert (= 2 delta-ct))
+      (ct-assert (eq :one (m-syn-b m)))))
 
 (def-cell-test m-syn
     (let* ((delta-ct 0)

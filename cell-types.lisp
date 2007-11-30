@@ -166,7 +166,7 @@ See the Lisp Lesser GNU Public License for more details.
 ;__________________
 
 (defmethod c-print-value ((c c-ruled) stream)
-  (format stream "~a" (cond ((c-validp c) "<vld>")
+  (format stream "~a" (cond ((c-validp c) (cons (c-value c) "<vld>"))
                             ((c-unboundp c) "<unb>")
                             ((not (c-currentp c)) "dirty")
                             (t "<err>"))))

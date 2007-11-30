@@ -67,7 +67,8 @@ See the Lisp Lesser GNU Public License for more details.
                                 (zerop (sbit usage rpos)))
                               (progn
                                 (count-it :unlink-unused)
-                                (trc nil "c-unlink-unused" c :dropping-used (car useds)) 
+                                #+save (when (eq 'mathx::progress (c-slot-name c))
+                                  (trc "c-unlink-unused" c :dropping-used (car useds)) )
                                 (c-unlink-caller (car useds) c)
                                 (rplaca useds nil))
                             (progn

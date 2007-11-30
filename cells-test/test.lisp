@@ -68,8 +68,10 @@ subclass for them?)
 #+go
 (test-cells)
 
+
 (defun test-cells ()
   (loop for test in (reverse *cell-tests*)
+        when (eq 'm-syn-bool test)
         do (cell-test-init test)
         (funcall test))
   (print (make-string 40 :initial-element #\*))

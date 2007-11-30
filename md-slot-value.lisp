@@ -64,6 +64,8 @@ See the Lisp Lesser GNU Public License for more details.
 ;;;      (mathx::show-time t)
 ;;;      (ctk::app-time t))))
 
+(defvar *trc-ensure* nil)
+
 (defun ensure-value-is-current (c debug-id ensurer)
   ;
   ; ensurer can be used cell propagating to callers, or an existing caller who wants to make sure
@@ -78,7 +80,7 @@ See the Lisp Lesser GNU Public License for more details.
 
   (cond
    ((c-currentp c)
-    (trc nil "c-currentp" c)) ;; used to follow c-inputp, but I am toying with letting ephemerals (inputs) fall obsolete
+    (trc nil "EVIC yep: c-currentp" c)) ;; used to follow c-inputp, but I am toying with letting ephemerals (inputs) fall obsolete
    ;; and then get reset here (ie, ((c-input-p c) (ephemeral-reset c))). ie, do not assume inputs are never obsolete
    ;;
    ((and (c-inputp c)
@@ -100,14 +102,22 @@ See the Lisp Lesser GNU Public License for more details.
                    (or (check-reversed (cdr useds))
                      (let ((used (car useds)))
                        (ensure-value-is-current used :nested c)
-                       (trc nil "comparing pulses (ensurer, used, used-changed): "  c debug-id used (c-pulse-last-changed used))
+                       #+slow (trc c "comparing pulses (ensurer, used, used-changed): "  c debug-id used (c-pulse-last-changed used))
                        (when (> (c-pulse-last-changed used)(c-pulse c))
-                         (trc nil "used changed and newer !!!!!!" c debug-id used)
+                         #+slow (trc c "used changed and newer !!!!!!" c :oldpulse (c-pulse used) debug-id used :lastchg (c-pulse-last-changed used))
+                         #+shhh (when (trcp c)
+                           (describe used))
                          t))))))
         (assert (typep c 'c-dependent))
         (check-reversed (cd-useds c))))
-    (trc nil "kicking off calc-set of" (c-slot-name c) :pulse *data-pulse-id*)
+    #+slow (trc c "kicking off calc-set of" (c-validp c) (c-slot-name c) :vstate (c-value-state c)
+             :stamped (c-pulse c) :current-pulse *data-pulse-id*)
     (calculate-and-set c))
+
+   ((mdead (c-value c))
+    (trc "ensure-value-is-current> trying recalc of ~a with current but dead value ~a" c (c-value c))
+    (let ((new-v (calculate-and-set c)))
+      (trc "ensure-value-is-current> GOT new value ~a" new-v)))
 
    (t (trc nil "ensuring current decided current, updating pulse" (c-slot-name c) debug-id)
      (c-pulse-update c :valid-uninfluenced)))
@@ -118,7 +128,7 @@ See the Lisp Lesser GNU Public License for more details.
   (bwhen (v (c-value c))
     (if (mdead v)
         (progn
-          (trc "ensure-value not returning dead model object value" v)
+          (brk "ensure-value still got and still not returning ~a dead value ~a" c v)
           nil)
       v)))
 
@@ -127,7 +137,8 @@ See the Lisp Lesser GNU Public License for more details.
            (when (c-stopped)
              (princ #\.)
              (return-from calculate-and-set))
-           
+
+           #-its-alive!
            (bwhen (x (find c *call-stack*)) ;; circularity
              (unless nil ;; *stop*
                (let ((stack (copy-list *call-stack*)))
@@ -142,7 +153,7 @@ See the Lisp Lesser GNU Public License for more details.
                    (setf caller-reiterated (eq caller c)))
              (c-break ;; break is problem when testing cells on some CLs
               "cell ~a midst askers (see above)" c)
-             (break))
+             (break "see listener for cell rule cycle diagnotics"))
   
            (multiple-value-bind (raw-value propagation-code)
                (calculate-and-link c)
@@ -160,7 +171,7 @@ See the Lisp Lesser GNU Public License for more details.
   (let ((*call-stack* (cons c *call-stack*))
         (*defer-changes* t))
     (assert (typep c 'c-ruled))
-    (trc nil "calculate-and-link" c)
+    #+slow (trc *c-debug* "calculate-and-link" c)
     (cd-usage-clear-all c)
     (multiple-value-prog1
         (funcall (cr-rule c) c)
@@ -248,7 +259,7 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
 
         ; --- head off unchanged; this got moved earlier on 2006-06-10 ---
         (when (and (not (eq propagation-code :propagate))
-                (eql prior-state :valid)
+                (find prior-state '(:valid :uncurrent))
                 (c-no-news c absorbed-value prior-value))
           (trc nil "(setf md-slot-value) > early no news" propagation-code prior-state prior-value  absorbed-value)
           (count-it :nonews)
@@ -303,16 +314,23 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
     
     (setf (c-state c) :optimized-away)
     
-    (let ((entry (rassoc c (cells (c-model c))))) ; move from cells to cells-flushed
+    (let ((entry (rassoc c (cells (c-model c)))))
       (unless entry
         (describe c))
       (c-assert entry)
       (trc nil "c-optimize-away?! moving cell to flushed list" c)
       (setf (cells (c-model c)) (delete entry (cells (c-model c))))
-      (push entry (cells-flushed (c-model c))))
+      #-its-alive! (push entry (cells-flushed (c-model c)))
+      )
     
     (dolist (caller (c-callers c))
-      (break "got opti of called")
+      ;
+      ; example: on window shutdown with a tool-tip displayed, the tool-tip generator got
+      ; kicked off and asked about the value of a dead instance. That returns nil, and
+      ; there was no other dependency, so the Cell then decided to optimize itself away.
+      ; of course, before that time it had a normal value on which other things depended,
+      ; so we ended up here. where there used to be a break.
+      ;
       (setf (cd-useds caller) (delete c (cd-useds caller)))
       (c-optimize-away?! caller) ;; rare but it happens when rule says (or .cache ...)
       )))

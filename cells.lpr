@@ -1,8 +1,8 @@
-;; -*- lisp-version: "8.0 [Windows] (Jan 22, 2007 8:01)"; cg: "1.81"; -*-
+;; -*- lisp-version: "8.0 [Windows] (Sep 14, 2007 21:56)"; cg: "1.81"; -*-
 
 (in-package :cg-user)
 
-(defpackage :CELLS)
+(defpackage :cells)
 
 (define-project :name :cells
   :modules (list (make-instance 'module :name "defpackage.lisp")

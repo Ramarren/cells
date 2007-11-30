@@ -87,11 +87,11 @@ See the Lisp Lesser GNU Public License for more details.
      (or (funcall some-function parent)
          (fm-ascendant-some (fm-parent parent) some-function))))
 
-(defun fm-ascendant-if (self if-function)
-   (when (and self if-function)
-     (or (when (funcall if-function self)
+(defun fm-ascendant-if (self test)
+  (when (and self test)
+    (or (when (funcall test self)
            self)
-         (fm-ascendant-if .parent if-function))))
+      (fm-ascendant-if .parent test))))
 
 (defun fm-descendant-if (self test)
   (when (and self test)
@@ -105,11 +105,13 @@ See the Lisp Lesser GNU Public License for more details.
                             (when (fm-includes node d2)
                               node))))
 
-(defun fm-collect-if (tree test)
+(defun fm-collect-if (tree test &optional skip-top dependently)
   (let (collection)
     (fm-traverse tree (lambda (node)
-                        (when (funcall test node)
-                          (push node collection))))
+                        (unless (and skip-top (eq node tree))
+                          (when (funcall test node)
+                            (push node collection))))
+      :with-dependency dependently)
     (nreverse collection)))
 
 (defun fm-value-dictionary (tree value-fn &optional include-top)
@@ -158,6 +160,39 @@ See the Lisp Lesser GNU Public License for more details.
              (tv)
              (without-c-dependency (tv))))))
   (values))
+
+(export! fm-traverse-bf)
+(defun fm-traverse-bf (family applied-fn &optional (cq (make-fifo-queue)))
+  (when family
+    (flet ((process-node (fm)
+               (funcall applied-fn fm)
+               (when (kids fm)
+                 (fifo-add cq (kids fm)))))
+      (process-node family)
+      (loop for x = (fifo-pop cq)
+            while x
+            do (mapcar #'process-node x)))))
+
+#+test-bf
+(progn
+  (defmd bftree (family)
+    (depth 0 :cell nil)
+    (id (c? (klin self)))
+    :kids (c? (when (< (depth self) 4)
+                (loop repeat (1+ (depth self))
+                    collecting (make-kid 'bftree :depth (1+ (depth self)))))))
+  
+  (defun klin (self)
+    (when self
+      (if .parent
+          (cons (kid-no self) (klin .parent))
+        (list 0))))
+  
+  (defun test-bf ()
+    (let ((self (make-instance 'bftree)))
+      (fm-traverse-bf self
+        (lambda (node)
+          (print (id node)))))))
 
 (defun fm-ordered-p (n1 n2 &aux (top (fm-ascendant-common n1 n2)))
   (assert top)
@@ -213,7 +248,7 @@ See the Lisp Lesser GNU Public License for more details.
 ;; should be modified to go through 'gather', which should be the real fm-find-all
 ;;
 
-(export! fm-do-up)
+(export! fm-do-up fm-find-next fm-find-prior)
 
 (defun fm-do-up (self &optional (fn 'identity))
   (when self
@@ -554,7 +589,8 @@ See the Lisp Lesser GNU Public License for more details.
   (count-it :fm-find-one)
   (flet ((matcher (fm)
            (when diag
-             (trc "fm-find-one matcher sees name" (md-name fm) :ofthing fm :seeking md-name))
+             (trc nil
+               "fm-find-one matcher sees name" (md-name fm) :ofthing (type-of fm) :seeking md-name global-search))
            (when (and (eql (name-root md-name)(md-name fm))
                    (or (null (name-subscript md-name))
                      (eql (name-subscript md-name) (fm-pos fm)))

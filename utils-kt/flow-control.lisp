@@ -59,6 +59,10 @@ See the Lisp Lesser GNU Public License for more details.
 (defun tree-flatten (tree)
   (list-flatten! (copy-tree tree)))
 
+(export! push-end)
+(defmacro push-end (item place )
+  `(setf ,place (nconc ,place (list ,item))))
+
 (defun pair-off (list &optional (test 'eql))
   (loop with pairs and copy = (copy-list list)
       while (cdr copy)
@@ -184,8 +188,9 @@ See the Lisp Lesser GNU Public License for more details.
 
 (export! without-repeating)
 
-
 (let ((generators (make-hash-table :test 'equalp)))
+  (defun reset-without-repeating ()
+    (setf generators (make-hash-table :test 'equalp)))
   (defun without-repeating (key all &optional (decent-interval (floor (length all) 2)))
     (funcall (or (gethash key generators)
                (setf (gethash key generators)

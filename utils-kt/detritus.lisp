@@ -49,10 +49,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defun xor (c1 c2)
   (if c1 (not c2) c2))
 
-(export! push-end collect collect-if)
-
-(defmacro push-end (item place )
-  `(setf ,place (nconc ,place (list ,item))))
+(export! collect collect-if)
 
 (defun collect (x list &key (key 'identity) (test 'eql))
   (loop for i in list
@@ -60,10 +57,22 @@ See the Lisp Lesser GNU Public License for more details.
         collect i))
 
 (defun collect-if (test list)
-  (loop for i in list
-        when (funcall test i)
-        collect i))
+  (remove-if-not test list))
 
+(defun test-setup ()
+  #-its-alive!
+  (ide.base::find-new-prompt-command
+   (cg.base::find-window :listener-frame)))
+
+#+test
+(test-setup)
+
+(defun test-prep ()
+  (test-setup))
+(defun test-init ()
+  (test-setup))
+
+(export! test-setup test-prep test-init)
 
 
 ;;; --- FIFO Queue -----------------------------
@@ -142,7 +151,8 @@ See the Lisp Lesser GNU Public License for more details.
                do (bwhen (fname (pathname-name file))
                     (format t "~&~v,8t~a ~,40t~d" (1+ depth) fname lines))
                summing lines)))
-      (format t "~&~v,8t~a ~,50t~d" depth (pathname-directory path) directory-lines)
+      (unless (zerop directory-lines)
+        (format t "~&~v,8t~a ~,50t~d" depth (pathname-directory path) directory-lines))
       directory-lines))
 
    ((find (pathname-type path) '("cl" "lisp" "c" "h" "java")
@@ -162,7 +172,14 @@ See the Lisp Lesser GNU Public License for more details.
 #+(or)
 (line-count (make-pathname
              :device "c"
-             :directory `(:absolute "0dev" "Algebra")) t)
+             :directory `(:absolute "0dev")))
+
+#+(or)
+(loop for d1 in '("cl-s3" "kpax" "puri-1.5.1" "s-base64" "s-http-client" "s-http-server" "s-sysdeps" "s-utils" "s-xml")
+      summing (line-count (make-pathname
+                      :device "c"
+                      :directory `(:absolute "1-devtools" ,d1))))
+
 
 (export! tree-includes tree-traverse tree-intersect)
 

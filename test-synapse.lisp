@@ -35,6 +35,7 @@
   (print `(output m-syn-b ,self ,new-value ,old-value)))
 
 
+
 (def-cell-test m-syn
     (progn (cell-reset)
       (let* ((delta-ct 0)

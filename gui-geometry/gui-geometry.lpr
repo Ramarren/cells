@@ -1,4 +1,4 @@
-;; -*- lisp-version: "8.0 [Windows] (Jan 22, 2007 8:01)"; cg: "1.81"; -*-
+;; -*- lisp-version: "8.0 [Windows] (Jan 29, 2007 18:02)"; cg: "1.81"; -*-
 
 (in-package :cg-user)
 
@@ -6,6 +6,7 @@
 
 (define-project :name :gui-geometry
   :modules (list (make-instance 'module :name "defpackage.lisp")
+                 (make-instance 'module :name "geo-macros.lisp")
                  (make-instance 'module :name
                                 "geo-data-structures.lisp")
                  (make-instance 'module :name "coordinate-xform.lisp")

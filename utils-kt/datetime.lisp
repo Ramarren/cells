@@ -197,5 +197,8 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun hyphenated-time-string ()
   (substitute #\- #\: (ymdhmsh)))
+
+#+test
+(hyphenated-time-string)
   
 

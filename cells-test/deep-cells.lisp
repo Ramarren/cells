@@ -34,12 +34,12 @@
       (setf *client-log* (append *client-log* (list new-value))))))
 
 (defun deep-queue-handler (client-q)
-  (loop for (nil . task) in (prog1
-                                                 (sort (fifo-data client-q) '< :key 'car)
-                                               (fifo-clear client-q))
-        do
+  (loop for (defer-info . task) in (prog1
+                                (sort (fifo-data client-q) '< :key 'car)
+                              (fifo-clear client-q))
+      do
         (trc nil "!!! --- deep-queue-handler dispatching" defer-info)
-        (funcall task)))
+        (funcall task :user-q defer-info)))
 
 (def-cell-test go-deep ()
   (cells-reset 'deep-queue-handler)

@@ -1,16 +1,10 @@
-;; -*- lisp-version: "8.0 [Windows] (Jan 22, 2007 8:01)"; cg: "1.81"; -*-
+;; -*- lisp-version: "8.1 [Windows] (Sep 29, 2007 20:23)"; cg: "1.103.2.10"; -*-
 
 (in-package :cg-user)
 
-(defpackage :COMMON-LISP
-  (:export #:list
-             #:make-instance
-             #:t
-             #:nil
-             #:quote))
-
 (define-project :name :utils-kt
   :modules (list (make-instance 'module :name "defpackage.lisp")
+                 (make-instance 'module :name "core.lisp")
                  (make-instance 'module :name "debug.lisp")
                  (make-instance 'module :name "flow-control.lisp")
                  (make-instance 'module :name "detritus.lisp")
@@ -28,12 +22,13 @@
   :runtime-modules nil
   :splash-file-module (make-instance 'build-module :name "")
   :icon-file-module (make-instance 'build-module :name "")
-  :include-flags '(:local-name-info)
-  :build-flags '(:allow-debug :purify)
+  :include-flags (list :local-name-info)
+  :build-flags (list :allow-debug :purify)
   :autoload-warning t
   :full-recompile-for-runtime-conditionalizations nil
+  :include-manifest-file-for-visual-styles t
   :default-command-line-arguments "+cx +t \"Initializing\""
-  :additional-build-lisp-image-arguments '(:read-init-files nil)
+  :additional-build-lisp-image-arguments (list :read-init-files nil)
   :old-space-size 256000
   :new-space-size 6144
   :runtime-build-option :standard

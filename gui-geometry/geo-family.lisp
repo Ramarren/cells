@@ -102,6 +102,47 @@ See the Lisp Lesser GNU Public License for more details.
                                         (^prior-sib-pr self (spacing .parent)))))))))))
 
 
+(defun ^prior-sib-pb (self &optional (spacing 0)) ;; just keeping with -pt variant till both converted to defun
+  (bif (psib (find-prior self (kids .parent)
+               :test (lambda (sib)
+                       (not (collapsed sib)))))
+    (eko (nil "^prior-sib-pb spc pb-psib -lt" (- (abs spacing)) (pb psib) (- (^lt)))
+      (+ (- (abs spacing)) ;; force spacing to minus(= down for OpenGL)
+        (pb psib)))   
+      0))
+
+(defun centered-h? ()
+  (c? (px-maintain-pl (round (- (inset-width .parent) (l-width self)) 2))))
+
+(defun centered-v? ()
+  (c? (py-maintain-pt (round (- (l-height .parent) (l-height self)) -2))))
+
+;--------------- geo.row.flow ----------------------------
+(export! geo-row-flow)
+
+(defmodel geo-row-flow (geo-inline)
+  ((spacing-hz :cell nil :initarg :spacing-hz :initform 0 :reader spacing-hz)
+   (spacing-vt :cell nil :initarg :spacing-vt :initform 0 :reader spacing-vt)
+   (aligned :cell nil :initarg :aligned :initform nil :reader aligned))
+  (:default-initargs
+      :lb  (c? (geo-kid-wrap self 'pb))
+    :kid-slots (lambda (self)
+                 (declare (ignore self))
+                 
+                 (list
+                  (mk-kid-slot (py)
+                    (c? (py-maintain-pt
+                         (let ((ph (^prior-sib-pr self (spacing-hz .parent) (aligned .parent))))
+                           (if (> (+ ph (l-width self)(outset .parent))  (l-width .parent))
+                               (^prior-sib-pb self (spacing-vt .parent))
+                             (^prior-sib-pt self))))))
+                  (mk-kid-slot (px)
+                    (c? (px-maintain-pl
+                         (let ((ph (^prior-sib-pr self (spacing-hz .parent) (aligned .parent))))
+                           (if (> (+ ph (l-width self)(outset .parent))  (l-width .parent))
+                               0
+                             ph)))))))))
+
 #| archive
 
 (defmodel geo-row-fv (family-values geo-row)())
@@ -136,28 +177,8 @@ See the Lisp Lesser GNU Public License for more details.
                                              (pt psib))
                                          0))))))))
 
-;--------------- IGRowFlow ----------------------------
-
-(defmodel geo-row-flow (geo-row)
-  ((spacing-hz :cell nil :initarg :spacing-hz :initform 0 :reader spacing-hz)
-   (spacing-vt :cell nil :initarg :spacing-vt :initform 0 :reader spacing-vt)
-   (aligned :cell nil :initarg :aligned :initform nil :reader aligned))
-  (:default-initargs
-   :lb  (c? (geo-kid-wrap self 'pb))
-    :kid-slots (lambda (self)
-                 (declare (ignore self))
-                 (list
-                  (mk-kid-slot (py)
-                    (c? (py-maintain-pt
-                         (let ((ph (^prior-sib-pr self (spacing-hz .parent) (aligned .parent))))
-                           (if (> (+ ph (l-width self)) (l-width .parent))
-                               (^prior-sib-pb self (spacing-vt .parent))
-                             (^prior-sib-pt self))))))
-                  (mk-kid-slot (px)
-                    (c? (px-maintain-pl
-                         (let ((ph (^prior-sib-pr self (spacing-hz .parent) (aligned .parent))))
-                           (if (> (+ ph (l-width self)) (l-width .parent))
-                               0
-                             ph)))))))))
-
 |#
+
+
+
+

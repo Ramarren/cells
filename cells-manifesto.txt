@@ -181,7 +181,7 @@ just after CLOS instance initialization, and when a slot changes value. Any obse
 is guaranteed to be called at least once during intialization even if a cell slot is bound to a constant
 or if it is an input or ruled Cell that never changes value.
 
-It is legal for observer code to assign to input Cells, but (a) special syntax is required to defer executuion
+It is legal for observer code to assign to input Cells, but (a) special syntax is required to defer execution
 until the observed state change has fully propagated; and (b) doing so compromises the declarative
 quality of an application -- one can no longer look to one rule to see how a slot (in this case the
 input slot being assigned by the observer) gets its value. A reasonable usage might be one with
@@ -205,8 +205,8 @@ When application code assigns to some input cell X, the Cells engine guarantees:
     by the change to X and will not be recomputed.
 
   - recomputations, when they read other datapoints, must see only values current with the new value of X.
-    Example: if A depends on B and X, and B depends on X, when A reads B it must return a value recomputed from
-    the new value of X.
+    Example: if A depends on B and X, and B depends on X, when X changes and A reads B and X to compute a
+    new value, B must return a value recomputed from the new value of X.
 
   - similarly, client observer callbacks must see only values current with the new value of X; and
 
@@ -285,11 +285,19 @@ C GUI library, where Lisp-land activity must be propagated to the C GUI, and C G
 to Lisp-land. See the Cells-Gtk or Celtk projects. Also, a persistent CLOS implementation that must echo 
 CLOS instance data into, say, SQL tables.
 
-Prior Art
+Prior Art (in increasing order of priorness (age))
 ---------
+Functional reactive programming:
+  This looks to be the most active, current, and vibrant subset of folks working on this sort of stuff.
+  Links:
+   FlapJax (FRP-powered web apps) http://www.flapjax-lang.org/
+   http://lambda-the-ultimate.org/node/1771
+   http://www.haskell.org/frp/
+   FrTime (scheme FRP implementation, no great links) http://pre.plt-scheme.org/plt/collects/frtime/doc.txt
+
 Adobe Adam, originally developed only to manage complex GUIs. [Adam]
 
-COSI, a class-based Cells-alike used at STSCI to in software used to 
+COSI, a class-based Cells-alike used at STSCI in software used to 
 schedule Hubble telescope viewing time. [COSI]
 
 Garnet's KR: http://www.cs.cmu.edu/~garnet/
@@ -304,13 +312,12 @@ PhD Thesis in which he develops a constraint programming language or two:
   http://www.cs.utk.edu/~bvz/quickplan.html
 
 Sutherland, I. Sketchpad: A Man Machine Graphical Communication System. PhD thesis, MIT, 1963.
-Steele himself cites Sketchpad as inexlicably unappreciated prior
+Steele himself cites Sketchpad as inexplicably unappreciated prior
 art to his Constraints system:
 
 See also:
  The spreadsheet paradigm: http://www.cs.utk.edu/~bvz/active-value-spreadsheet.html
  The dataflow paradigm: http://en.wikipedia.org/wiki/Dataflow
- Reactive programming: http://www.haskell.org/yampa/AFPLectureNotes.pdf
  Frame-based programming
  Definitive-programming
 

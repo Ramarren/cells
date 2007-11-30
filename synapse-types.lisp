@@ -18,6 +18,18 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :cells)
 
+(export! f-find)
+
+(defmacro f-find (synapse-id sought where)
+  `(call-f-find ,synapse-id ,sought ,where))
+
+(defun call-f-find (synapse-id sought where)
+  (with-synapse synapse-id ()
+    (bif (k (progn
+              (find sought where)))
+      (values k :propagate)
+      (values nil :no-propagate))))
+
 (defmacro f-sensitivity (synapse-id (sensitivity &optional subtypename) &body body)
   `(call-f-sensitivity ,synapse-id ,sensitivity ,subtypename (lambda () ,@body)))
 
