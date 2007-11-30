@@ -335,11 +335,12 @@ evaluate:
   ()
   (:default-initargs
       :kids (c-in nil) ;; or we cannot add any addend kids later
-    :value (c? (reduce #'+ (kids self)
+    :value (c? (trc "val rule runs")
+             (reduce #'+ (kids self)
                    :initial-value 0
                    :key #'value))))
 
-(defobserver value ((self summer))
+(defobserver .value ((self summer))
   (trc "the sum of the values of the kids is" new-value))
 
 (defobserver .kids ((self summer))

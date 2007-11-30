@@ -25,8 +25,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmodel model ()
   ((.md-name :cell nil :initform nil :initarg :md-name :accessor md-name)
    (.fm-parent :cell nil :initform nil :initarg :fm-parent :accessor fm-parent)
-   (.value :initform nil :accessor value :initarg :value)
-   (zdbg :initform nil :accessor dbg :initarg :dbg)))
+   (.value :initform nil :accessor value :initarg :value)))
 
 (defmethod fm-parent (other)
   (declare (ignore other))
