@@ -18,11 +18,14 @@
   :long-description "Low-level utilities used by all of Kenny's projects"
   :serial t
   :components ((:file "defpackage")
+               (:file "core")
                (:file "debug")
                (:file "flow-control")
                (:file "detritus")
+               (:file "quad")
                (:file "strings")
-               (:file "datetime")))
+               (:file "datetime")
+               (:file "split-sequence")))
 
 (defmethod perform ((o load-op) (c (eql (find-system :utils-kt))))
   ; (pushnew "CELLS" *modules* :test #'string=)
