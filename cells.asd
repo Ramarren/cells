@@ -5,12 +5,13 @@
 (declaim (optimize (debug 3) (speed 3) (safety 1) (compilation-speed 0)))
 
 (asdf:defsystem :cells
-    :name "cells"
+  :name "cells"
   :author "Kenny Tilton <kentilton@gmail.com>"
   :maintainer "Kenny Tilton <kentilton@gmail.com>"
   :licence "Lisp LGPL"
   :description "Cells"
   :long-description "Cells: a dataflow extension to CLOS."
+  :version "3.0"
   :serial t
   :components ((:module "utils-kt"
                  :serial t
@@ -24,22 +25,21 @@
                (:file "trc-eko")
                (:file "cells")
                (:file "integrity")
-               (:file "constructors")
                (:file "cell-types")
-               (:file "synapse")
-               (:file "synapse-types")
+               (:file "constructors")
                (:file "initialize")
                (:file "md-slot-value")
                (:file "slot-utilities")
                (:file "link")
                (:file "propagate")
+               (:file "synapse")
+               (:file "synapse-types")
                (:file "model-object")
                (:file "defmodel")
                (:file "md-utilities")
                (:file "family")
                (:file "fm-utilities")
-               (:file "family-values")
-               (:file "variables")))
+               (:file "family-values")))
 
 (defmethod perform ((o load-op) (c (eql (find-system :cells))))
   (pushnew :cells *features*))
@@ -48,6 +48,4 @@
   (oos 'load-op :cells-test))
 
 (defmethod perform ((o test-op) (c (eql :cells)))
-  (oos 'load-op :cells-test))
-
-)
+  (oos 'load-op :cells-test)))
