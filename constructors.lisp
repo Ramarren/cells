@@ -19,14 +19,27 @@ See the Lisp Lesser GNU Public License for more details.
 (in-package :cells)
 
 (eval-now!
-  (export '(c?n)))
+  (export '(.cache-bound-p
+
+            ;; Cells Constructors
+            c?n
+            c?once
+            c?n-until
+            c?1
+            c_1
+            c?+n
+
+            ;; Debug Macros and Functions
+            c?dbg
+            c_?dbg
+            c-input-dbg
+
+            )))
 
 ;___________________ constructors _______________________________
 
 (defmacro c-lambda (&body body)
   `(c-lambda-var (slot-c) ,@body))
-
-(export! .cache-bound-p c?+n)
 
 (defmacro c-lambda-var ((c) &body body)
   `(lambda (,c &aux (self (c-model ,c))
@@ -72,8 +85,6 @@ See the Lisp Lesser GNU Public License for more details.
     :rule (c-lambda ,@body)
     ,@args))
 
-(export! c?once c?n-until c?1 c_1)
-
 (defmacro c?once (&body body)
   `(make-c-dependent
     :code '(without-c-dependency ,@body)
@@ -113,8 +124,6 @@ See the Lisp Lesser GNU Public License for more details.
     :value-state :unevaluated
     :lazy :until-asked
     :rule (c-lambda ,@body)))
-
-(export! c?dbg c_?dbg c-input-dbg)
 
 (defmacro c_?dbg (&body body)
   "Lazy until asked, then eagerly propagating"
