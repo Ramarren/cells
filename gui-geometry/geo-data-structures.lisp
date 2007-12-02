@@ -21,12 +21,9 @@ See the Lisp Lesser GNU Public License for more details.
 ;-----------------------------
 
 (defstruct v2 
-  (h 0 )
-  (v 0 )
+  (h 0 )  ;; horizontal coordinate
+  (v 0 )  ;; vertical coordinate
   )
-
-#+(or)
-(instance-slots (mkv2 1 2))
 
 (defmethod print-object ((self v2) s)
   (format s "~a|~a" (v2-h self)(v2-v self)))
