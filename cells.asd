@@ -38,7 +38,8 @@
                (:file "md-utilities")
                (:file "family")
                (:file "fm-utilities")
-               (:file "family-values")))
+               (:file "family-values")
+               (:file "variables")))
 
 (defmethod perform ((o load-op) (c (eql (find-system :cells))))
   (pushnew :cells *features*))
