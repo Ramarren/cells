@@ -28,8 +28,10 @@ See the Lisp Lesser GNU Public License for more details.
     #+sbcl #:sb-mop
     #+openmcl-partial-mop #:openmcl-mop
     #+(and mcl (not openmcl-partial-mop))  #:ccl)
-  (:export #:utils-kt-reset
-     #:count-it #:count-of
+  (:export 
+    #:export!
+    #:utils-kt-reset
+    #:count-it #:count-of
     #:wdbg #:maptimes #:bwhen #:bif #:xor
     #:with-dynamic-fn #:last1 #:packed-flat! #:with-metrics 
     #:shortc
