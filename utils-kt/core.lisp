@@ -42,18 +42,22 @@ resulting in implementation-specific behavior."
 
 (export! exe-path exe-dll font-path)
 
+#+(and allegro ide)
 (defun exe-path ()
   #+its-alive!
   (excl:current-directory)
   #-its-alive!
   (excl:path-pathname (ide.base::project-file ide.base:*current-project*)))
 
+#+(and allegro ide) 
 (defun font-path ()
   (merge-pathnames
    (make-pathname
     :directory #+its-alive! (list :relative "font")
-    #-its-alive! (append (butlast (pathname-directory (exe-path)))
-                   (list "TY Extender" "font")))
+    #-its-alive! (append (butlast (pathname-directory 
+       (exe-path)
+  ))
+   (list "TY Extender" "font")))
    (exe-path)))
 
 #+test
