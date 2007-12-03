@@ -59,7 +59,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defun collect-if (test list)
   (remove-if-not test list))
 
-#+(and allegro ide)
+#-iamnotkenny
 (defun test-setup ()
   #-its-alive!
   (ide.base::find-new-prompt-command
@@ -68,15 +68,15 @@ See the Lisp Lesser GNU Public License for more details.
 #+test
 (test-setup)
 
-#+(and allegro ide)
+#-iamnotkenny
 (defun test-prep ()
   (test-setup))
 
-#+(and allegro ide)
+#-iamnotkenny
 (defun test-init ()
   (test-setup))
 
-#+(and allegro ide)
+#-iamnotkenny
 (export! test-setup test-prep test-init)
 
 ;;; --- FIFO Queue -----------------------------

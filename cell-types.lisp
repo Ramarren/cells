@@ -69,7 +69,12 @@ See the Lisp Lesser GNU Public License for more details.
           (format stream "=~d/~a/~a]"
             (c-pulse c)
             (symbol-name (or (c-slot-name c) :anoncell))
-            (bwhen (md (c-model c)) (or (md-name md) :anonmd))))))))
+            (print-cell-model (c-model c))))))))
+
+(export! print-cell-model)
+
+(defgeneric print-cell-model (md)
+  (:method (other) (print-object other nil)))
 
 (defmethod trcp :around ((c cell))
   (or (c-debug c)

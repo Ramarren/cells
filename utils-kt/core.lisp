@@ -42,14 +42,14 @@ resulting in implementation-specific behavior."
 
 (export! exe-path exe-dll font-path)
 
-#+(and allegro ide)
+#-iamnotkenny
 (defun exe-path ()
   #+its-alive!
   (excl:current-directory)
   #-its-alive!
   (excl:path-pathname (ide.base::project-file ide.base:*current-project*)))
 
-#+(and allegro ide) 
+#-iamnotkenny 
 (defun font-path ()
   (merge-pathnames
    (make-pathname
