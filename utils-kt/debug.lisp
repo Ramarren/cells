@@ -34,11 +34,7 @@ See the Lisp Lesser GNU Public License for more details.
   
  (print "----------UTILSRESET----------------------------------"))
 
-
-
 ;------------- counting ---------------------------
-
-(export! with-counts)
 
 (defmacro with-counts ((onp &rest msg) &body body)
   `(if ,onp
