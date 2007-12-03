@@ -31,7 +31,7 @@ See the Lisp Lesser GNU Public License for more details.
   (:export 
     #:export!
     #:utils-kt-reset
-    #:count-it #:count-of
+    #:count-it #:count-of #:with-counts
     #:wdbg #:maptimes #:bwhen #:bif #:xor
     #:with-dynamic-fn #:last1 #:packed-flat! #:with-metrics 
     #:shortc
