@@ -11,21 +11,19 @@
 (asdf:defsystem :utils-kt
   :name "utils-kt"
   :author "Kenny Tilton <ktilton@nyc.rr.com>"
-  :version "18-Oct-2004"
+  :version "2007-12-02"
   :maintainer "Kenny Tilton <ktilton@nyc.rr.com>"
   :licence "MIT Style"
   :description "Kenny's Utilities"
   :long-description "Low-level utilities used by all of Kenny's projects"
-  :serial t
   :components ((:file "defpackage")
-               (:file "core")
-               (:file "debug")
-               (:file "flow-control")
-               (:file "detritus")
-               (:file "quad")
-               (:file "strings")
-               (:file "datetime")
-               (:file "split-sequence")))
+               (:file "core" :depends-on ("defpackage"))
+               (:file "debug" :depends-on ("core"))
+               (:file "flow-control" :depends-on ("core" "debug"))
+               (:file "detritus" :depends-on ("core" "debug"))
+               (:file "strings" :depends-on ("core" "debug"))
+               (:file "datetime" :depends-on ("core" "debug"))
+               (:file "split-sequence" :depends-on ("core" "debug"))))
 
 (defmethod perform ((o load-op) (c (eql (find-system :utils-kt))))
   ; (pushnew "CELLS" *modules* :test #'string=)
