@@ -8,6 +8,7 @@
   :serial t
   :components
   ((:file "defpackage")
+   (:file "geo-macros")
    (:file "geo-data-structures")
    (:file "coordinate-xform")
    (:file "geometer")
