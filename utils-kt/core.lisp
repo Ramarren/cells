@@ -22,7 +22,7 @@ See the Lisp Lesser GNU Public License for more details.
      ,@body))
 
 (defmacro export! (&rest symbols)
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
+  `(eval-when (#-sbcl :compile-toplevel :load-toplevel :execute)
      (export ',symbols)))
 
 (defmacro define-constant (name value &optional docstring)

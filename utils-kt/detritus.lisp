@@ -70,7 +70,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (export! project-path)
 (defun project-path ()
-  (excl:path-pathname (ide.base::project-file ide.base:*current-project*)))
+  #+allegro (excl:path-pathname (ide.base::project-file ide.base:*current-project*)))
 
 #+test
 (test-setup)
