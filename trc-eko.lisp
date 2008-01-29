@@ -33,7 +33,7 @@ See the Lisp Lesser GNU Public License for more details.
         `(without-c-dependency
           (call-trc t ,tgt-form ,@os))
       (let ((tgt (gensym)))
-        (break "slowww? ~a" tgt-form)
+        ;(break "slowww? ~a" tgt-form)
         `(without-c-dependency
           (bif (,tgt ,tgt-form)
             (if (trcp ,tgt)
