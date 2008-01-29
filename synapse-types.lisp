@@ -36,7 +36,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defun call-f-sensitivity (synapse-id sensitivity subtypename body-fn)
   (with-synapse synapse-id (prior-fire-value)
     (let ((new-value (funcall body-fn)))
-      (trc nil "f-sensitivity fire-p decides" prior-fire-value sensitivity)
+      ;(trc "f-sensitivity fire-p decides new" new-value :from-prior prior-fire-value :sensi sensitivity)
       (let ((prop-code (if (or (xor prior-fire-value new-value)
                              (eko (nil "sens fire-p decides" new-value prior-fire-value sensitivity)
                                 (delta-greater-or-equal

@@ -19,7 +19,8 @@ See the Lisp Lesser GNU Public License for more details.
   (:use #:common-lisp #:utils-kt #:cells)
   (:export #:geometer #:geo-zero-tl #:geo-inline #:a-stack #:a-row
     #:px #:py #:ll #:lt #:lr #:lb #:pl #:pt #:pr #:pb
-    #:^px #:^py #:^ll #:^lt #:^lr #:^lb
+    #:^px #:^py #:^ll #:^lt #:^lr #:^lb #:^lb-height
+    #:^fill-parent-down
     #:u96ths #:udots #:uinches #:uin #:upoints #:upts #:u8ths #:u16ths #:u32nds
     #:mkr #:v2-nmove #:l-height #:mkv2 #:^offset-within #:inset-lr #:v2-v #:v2-h
     #:r-bounds #:l-box

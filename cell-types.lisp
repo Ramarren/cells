@@ -66,8 +66,9 @@ See the Lisp Lesser GNU Public License for more details.
           (call-next-method)
         (progn
           (c-print-value c stream)
-          (format stream "=~d/~a/~a]"
+          (format stream "=~d/~a/~a/~a]"
             (c-pulse c)
+            (c-state c)
             (symbol-name (or (c-slot-name c) :anoncell))
             (print-cell-model (c-model c))))))))
 
@@ -91,8 +92,6 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun caller-drop (used caller)
   (fifo-delete (c-caller-store used) caller))
-
-
 
 ; --- ephemerality --------------------------------------------------
 ; 

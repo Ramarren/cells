@@ -124,6 +124,27 @@ See the Lisp Lesser GNU Public License for more details.
   `(loop for ,nvar below ,count
        collecting (progn ,@body)))
 
+(export! maphash* hashtable-assoc -1?1 -1?1 prime?)
+
+(defun maphash* (f h)
+  (loop for k being the hash-keys of h
+        using (hash-value v)
+        collecting (funcall f k v)))
+
+(defun hashtable-assoc (h)
+  (maphash* (lambda (k v) (cons k v)) h))
+
+(define-symbol-macro -1?1 (expt -1 (random 2)))
+
+(defun -1?1 (x) (* -1?1 x))
+
+(defun prime? (n)
+  (and (> n 1)
+    (or (= 2 n)(oddp n))
+    (loop for d upfrom 3 by 2 to (sqrt n)
+        when (zerop (mod n d)) return nil
+        finally (return t))))
+
 ; --- cloucell support for struct access of slots ------------------------
 
 (eval-when (:compile-toplevel :execute :load-toplevel)

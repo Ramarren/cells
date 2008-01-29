@@ -59,24 +59,28 @@ See the Lisp Lesser GNU Public License for more details.
 (defun collect-if (test list)
   (remove-if-not test list))
 
-#-iamnotkenny
-(defun test-setup ()
-  #-its-alive!
+(defun test-setup (&optional drib)
+  #-(or iamnotkenny its-alive!)
   (ide.base::find-new-prompt-command
-   (cg.base::find-window :listener-frame)))
+   (cg.base::find-window :listener-frame))
+  (when drib
+    (dribble (merge-pathnames 
+              (make-pathname :name drib :type "TXT")
+              (project-path)))))
+
+(export! project-path)
+(defun project-path ()
+  (excl:path-pathname (ide.base::project-file ide.base:*current-project*)))
 
 #+test
 (test-setup)
 
-#-iamnotkenny
-(defun test-prep ()
-  (test-setup))
+(defun test-prep (&optional drib)
+  (test-setup drib))
 
-#-iamnotkenny
-(defun test-init ()
-  (test-setup))
+(defun test-init (&optional drib)
+  (test-setup drib))
 
-#-iamnotkenny
 (export! test-setup test-prep test-init)
 
 ;;; --- FIFO Queue -----------------------------

@@ -33,7 +33,8 @@ See the Lisp Lesser GNU Public License for more details.
     (apply #'make-instance part-class (append initargs (list :md-name partname)))))
 
 (defmacro mk-part (md-name (md-class) &rest initargs)
-  `(make-part ',md-name ',md-class ,@initargs))
+  `(make-part ',md-name ',md-class ,@initargs
+     :fm-parent (progn (assert self) self)))
 
 (defmethod make-part-spec ((part-class symbol))
   (make-part part-class part-class))

@@ -54,6 +54,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun c-stop (&optional why)
   (setf *stop* t)
+  (print `(c-stop-entry ,why))
   (format t "~&C-STOP> stopping because ~a" why)  )
 
 (define-symbol-macro .stop
@@ -151,13 +152,11 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun c-break (&rest args)
   (unless *stop*
-    (let ((*print-level* 3)
+    (let ((*print-level* 5)
           (*print-circle* t)
-          )
+          (args2 (mapcar 'princ-to-string args)))
       (c-stop args)
-      (format t "c-break > stopping > ~a" args)
-      (apply 'error args))))
-
-
-
-
+      
+      (format t "~&c-break > stopping > ~{~a ~}" args2)
+      (print `(c-break-args ,@args2))
+      (apply 'error args2))))

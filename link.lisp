@@ -23,7 +23,9 @@ See the Lisp Lesser GNU Public License for more details.
     (trc nil "caller not being recorded because used optimized away" caller (c-value used) :used used)
     (return-from record-caller nil))
   (trc nil "record-caller entry: used=" used :caller caller)
-
+  #+cool (when (and (eq :ccheck (md-name (c-model caller)))
+          (eq :cview (md-name (c-model used))))
+    (break "bingo"))
   (multiple-value-bind (used-pos useds-len)
       (loop with u-pos
           for known in (cd-useds caller)

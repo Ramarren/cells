@@ -106,6 +106,9 @@ See the Lisp Lesser GNU Public License for more details.
   (when (eql :nascent (md-state self))
     (call-next-method)))
 
+#+test
+(md-slot-cell-type 'cgtk::label 'cgtk::container)
+
 (defmethod md-awaken ((self model-object))
   ;
   ; --- debug stuff
@@ -123,7 +126,7 @@ See the Lisp Lesser GNU Public License for more details.
   (setf (md-state self) :awakening)
   
   (dolist (esd (class-slots (class-of self)))
-    (when (md-slot-cell-type (type-of self) (slot-definition-name esd))
+    (bwhen (sct (md-slot-cell-type (type-of self) (slot-definition-name esd)))
       (let* ((slot-name (slot-definition-name esd))
              (c (md-slot-cell self slot-name)))
         (when *c-debug*
@@ -146,6 +149,7 @@ See the Lisp Lesser GNU Public License for more details.
           ;; until 2007-10 (unless (cdr (assoc slot-name (cells-flushed self))) ;; make sure not flushed
           ;; but first I worried about it being slow keeping the flushed list /and/ searching, then
           ;; I wondered why a flushed cell should not be observed, constant cells are. So Just Observe It
+          
           (slot-value-observe slot-name self (bd-slot-value self slot-name) nil nil))
 
 
@@ -175,6 +179,9 @@ See the Lisp Lesser GNU Public License for more details.
       (cdr (assoc slot-name (cells self)))
     (get slot-name 'cell)))
 
+#+test
+(get 'cgtk::label :cell-types)
+
 (defun md-slot-cell-type (class-name slot-name)
   (assert class-name)
   (if (eq class-name 'null)
@@ -192,11 +199,11 @@ See the Lisp Lesser GNU Public License for more details.
       (setf (get slot-name :cell-type) new-type)
     (let ((entry (assoc slot-name (get class-name :cell-types))))
       (if entry
-          (progn
+          (prog1
             (setf (cdr entry) new-type)
             (loop for c in (class-direct-subclasses (find-class class-name))
                 do (setf (md-slot-cell-type (class-name c) slot-name) new-type)))
-        (push (cons slot-name new-type) (get class-name :cell-types))))))
+        (cdar (push (cons slot-name new-type) (get class-name :cell-types)))))))
 
 (defun md-slot-owning (class-name slot-name)
   (assert class-name)

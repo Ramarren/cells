@@ -33,7 +33,7 @@ See the Lisp Lesser GNU Public License for more details.
         `(without-c-dependency
           (call-trc t ,tgt-form ,@os))
       (let ((tgt (gensym)))
-        ;(break "slowww? ~a" tgt-form)
+        (break "slowww? ~a" tgt-form)
         `(without-c-dependency
           (bif (,tgt ,tgt-form)
             (if (trcp ,tgt)
@@ -64,7 +64,7 @@ See the Lisp Lesser GNU Public License for more details.
       '(progn)
     `(without-c-dependency
          (call-trc t ,(format nil "TX> ~(~s~)" tgt-form)
-           ,@(loop for obj in os
+           ,@(loop for obj in (or os (list tgt-form))
                    nconcing (list (intern (format nil "~a" obj) :keyword) obj))))))
 
 

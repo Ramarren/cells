@@ -40,7 +40,6 @@ See the Lisp Lesser GNU Public License for more details.
     nil))
 
 (defgeneric not-to-be (self)
-
   (:method ((self model-object))
     (md-quiesce self))
 

@@ -61,7 +61,8 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun call-count-it (&rest keys)
     (declare (ignorable keys))
-  ;;; (when (eql :TGTNILEVAL (car keys))(break))
+  (when (find (car keys) '(:trcfailed :TGTNILEVAL))
+    (break "clean up time ~a" keys))
   (let ((entry (assoc keys *count* :test #'equal)))
       (if entry
           (setf (cdr entry) (1+ (cdr entry)))
