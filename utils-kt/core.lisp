@@ -21,9 +21,11 @@ See the Lisp Lesser GNU Public License for more details.
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      ,@body))
 
-(defmacro export! (&rest symbols)
-  `(eval-when (#-sbcl :compile-toplevel :load-toplevel :execute)
-     (export ',symbols)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defmacro export! (&rest symbols)
+   `(eval-when ( :compile-toplevel :load-toplevel :execute)
+      #+sbssscl (export (list ,@(mapcar #'(lambda (x) (list 'quote x)) symbols)))
+      #-sbclss (export ',symbols))))
 
 (defmacro define-constant (name value &optional docstring)
   "Define a constant properly.  If NAME is unbound, DEFCONSTANT
