@@ -104,7 +104,8 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmethod md-awaken :around ((self model-object))
   (when (eql :nascent (md-state self))
-    (call-next-method)))
+    (call-next-method))
+  self)
 
 #+test
 (md-slot-cell-type 'cgtk::label 'cgtk::container)
@@ -150,7 +151,12 @@ See the Lisp Lesser GNU Public License for more details.
           ;; but first I worried about it being slow keeping the flushed list /and/ searching, then
           ;; I wondered why a flushed cell should not be observed, constant cells are. So Just Observe It
           
-          (slot-value-observe slot-name self (bd-slot-value self slot-name) nil nil))
+          (let ((flushed (md-slot-cell-flushed self slot-name)))
+            (when (or (null flushed) ;; constant, ie, never any cell provided for this slot
+                    (> *data-pulse-id* (c-pulse-observed flushed))) ;; unfrickinlikely
+              (when flushed
+                (setf (c-pulse-observed flushed) *data-pulse-id*)) ;; probably unnecessary
+              (slot-value-observe slot-name self (bd-slot-value self slot-name) nil nil))))
 
 
          ((find (c-lazy c) '(:until-asked :always t))
@@ -177,6 +183,11 @@ See the Lisp Lesser GNU Public License for more details.
 (defmethod md-slot-cell (self slot-name)
   (if self
       (cdr (assoc slot-name (cells self)))
+    (get slot-name 'cell)))
+
+(defmethod md-slot-cell-flushed (self slot-name)
+  (if self
+      (cdr (assoc slot-name (cells-flushed self)))
     (get slot-name 'cell)))
 
 #+test

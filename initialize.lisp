@@ -32,8 +32,11 @@ See the Lisp Lesser GNU Public License for more details.
   ;
   ; nothing to calculate, but every cellular slot should be output
   ;
-  (slot-value-observe (c-slot-name c) (c-model c) (c-value c) nil nil)
-  (ephemeral-reset c))
+  (trc nil "awaken cell observing" c)
+  (when (> *data-pulse-id* (c-pulse-observed c))
+    (setf (c-pulse-observed c) *data-pulse-id*)
+    (slot-value-observe (c-slot-name c) (c-model c) (c-value c) nil nil)
+    (ephemeral-reset c)))
 
 (defmethod awaken-cell ((c c-ruled))
   (let (*call-stack*)

@@ -113,8 +113,14 @@ See the Lisp Lesser GNU Public License for more details.
     (unless nil #+not (member (c-lazy c) '(t :always :once-asked)) ;; 2006-09-26 still fuzzy on this 
       (c-propagate-to-callers c))
     
-    (slot-value-observe (c-slot-name c) (c-model c)
-      (c-value c) prior-value prior-value-supplied)
+    (trc nil "c-propagate observing" c)
+
+    ; this next assertion is just to see if we can ever come this way twice. If so, just
+    ; make it a condition on whether to observe
+    (when t ; breaks algebra (> *data-pulse-id* (c-pulse-observed c))
+      (setf (c-pulse-observed c) *data-pulse-id*)
+      (slot-value-observe (c-slot-name c) (c-model c)
+        (c-value c) prior-value prior-value-supplied))
     
     
     ;

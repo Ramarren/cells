@@ -328,7 +328,7 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
           )
     ;; (when (trcp c) (break "go optimizing ~a" c))
     
-    #+shh (when (trcp c)
+    (when (trcp c)
       (trc "optimizing away" c (c-state c) (rassoc c (cells (c-model c)))(rassoc c (cells-flushed (c-model c))))
       )
 

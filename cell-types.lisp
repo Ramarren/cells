@@ -37,6 +37,7 @@ See the Lisp Lesser GNU Public License for more details.
                                                        ; a dependency on the existence of instance owning X
   (pulse 0 :type fixnum)
   (pulse-last-changed 0 :type fixnum) ;; lazys can miss changes by missing change of X followed by unchange of X in subsequent DP
+  (pulse-observed 0 :type fixnum)
   lazy
   (optimize t)
   debug
