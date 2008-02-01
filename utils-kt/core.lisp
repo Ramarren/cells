@@ -23,23 +23,23 @@ See the Lisp Lesser GNU Public License for more details.
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defmacro export! (&rest symbols)
-   `(eval-when ( :compile-toplevel :load-toplevel :execute)
-      #+sbssscl (export (list ,@(mapcar #'(lambda (x) (list 'quote x)) symbols)))
-      #-sbclss (export ',symbols))))
+    `(eval-when ( :compile-toplevel :load-toplevel :execute)
+       (export ',symbols))))
 
-(defmacro define-constant (name value &optional docstring)
-  "Define a constant properly.  If NAME is unbound, DEFCONSTANT
+(eval-now!
+  (defmacro define-constant (name value &optional docstring)
+   "Define a constant properly.  If NAME is unbound, DEFCONSTANT
 it to VALUE.  If it is already bound, and it is EQUAL to VALUE,
 reuse the SYMBOL-VALUE of NAME.  Otherwise, DEFCONSTANT it again,
 resulting in implementation-specific behavior."
-  `(defconstant ,name
-     (if (not (boundp ',name))
-	 ,value
-	 (let ((value ,value))
-	   (if (equal value (symbol-value ',name))
-	       (symbol-value ',name)
-	       value)))
-     ,@(when docstring (list docstring))))
+   `(defconstant ,name
+      (if (not (boundp ',name))
+	  ,value
+	  (let ((value ,value))
+	    (if (equal value (symbol-value ',name))
+		(symbol-value ',name)
+		value)))
+      ,@(when docstring (list docstring)))))
 
 
 (export! exe-path exe-dll font-path)

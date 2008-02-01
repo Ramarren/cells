@@ -264,39 +264,7 @@ See the Lisp Lesser GNU Public License for more details.
       (funcall f)
       *the-unpropagated*)))
     
-  
-(defmd tcp ()
-  (left (c-in 0))
-  (top (c-in 0))
-  (right (c-in 0))
-  (bottom (c-in 0))
-  (area (c? (trc "area running")
-          (* (- (^right)(^left))
-              (- (^top)(^bottom))))))
-
-(defobserver area ()
-  (TRC "new area" new-value old-value old-value-boundp :pulse *data-pulse-id*))
-
-(defun tcprop ()
-  (untrace)
-  (test-prep)
-  (LET ((box (make-instance 'tcp)))
-    (trc "changing top to 10" *data-pulse-id*)
-    (setf (top box) 10)
-    (trc "not changing top" *data-pulse-id*)
-    (setf (top box) 10)
-    (trc "changing right to 10" *data-pulse-id*)
-    (setf (right box) 10)
-    (trc "not changing right" *data-pulse-id*)
-    (setf (right box) 10)
-    (trc "changing bottom to -1" *data-pulse-id*)
-    (decf (bottom box))
-    (with-client-propagation ()
-      (loop repeat 20 do
-            (trc "changing bottom by -1" *data-pulse-id*)
-            (decf (bottom box))
-            (decf (left box))))))
-  
+    
 
 
 
