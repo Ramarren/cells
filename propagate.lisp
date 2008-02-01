@@ -239,12 +239,14 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defparameter *the-unpropagated* nil)
 
-(defmacro with-client-propagation ((&key (per-cell nil per-cell?) (finally nil finally?)) &body body)
-  `(call-with-client-propagation (lambda () ,@body)
-     ,@(when per-cell? `(:per-cell (lambda (c) (declare (ignorable c)) ,per-cell)))
+(defmacro with-one-datapulse ((&key (per-cell nil per-cell?) (finally nil finally?)) &body body)
+  `(call-with-one-datapulse (lambda () ,@body)
+     ,@(when per-cell? `(:per-cell (lambda (c prior-value prior-value-boundp)
+                                     (declare (ignorable c prior-value prior-value-boundp))
+                                     ,per-cell)))
      ,@(when finally? `(:finally (lambda (cs) (declare (ignorable cs)) ,finally)))))
 
-(defun call-with-client-propagation
+(defun call-with-one-datapulse
     (f &key
       (per-cell (lambda (c prior-value prior-value?)
                   (unless (find c *the-unpropagated* :key 'car)
@@ -256,15 +258,54 @@ See the Lisp Lesser GNU Public License for more details.
                        (c-propagate c prior-value prior-value?)))))
   (assert (not *client-is-propagating*))
   (data-pulse-next :client-prop)
-  (trc "call-with-client-propagation bumps pulse" *data-pulse-id*)
+  (trc "call-with-one-datapulse bumps pulse" *data-pulse-id*)
   (funcall finally
     (let ((*client-is-propagating* t)
           (*per-cell-handler* per-cell)
           (*the-unpropagated* nil))
       (funcall f)
       *the-unpropagated*)))
-    
-    
+  
+(defmd tcp ()
+  (left (c-in 0))
+  (top (c-in 0))
+  (right (c-in 0))
+  (bottom (c-in 0))
+  (area (c? (trc "area running")
+          (* (- (^right)(^left))
+              (- (^top)(^bottom))))))
+
+(defobserver area ()
+  (TRC "new area" new-value old-value old-value-boundp :pulse *data-pulse-id*))
+
+(defobserver bottom ()
+  (TRC "new bottom" new-value old-value old-value-boundp :pulse *data-pulse-id*)
+  (with-integrity (:change 'bottom-tells-left)
+    (setf (^left) new-value)))
+
+(defobserver left ()
+  (TRC "new left" new-value old-value old-value-boundp :pulse *data-pulse-id*))
+
+(defun tcprop ()
+  (untrace)
+  (test-prep)
+  (LET ((box (make-instance 'tcp)))
+    (trc "changing top to 10" *data-pulse-id*)
+    (setf (top box) 10)
+    (trc "not changing top" *data-pulse-id*)
+    (setf (top box) 10)
+    (trc "changing right to 10" *data-pulse-id*)
+    (setf (right box) 10)
+    (trc "not changing right" *data-pulse-id*)
+    (setf (right box) 10)
+    (trc "changing bottom to -1" *data-pulse-id*)
+    (decf (bottom box))
+    (with-one-datapulse ()
+      (loop repeat 20 do
+            (trc "changing bottom by -1" *data-pulse-id*)
+            (decf (bottom box))))))
+  
+
 
 
 
