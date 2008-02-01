@@ -27,7 +27,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro with-integrity ((&optional opcode defer-info debug) &rest body)
   (when opcode
     (assert (find opcode *ufb-opcodes*) ()
-            "Invalid second value to with-integrity: ~a" opcode))
+      "Invalid opcode for with-integrity: ~a. Allowed values: ~a" opcode *ufb-opcodes*))
   `(call-with-integrity ,opcode ,defer-info (lambda (opcode defer-info)
                                               (declare (ignorable opcode defer-info))
                                               ,(when debug
@@ -55,8 +55,7 @@ See the Lisp Lesser GNU Public License for more details.
           *defer-changes*)
       (trc nil "initiating new UFB!!!!!!!!!!!!" opcode defer-info)
       (when (or (zerop *data-pulse-id*)
-              (eq opcode :change)
-              )
+              (eq opcode :change))
         (eko (nil "!!! New pulse, event" *data-pulse-id* defer-info)
           (data-pulse-next (cons opcode defer-info))))
       (prog1

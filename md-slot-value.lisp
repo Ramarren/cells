@@ -218,8 +218,6 @@ See the Lisp Lesser GNU Public License for more details.
           ;
           ; --- data flow propagation -----------
           ;
-          
-          (setf (c-pulse-last-changed c) *data-pulse-id*)
           (without-c-dependency
               (c-propagate c prior-value t)))))))
 
@@ -245,7 +243,6 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
     (md-slot-value-assume c new-value nil))
 
    (*defer-changes*
-    (print `(cweird ,c ,(type-of c)))
     (c-break "SETF of ~a must be deferred by wrapping code in WITH-INTEGRITY" c))
 
    (t
@@ -277,12 +274,10 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
           (return-from md-slot-value-assume absorbed-value))
 
         ; --- slot maintenance ---
-        (when (eq (c-state c) :optimized-away)
-          (break "bongo one ~a flush ~a" c (flushed? c)))
+        
         (unless (c-synaptic c)
           (md-slot-value-store (c-model c) (c-slot-name c) absorbed-value))
-        (when (eq (c-state c) :optimized-away)
-          (break "bongo two ~a flush ~a" c (flushed? c)))
+        
         ; --- cell maintenance ---
         (setf
          (c-value c) absorbed-value
@@ -298,7 +293,6 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
         ; --- data flow propagation -----------
         (unless (eq propagation-code :no-propagate)
           (trc nil "md-slot-value-assume flagging as changed: prior state, value:" prior-state prior-value )
-          (setf (c-pulse-last-changed c) *data-pulse-id*)
           (c-propagate c prior-value (cache-state-bound-p prior-state)))  ;; until 06-02-13 was (not (eq prior-state :unbound))
         
         absorbed-value)))

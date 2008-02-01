@@ -36,10 +36,13 @@ See the Lisp Lesser GNU Public License for more details.
 
 ; --- data pulse (change ID) management -------------------------------------
 
+(defparameter *client-is-propagating* nil)
+
 (defun data-pulse-next (pulse-info)
   (declare (ignorable pulse-info))
-  (trc nil "data-pulse-next > " (1+ *data-pulse-id*) pulse-info)
-  (incf *data-pulse-id*))
+  (unless *client-is-propagating*
+    (trc nil "data-pulse-next > " (1+ *data-pulse-id*) pulse-info)
+    (incf *data-pulse-id*)))
 
 (defun c-currentp (c)
   (eql (c-pulse c) *data-pulse-id*))
@@ -59,28 +62,37 @@ See the Lisp Lesser GNU Public License for more details.
 ; though it is still receiving final processing here.
 ;
 
+
+(defparameter *per-cell-handler* nil)
+
 (defun c-propagate (c prior-value prior-value-supplied)
-  
-  (count-it :c-propagate)
+  (when *client-is-propagating*
+    (when *per-cell-handler*
+      (funcall *per-cell-handler* c prior-value prior-value-supplied)
+      (return-from c-propagate)))
+
+  (count-it :cpropagate)
+  (setf (c-pulse-last-changed c) *data-pulse-id*)
+          
   (when prior-value
     (assert prior-value-supplied () "How can prior-value-supplied be nil if prior-value is not?!! ~a" c))
   (let (*call-stack* 
         (*c-prop-depth*  (1+ *c-prop-depth*))
         (*defer-changes* t))
-    (trc nil "c-propagate clearing *call-stack*" c)
+    (trc nil "c.propagate clearing *call-stack*" c)
     
     ;------ debug stuff ---------
     ;
     (when *stop*
       (princ #\.)(princ #\!)
       (return-from c-propagate))    
-    (trc nil  "c-propagate> !!!!!!! propping" c (c-value c) :caller-ct (length (c-callers c)))
-    #+slow (trc c "c-propagate> !!!! new value" (c-value c) :prior-value prior-value :caller-ct (length (c-callers c)) c)
+    (trc nil  "c.propagate> !!!!!!! propping" c (c-value c) :caller-ct (length (c-callers c)))
+    #+slow (trc c "c.propagate> !!!! new value" (c-value c) :prior-value prior-value :caller-ct (length (c-callers c)) c)
     (when *c-debug*
       (when (> *c-prop-depth* 250)
-        (trc nil "c-propagate deep" *c-prop-depth* (c-model c) (c-slot-name c) #+nah c))
+        (trc nil "c.propagate deep" *c-prop-depth* (c-model c) (c-slot-name c) #+nah c))
       (when (> *c-prop-depth* 300)
-        (c-break "c-propagate looping ~c" c)))
+        (c-break "c.propagate looping ~c" c)))
     
     ; --- manifest new value as needed ---
     ;
@@ -94,7 +106,7 @@ See the Lisp Lesser GNU Public License for more details.
     (when (and prior-value-supplied
             prior-value
             (md-slot-owning (type-of (c-model c)) (c-slot-name c)))
-      (trc nil "c-propagate> contemplating lost")
+      (trc nil "c.propagate> contemplating lost")
       (flet ((listify (x) (if (listp x) x (list x))))
         (bif (lost (set-difference (listify prior-value) (listify (c-value c))))
           (progn
@@ -113,7 +125,7 @@ See the Lisp Lesser GNU Public License for more details.
     (unless nil #+not (member (c-lazy c) '(t :always :once-asked)) ;; 2006-09-26 still fuzzy on this 
       (c-propagate-to-callers c))
     
-    (trc nil "c-propagate observing" c)
+    (trc nil "c.propagate observing" c)
 
     ; this next assertion is just to see if we can ever come this way twice. If so, just
     ; make it a condition on whether to observe
@@ -177,6 +189,14 @@ See the Lisp Lesser GNU Public License for more details.
 ; --- recalculate dependents ----------------------------------------------------
 
 
+(defmacro cll-outer (val &body body)
+ `(let ((outer-val ,val))
+    ,@body))
+
+(defmacro cll-inner (expr)
+  `(,expr outer-val))
+
+(export! cll-outer cll-inner)
 
 (defun c-propagate-to-callers (c)
   ;
@@ -195,11 +215,11 @@ See the Lisp Lesser GNU Public License for more details.
                          (member (c-lazy caller) '(t :always :once-asked))))
           (c-callers c))
     (let ((causation (cons c *causation*))) ;; in case deferred
-      #+slow (TRC c "c-propagate-to-callers > queueing notifying callers" (c-callers c))
+      #+slow (TRC c "c.propagate-to-callers > queueing notifying callers" (c-callers c))
       (with-integrity (:tell-dependents c)
         (assert (null *call-stack*))
         (let ((*causation* causation))
-          (trc nil "c-propagate-to-callers > actually notifying callers of" c (c-callers c))
+          (trc nil "c.propagate-to-callers > actually notifying callers of" c (c-callers c))
           #+c-debug (dolist (caller (c-callers c))
                       (assert (find c (cd-useds caller)) () "test 1 failed ~a ~a" c caller))
           #+c-debug (dolist (caller (copy-list (c-callers c))) ;; following code may modify c-callers list...
@@ -217,6 +237,66 @@ See the Lisp Lesser GNU Public License for more details.
               (let ((*trc-ensure* (trcp c)))
                 (ensure-value-is-current caller :prop-from c)))))))))
 
+(defparameter *the-unpropagated* nil)
+
+(defmacro with-client-propagation ((&key (per-cell nil per-cell?) (finally nil finally?)) &body body)
+  `(call-with-client-propagation (lambda () ,@body)
+     ,@(when per-cell? `(:per-cell (lambda (c) (declare (ignorable c)) ,per-cell)))
+     ,@(when finally? `(:finally (lambda (cs) (declare (ignorable cs)) ,finally)))))
+
+(defun call-with-client-propagation
+    (f &key
+      (per-cell (lambda (c prior-value prior-value?)
+                  (unless (find c *the-unpropagated* :key 'car)
+                    (pushnew (list c prior-value prior-value?) *the-unpropagated*))))
+      (finally (lambda (cs)
+                 (print `(finally sees ,*data-pulse-id* ,cs))
+                 ;(trace c-propagate ensure-value-is-current)
+                 (loop for (c prior-value prior-value?) in (nreverse cs) do
+                       (c-propagate c prior-value prior-value?)))))
+  (assert (not *client-is-propagating*))
+  (data-pulse-next :client-prop)
+  (trc "call-with-client-propagation bumps pulse" *data-pulse-id*)
+  (funcall finally
+    (let ((*client-is-propagating* t)
+          (*per-cell-handler* per-cell)
+          (*the-unpropagated* nil))
+      (funcall f)
+      *the-unpropagated*)))
+    
+  
+(defmd tcp ()
+  (left (c-in 0))
+  (top (c-in 0))
+  (right (c-in 0))
+  (bottom (c-in 0))
+  (area (c? (trc "area running")
+          (* (- (^right)(^left))
+              (- (^top)(^bottom))))))
+
+(defobserver area ()
+  (TRC "new area" new-value old-value old-value-boundp :pulse *data-pulse-id*))
+
+(defun tcprop ()
+  (untrace)
+  (test-prep)
+  (LET ((box (make-instance 'tcp)))
+    (trc "changing top to 10" *data-pulse-id*)
+    (setf (top box) 10)
+    (trc "not changing top" *data-pulse-id*)
+    (setf (top box) 10)
+    (trc "changing right to 10" *data-pulse-id*)
+    (setf (right box) 10)
+    (trc "not changing right" *data-pulse-id*)
+    (setf (right box) 10)
+    (trc "changing bottom to -1" *data-pulse-id*)
+    (decf (bottom box))
+    (with-client-propagation ()
+      (loop repeat 20 do
+            (trc "changing bottom by -1" *data-pulse-id*)
+            (decf (bottom box))
+            (decf (left box))))))
+  
 
 
 

@@ -1,8 +1,8 @@
-;; -*- lisp-version: "8.0 [Windows] (Sep 14, 2007 21:56)"; cg: "1.81"; -*-
+;; -*- lisp-version: "8.1 [Windows] (Jan 2, 2008 9:44)"; cg: "1.103.2.10"; -*-
 
 (in-package :cg-user)
 
-(defpackage :cells)
+(defpackage :CELLS)
 
 (define-project :name :cells
   :modules (list (make-instance 'module :name "defpackage.lisp")
@@ -36,16 +36,17 @@
   :runtime-modules nil
   :splash-file-module (make-instance 'build-module :name "")
   :icon-file-module (make-instance 'build-module :name "")
-  :include-flags '(:local-name-info)
-  :build-flags '(:allow-debug :purify)
+  :include-flags (list :local-name-info)
+  :build-flags (list :allow-debug :purify)
   :autoload-warning t
   :full-recompile-for-runtime-conditionalizations nil
+  :include-manifest-file-for-visual-styles t
   :default-command-line-arguments "+cx +t \"Initializing\""
-  :additional-build-lisp-image-arguments '(:read-init-files nil)
+  :additional-build-lisp-image-arguments (list :read-init-files nil)
   :old-space-size 256000
   :new-space-size 6144
   :runtime-build-option :standard
-  :on-initialization 'cells::test
+  :on-initialization 'cells::tcprop
   :on-restart 'do-default-restart)
 
 ;; End of Project Definition
