@@ -36,11 +36,11 @@ See the Lisp Lesser GNU Public License for more details.
 
 ; --- data pulse (change ID) management -------------------------------------
 
-(defparameter *client-is-propagating* nil)
+(defparameter *one-pulse?* nil)
 
 (defun data-pulse-next (pulse-info)
   (declare (ignorable pulse-info))
-  (unless *client-is-propagating*
+  (unless *one-pulse?*
     (trc nil "data-pulse-next > " (1+ *data-pulse-id*) pulse-info)
     (incf *data-pulse-id*)))
 
@@ -66,7 +66,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defparameter *per-cell-handler* nil)
 
 (defun c-propagate (c prior-value prior-value-supplied)
-  (when *client-is-propagating*
+  (when *one-pulse?*
     (when *per-cell-handler*
       (funcall *per-cell-handler* c prior-value prior-value-supplied)
       (return-from c-propagate)))
@@ -132,7 +132,7 @@ See the Lisp Lesser GNU Public License for more details.
     (when t ; breaks algebra (> *data-pulse-id* (c-pulse-observed c))
       (setf (c-pulse-observed c) *data-pulse-id*)
       (slot-value-observe (c-slot-name c) (c-model c)
-        (c-value c) prior-value prior-value-supplied))
+        (c-value c) prior-value prior-value-supplied c))
     
     
     ;
@@ -152,7 +152,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro defobserver (slotname &rest args &aux (aroundp (eq :around (first args))))
   (when aroundp (setf args (cdr args)))
   (destructuring-bind ((&optional (self-arg 'self) (new-varg 'new-value)
-                         (oldvarg 'old-value) (oldvargboundp 'old-value-boundp))
+                         (oldvarg 'old-value) (oldvargboundp 'old-value-boundp) (cell-arg 'c))
                        &body output-body) args
     `(progn
        (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -161,24 +161,24 @@ See the Lisp Lesser GNU Public License for more details.
             (let ((temp1 (gensym))
                   (loc-self (gensym)))
               `(defmethod slot-value-observe #-(or cormanlisp) ,(if aroundp :around 'progn)
-                 ((slotname (eql ',slotname)) ,self-arg ,new-varg ,oldvarg ,oldvargboundp)
+                 ((slotname (eql ',slotname)) ,self-arg ,new-varg ,oldvarg ,oldvargboundp ,cell-arg)
                  (let ((,temp1 (bump-output-count ,slotname))
                        (,loc-self ,(if (listp self-arg)
                                        (car self-arg)
                                      self-arg)))
                    (when (and ,oldvargboundp ,oldvarg)
-                     (format t "~&output ~d (~a ~a) old: ~a" ,temp1 ',slotname ,loc-self ,oldvarg))
-                   (format t "~&output ~d (~a ~a) new: ~a" ,temp1 ',slotname ,loc-self ,new-varg))))
+                     (format t "~&output ~d (~a ~a) old: ~a" ,temp1 ',slotname ,loc-self ,oldvarg ,cell-arg))
+                   (format t "~&output ~d (~a ~a) new: ~a" ,temp1 ',slotname ,loc-self ,new-varg ,cell-arg))))
           `(defmethod slot-value-observe
                #-(or cormanlisp) ,(if aroundp :around 'progn)
-             ((slotname (eql ',slotname)) ,self-arg ,new-varg ,oldvarg ,oldvargboundp)
+             ((slotname (eql ',slotname)) ,self-arg ,new-varg ,oldvarg ,oldvargboundp ,cell-arg)
              (declare (ignorable
                        ,@(flet ((arg-name (arg-spec)
                                   (etypecase arg-spec
                                     (list (car arg-spec))
                                     (atom arg-spec))))
                            (list (arg-name self-arg)(arg-name new-varg)
-                             (arg-name oldvarg)(arg-name oldvargboundp)))))
+                             (arg-name oldvarg)(arg-name oldvargboundp) (arg-name cell-arg)))))
              ,@output-body)))))
 
 (defmacro bump-output-count (slotname) ;; pure test func
@@ -256,56 +256,13 @@ See the Lisp Lesser GNU Public License for more details.
                  ;(trace c-propagate ensure-value-is-current)
                  (loop for (c prior-value prior-value?) in (nreverse cs) do
                        (c-propagate c prior-value prior-value?)))))
-  (assert (not *client-is-propagating*))
+  (assert (not *one-pulse?*))
   (data-pulse-next :client-prop)
   (trc "call-with-one-datapulse bumps pulse" *data-pulse-id*)
   (funcall finally
-    (let ((*client-is-propagating* t)
+    (let ((*one-pulse?* t)
           (*per-cell-handler* per-cell)
           (*the-unpropagated* nil))
       (funcall f)
       *the-unpropagated*)))
   
-(defmd tcp ()
-  (left (c-in 0))
-  (top (c-in 0))
-  (right (c-in 0))
-  (bottom (c-in 0))
-  (area (c? (trc "area running")
-          (* (- (^right)(^left))
-              (- (^top)(^bottom))))))
-
-(defobserver area ()
-  (TRC "new area" new-value old-value old-value-boundp :pulse *data-pulse-id*))
-
-(defobserver bottom ()
-  (TRC "new bottom" new-value old-value old-value-boundp :pulse *data-pulse-id*)
-  (with-integrity (:change 'bottom-tells-left)
-    (setf (^left) new-value)))
-
-(defobserver left ()
-  (TRC "new left" new-value old-value old-value-boundp :pulse *data-pulse-id*))
-
-(defun tcprop ()
-  (untrace)
-  (test-prep)
-  (LET ((box (make-instance 'tcp)))
-    (trc "changing top to 10" *data-pulse-id*)
-    (setf (top box) 10)
-    (trc "not changing top" *data-pulse-id*)
-    (setf (top box) 10)
-    (trc "changing right to 10" *data-pulse-id*)
-    (setf (right box) 10)
-    (trc "not changing right" *data-pulse-id*)
-    (setf (right box) 10)
-    (trc "changing bottom to -1" *data-pulse-id*)
-    (decf (bottom box))
-    (with-one-datapulse ()
-      (loop repeat 20 do
-            (trc "changing bottom by -1" *data-pulse-id*)
-            (decf (bottom box))))))
-  
-
-
-
-

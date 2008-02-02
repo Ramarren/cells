@@ -1,4 +1,3 @@
-
 (in-package :cells)
 
 (defmd tcp ()
@@ -12,6 +11,14 @@
 
 (defobserver area ()
   (TRC "new area" new-value old-value old-value-boundp :pulse *data-pulse-id*))
+
+(defobserver bottom ()
+  (TRC "new bottom" new-value old-value old-value-boundp :pulse *data-pulse-id*)
+  (with-integrity (:change 'bottom-tells-left)
+    (setf (^left) new-value)))
+
+(defobserver left ()
+  (TRC "new left" new-value old-value old-value-boundp :pulse *data-pulse-id*))
 
 (defun tcprop ()
   (untrace)
@@ -27,8 +34,12 @@
     (setf (right box) 10)
     (trc "changing bottom to -1" *data-pulse-id*)
     (decf (bottom box))
-    (with-client-propagation ()
-      (loop repeat 20 do
+    (with-one-datapulse ()
+      (loop repeat 5 do
             (trc "changing bottom by -1" *data-pulse-id*)
-            (decf (bottom box))
-            (decf (left box))))))
+            (decf (bottom box))))))
+  
+
+
+
+

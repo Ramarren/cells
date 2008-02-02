@@ -156,7 +156,7 @@ See the Lisp Lesser GNU Public License for more details.
                     (> *data-pulse-id* (c-pulse-observed flushed))) ;; unfrickinlikely
               (when flushed
                 (setf (c-pulse-observed flushed) *data-pulse-id*)) ;; probably unnecessary
-              (slot-value-observe slot-name self (bd-slot-value self slot-name) nil nil))))
+              (slot-value-observe slot-name self (bd-slot-value self slot-name) nil nil flushed))))
 
 
          ((find (c-lazy c) '(:until-asked :always t))
