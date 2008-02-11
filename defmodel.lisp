@@ -46,7 +46,9 @@ See the Lisp Lesser GNU Public License for more details.
 				  `(eval-when (:compile-toplevel :execute :load-toplevel)
 				     (unless (macro-function ',deriver-fn)
 				       (defmacro ,deriver-fn ()
-					 `(,',reader-fn self))))))))))
+					 `(,',reader-fn self)))
+				     #+sbcl (unless (fboundp ',reader-fn)
+					      (defgeneric ,reader-fn (slot))))))))))
      
 					;
 					; -------  defclass ---------------  (^slot-value ,model ',',slotname)
@@ -98,9 +100,8 @@ the defmodel form for ~a" ',class ',class))))
                        (let* ((reader-fn (or reader accessor))
                               (writer-fn (or writer accessor))
                               )
-                         `(progn
+                         `(eval-when (#+sbcl :load-toplevel :execute) ; ph -- prevent sbcl warning
                             (setf (md-slot-cell-type ',class ',slotname) ,cell)
-                         
                             ,(when owning
 				   `(setf (md-slot-owning ',class ',slotname) ,owning))
                             ,(when reader-fn

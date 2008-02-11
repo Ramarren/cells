@@ -23,7 +23,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defmacro export! (&rest symbols)
-    `(eval-when ( :compile-toplevel :load-toplevel :execute)
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
        (export ',symbols))))
 
 (eval-now!
