@@ -51,7 +51,6 @@ them (ie, does not access them)
 
 #| do list
 
--- can we lose the special handling of the .kids slot?
 
 -- test drifters (and can they be handled without creating a special
 subclass for them?)

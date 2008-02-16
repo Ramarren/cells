@@ -147,27 +147,48 @@ See the Lisp Lesser GNU Public License for more details.
 
 
 #+allegro
-(defun line-count (path &optional show-files (depth 0))
+(defun line-count (path &optional show-files (max-depth most-positive-fixnum) no-semis (depth 0))
   (cond
    ((excl:file-directory-p path)
-    (when show-files
-      (format t "~&~v,8t~a counts:" depth (pathname-directory path)))
-    (let ((directory-lines          
-           (loop for file in (directory path :directories-are-files nil)
-               for lines = (line-count file show-files (1+ depth))
-               when (and show-files (plusp lines))
-               do (bwhen (fname (pathname-name file))
-                    (format t "~&~v,8t~a ~,40t~d" (1+ depth) fname lines))
-               summing lines)))
-      (unless (zerop directory-lines)
-        (format t "~&~v,8t~a ~,50t~d" depth (pathname-directory path) directory-lines))
-      directory-lines))
+    (if (>= depth max-depth)
+        (progn
+          (format t "~&~v,8t~a dir too deep:" depth (pathname-directory path))
+          0)
+      (progn
+        (when show-files
+          (format t "~&~v,8t~a counts:" depth (pathname-directory path)))
+        (let ((directory-lines          
+               (loop for file in (directory path :directories-are-files nil)
+                   for lines = (line-count file show-files max-depth no-semis (1+ depth))
+                   when (and show-files (plusp lines))
+                   do (bwhen (fname (pathname-name file))
+                        (format t "~&~v,8t~a ~,40t~d" (1+ depth) fname lines))
+                   summing lines)))
+          (unless (zerop directory-lines)
+            (format t "~&~v,8t~a ~,50t~d" depth (pathname-directory path) directory-lines))
+          directory-lines))))
 
    ((find (pathname-type path) '("cl" "lisp" "c" "h" "java")
       :test 'string-equal)
-    (source-line-count path))
+    (source-line-count path no-semis))
    (t 0)))
 
+(defun source-line-count (path no-semis)
+  (with-open-file (s path)
+    (loop with block-rem = 0
+        for line = (read-line s nil nil)
+        for trim = (when line (string-trim '(#\space #\tab) line))
+        while line
+        when (> (length trim) 1)
+        do (cond
+            ((string= "#|" (subseq trim 0 2))(incf block-rem))
+            ((string= "|#" (subseq trim 0 2))(decf block-rem)))
+        unless (or (string= trim "")
+                 (and no-semis (or (plusp block-rem)
+                                 (char= #\; (schar trim 0)))))
+        count 1)))
+
+#+save
 (defun source-line-count (path)
    (with-open-file (s path)
      (loop with lines = 0
@@ -180,7 +201,8 @@ See the Lisp Lesser GNU Public License for more details.
 #+(or)
 (line-count (make-pathname
              :device "c"
-             :directory `(:absolute "0dev")))
+             :directory `(:absolute "0Algebra" "Cells"))
+  nil 1 t)
 
 #+(or)
 (loop for d1 in '("cl-s3" "kpax" "puri-1.5.1" "s-base64" "s-http-client" "s-http-server" "s-sysdeps" "s-utils" "s-xml")

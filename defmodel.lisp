@@ -24,75 +24,75 @@ See the Lisp Lesser GNU Public License for more details.
      (eval-when (:compile-toplevel :execute :load-toplevel)
        (setf (get ',class :cell-types) nil)
        (setf (get ',class 'slots-excluded-from-persistence)
-             ',(loop for slotspec in slotspecs
-		  unless (and (getf (cdr slotspec) :ps t)
-			      (getf (cdr slotspec) :persistable t))
-		  collect (car slotspec)))) 
+         ',(loop for slotspec in slotspecs
+               unless (and (getf (cdr slotspec) :ps t)
+                        (getf (cdr slotspec) :persistable t))
+               collect (car slotspec)))) 
      ;; define slot macros before class so they can appear in
      ;; initforms and default-initargs
      ,@(delete nil
-	       (loop for slotspec in slotspecs
-		  nconcing (destructuring-bind
-				 (slotname &rest slotargs
-					   &key (cell t) owning (accessor slotname) reader
-					   &allow-other-keys)
-			       slotspec
+         (loop for slotspec in slotspecs
+             nconcing (destructuring-bind
+                          (slotname &rest slotargs
+                            &key (cell t) owning (accessor slotname) reader
+                            &allow-other-keys)
+                          slotspec
                         
-			     (declare (ignorable slotargs owning))
-			     (list
-			      (when cell
-				(let* ((reader-fn (or reader accessor))
-				       (deriver-fn (intern$ "^" (symbol-name reader-fn))))
-				  `(eval-when (:compile-toplevel :execute :load-toplevel)
-				     (unless (macro-function ',deriver-fn)
-				       (defmacro ,deriver-fn ()
-					 `(,',reader-fn self)))
-				     #+sbcl (unless (fboundp ',reader-fn)
-					      (defgeneric ,reader-fn (slot))))))))))
+                        (declare (ignorable slotargs owning))
+                        (list
+                         (when cell
+                           (let* ((reader-fn (or reader accessor))
+                                  (deriver-fn (intern$ "^" (symbol-name reader-fn))))
+                             `(eval-when (:compile-toplevel :execute :load-toplevel)
+                                (unless (macro-function ',deriver-fn)
+                                  (defmacro ,deriver-fn ()
+                                    `(,',reader-fn self)))
+                                #+sbcl (unless (fboundp ',reader-fn)
+                                         (defgeneric ,reader-fn (slot))))))))))
      
-					;
-					; -------  defclass ---------------  (^slot-value ,model ',',slotname)
-					;
+     ;
+     ; -------  defclass ---------------  (^slot-value ,model ',',slotname)
+     ;
      
      (progn
        (defclass ,class ,(or directsupers '(model-object)) ;; now we can def the class
-	 ,(mapcar (lambda (s)
-		    (list* (car s)
-			   (let ((ias (cdr s)))
-			     (remf ias :persistable)
-			     (remf ias :ps)
-			     ;; We handle accessor below
-			     (when (getf ias :cell t)
-			       (remf ias :reader)
-			       (remf ias :writer)
-			       (remf ias :accessor))
-			     (remf ias :cell)
-			     (remf ias :owning)
-			     (remf ias :unchanged-if)
-			     ias))) (mapcar #'copy-list slotspecs))
-	 (:documentation
-	  ,@(or (cdr (find :documentation options :key #'car))
-		'("chya")))
-	 (:default-initargs ;; nil ok and needed: acl oddity in re not clearing d-i's sans this
-	     ,@(cdr (find :default-initargs options :key #'car)))
-	 (:metaclass ,(or (cadr (find :metaclass options :key #'car))
-			  'standard-class)))
+         ,(mapcar (lambda (s)
+                    (list* (car s)
+                      (let ((ias (cdr s)))
+                        (remf ias :persistable)
+                        (remf ias :ps)
+                        ;; We handle accessor below
+                        (when (getf ias :cell t)
+                          (remf ias :reader)
+                          (remf ias :writer)
+                          (remf ias :accessor))
+                        (remf ias :cell)
+                        (remf ias :owning)
+                        (remf ias :unchanged-if)
+                        ias))) (mapcar #'copy-list slotspecs))
+         (:documentation
+          ,@(or (cdr (find :documentation options :key #'car))
+              '("chya")))
+         (:default-initargs ;; nil ok and needed: acl oddity in re not clearing d-i's sans this
+             ,@(cdr (find :default-initargs options :key #'car)))
+         (:metaclass ,(or (cadr (find :metaclass options :key #'car))
+                        'standard-class)))
        
        (defmethod shared-initialize :after ((self ,class) slot-names &rest iargs &key)
          (declare (ignore slot-names iargs))
          ,(when (and directsupers (not (member 'model-object directsupers)))
-		`(unless (typep self 'model-object)
-		   (error "If no superclass of ~a inherits directly
+            `(unless (typep self 'model-object)
+               (error "If no superclass of ~a inherits directly
 or indirectly from model-object, model-object must be included as a direct super-class in
 the defmodel form for ~a" ',class ',class))))
-					;
-					; slot accessors once class is defined...
-					;
+       ;
+       ; slot accessors once class is defined...
+       ;
        ,@(mapcar (lambda (slotspec)
                    (destructuring-bind
-			 (slotname &rest slotargs
-				   &key (cell t) owning unchanged-if (accessor slotname) reader writer type
-				   &allow-other-keys)
+                       (slotname &rest slotargs
+                         &key (cell t) owning unchanged-if (accessor slotname) reader writer type
+                         &allow-other-keys)
                        slotspec
                      
                      (declare (ignorable slotargs))
@@ -100,27 +100,27 @@ the defmodel form for ~a" ',class ',class))))
                        (let* ((reader-fn (or reader accessor))
                               (writer-fn (or writer accessor))
                               )
-                         `(eval-when (#+sbcl :load-toplevel :execute) ; ph -- prevent sbcl warning
+                         `(progn ;; eval-when (#+sbcl :load-toplevel :execute) ; ph -- prevent sbcl warning
                             (setf (md-slot-cell-type ',class ',slotname) ,cell)
                             ,(when owning
-				   `(setf (md-slot-owning ',class ',slotname) ,owning))
+                               `(setf (md-slot-owning ',class ',slotname) ,owning))
                             ,(when reader-fn
-				   `(defmethod ,reader-fn ((self ,class))
-				      (md-slot-value self ',slotname)))
+                               `(defmethod ,reader-fn ((self ,class))
+                                  (md-slot-value self ',slotname)))
                             
                             ,(when writer-fn
-				   `(defmethod (setf ,writer-fn) (new-value (self ,class))
-				      (setf (md-slot-value self ',slotname)
-					    ,(if type
-						 `(coerce new-value ',type)
-						 'new-value))))
+                               `(defmethod (setf ,writer-fn) (new-value (self ,class))
+                                  (setf (md-slot-value self ',slotname)
+                                    ,(if type
+                                         `(coerce new-value ',type)
+                                       'new-value))))
                             
                             ,(when unchanged-if
-				   `(def-c-unchanged-test (,class ,slotname) ,unchanged-if))
+                               `(def-c-unchanged-test (,class ,slotname) ,unchanged-if))
                             )
                          ))
                      ))
-		 slotspecs)
+           slotspecs)
        (find-class ',class))))
 
 (defun defmd-canonicalize-slot (slotname
