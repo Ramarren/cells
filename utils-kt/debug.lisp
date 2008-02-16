@@ -87,8 +87,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 ;-------------------- timex ---------------------------------
 
-(eval-when (compile eval load)
-  (export '(timex)))
+(export! timex)
 
 (defmacro timex ((onp &rest trcargs) &body body)
   `(if ,onp
@@ -119,9 +118,9 @@ See the Lisp Lesser GNU Public License for more details.
        ,form-measured)
      ,@postlude))
 
-(export! clock clock-0 clock-off)
-
 (defvar *clock*)
+
+(export! clock clock-0 clock-off)
 
 (defun clock-off (key)
   (when (boundp '*clock*)

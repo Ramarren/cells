@@ -13,15 +13,8 @@
   :long-description "Cells: a dataflow extension to CLOS."
   :version "3.0"
   :serial t
-  :components ((:module "utils-kt"
-                 :serial t
-                 :components ((:file "defpackage")
-                              (:file "debug")
-                              (:file "flow-control")
-                              (:file "detritus")
-                              (:file "strings")
-                              (:file "datetime")))
-               (:file "defpackage")
+  :depends-on (:utils-kt)
+  :components ((:file "defpackage")
                (:file "trc-eko")
                (:file "cells")
                (:file "integrity")

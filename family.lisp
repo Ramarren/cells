@@ -80,6 +80,9 @@ See the Lisp Lesser GNU Public License for more details.
   (when new-value
     (not-to-be self)))
 
+
+(defvar *parent* nil)
+
 (defmodel family (model)
   ((.kid-slots :cell nil
      :initform nil
@@ -89,9 +92,8 @@ See the Lisp Lesser GNU Public License for more details.
      :owning t
      :accessor kids
      :initarg :kids)
-   ))
-
-(defvar *parent*)
+   )
+  (:default-initargs :fm-parent (when (boundp '*parent*) *parent*)))
 
 (defmacro the-kids (&rest kids)
   `(let ((*parent* self))
