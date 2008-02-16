@@ -6,6 +6,46 @@ Summary
 Cells is a mature, stable extension to CLOS[impl] allowing one to create classes 
 whose instances can have slot values determined by instance-specific formulas. 
 
+Example
+-------
+For example, in a text editor application we might have (condensed):
+
+  (make-instance 'menu-item
+	:label "Cut"
+	:enabled (c? (bwhen (f (focus *window*))
+				(and (typep focus 'text-widget)
+				    (selection-range focus)))))
+
+Translated, the enabled state of the Cut menu item follows 
+whether or not the user is focused on a text-edit widget and
+whether they have in fact selected a range of text.
+
+Meanwhile, the selection-range rule might be:
+
+(let (start)
+  (c? (if (mouse-down? .w.)
+          (bwhen (c (mouse-pos-to-char self (mouse-pos .w.)))
+            (if start
+                (list start c)
+              (setf start c)))
+        (setf start nil))))
+
+Now the only imperative code needed is some glue reading the OS event loop 
+converting raw mouse down and mouse move events into window (the .w. symbol-macro)
+attributes such as mouse-down? and mouse-pos. The desired functionality is achieved
+by declarative rules which (like selection-range above) are entirely responsible for
+deciding the selection range.
+
+A final trick comes from slot observers. Suppose we are thinly wrapping a C GUI and need to
+do something in the C library to actually make menu items available or not. 
+It might look something like this:
+
+ (defobserver enabled ((self menu-item) new-value old-value old-value-bound?)
+     (menu-item-set (c-ptr self) (if new-value 1 0)))
+
+ie, Somr model attributes must be propagated outside the model as they change, and observers 
+are callbacks we can provide to handle change.
+
 Motivation
 ----------
 As a child I watched my father toil at home for hours over paper 
