@@ -100,7 +100,7 @@ the defmodel form for ~a" ',class ',class))))
                        (let* ((reader-fn (or reader accessor))
                               (writer-fn (or writer accessor))
                               )
-                         `(progn ;; eval-when (#+sbcl :load-toplevel :execute) ; ph -- prevent sbcl warning
+                         `(eval-when (#-sbcl :compile-toplevel :load-toplevel :execute) ; ph -- prevent sbcl warning
                             (setf (md-slot-cell-type ',class ',slotname) ,cell)
                             ,(when owning
                                `(setf (md-slot-owning ',class ',slotname) ,owning))
