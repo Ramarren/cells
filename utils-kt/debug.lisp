@@ -56,7 +56,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro count-it (&rest keys)
   (declare (ignorable keys))
   #+(or) `(progn)
-  `(when *counting*
+  `(when (car *counting*)
      (call-count-it ,@keys)))
 
 (defun call-count-it (&rest keys)

@@ -53,7 +53,7 @@ See the Lisp Lesser GNU Public License for more details.
   (prog1
       (with-integrity ()
         (ensure-value-is-current c :c-read nil))
-    (when (car *call-stack*)
+    (when *depender*
       (record-caller c))))
   
 (defun chk (s &optional (key 'anon))
@@ -131,7 +131,7 @@ See the Lisp Lesser GNU Public License for more details.
   (bwhen (v (c-value c))
     (if (mdead v)
         (progn
-          (brk "on pulse ~a ensure-value still got and still not returning ~a dead value ~a" *data-pulse-id* c v)
+          (format t "~&on pulse ~a ensure-value still got and still not returning ~a dead value ~a" *data-pulse-id* c v)
           nil)
       v)))
 
@@ -178,6 +178,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun calculate-and-link (c)
   (let ((*call-stack* (cons c *call-stack*))
+        (*depender* c)
         (*defer-changes* t))
     (assert (typep c 'c-ruled))
     #+shhh (trc c "calculate-and-link" c)

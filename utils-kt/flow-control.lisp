@@ -113,6 +113,11 @@ See the Lisp Lesser GNU Public License for more details.
   `(let ((,bindvar ,boundform))
       (when ,bindvar
         ,@body)))
+
+(defmacro b-when (bindvar boundform &body body)
+  `(let ((,bindvar ,boundform))
+     (when ,bindvar
+       ,@body)))
   
 (defmacro bif ((bindvar boundform) yup &optional nope)
   `(let ((,bindvar ,boundform))
@@ -120,11 +125,17 @@ See the Lisp Lesser GNU Public License for more details.
          ,yup
          ,nope)))
 
+(defmacro b-if (bindvar boundform yup &optional nope)
+  `(let ((,bindvar ,boundform))
+     (if ,bindvar
+         ,yup
+       ,nope)))
+
 (defmacro maptimes ((nvar count) &body body)
   `(loop for ,nvar below ,count
        collecting (progn ,@body)))
 
-(export! maphash* hashtable-assoc -1?1 -1?1 prime?)
+(export! maphash* hashtable-assoc -1?1 -1?1 prime? b-if b-when)
 
 (defun maphash* (f h)
   (loop for k being the hash-keys of h
@@ -195,7 +206,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun without-repeating-generator (decent-interval all)
   (let ((len (length all))
-        (head (let ((v (copy-list all)))
+        (head (let ((v (shuffle all)))
                 (nconc v v))))
     (lambda ()
       (if (< len 2)
@@ -207,7 +218,16 @@ See the Lisp Lesser GNU Public License for more details.
             (car head)
           (setf head (cdr head)))))))
 
-(export! without-repeating)
+(defun shuffle (list &key (test 'identity))
+  (if (cdr list)
+      (loop thereis
+            (funcall test
+              (mapcar 'cdr
+                (sort (loop for e in list collecting (cons (random most-positive-fixnum) e))
+                  '< :key 'car))))
+    (copy-list list)))
+
+(export! without-repeating shuffle)
 
 (let ((generators (make-hash-table :test 'equalp)))
   (defun reset-without-repeating ()

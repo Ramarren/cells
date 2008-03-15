@@ -188,21 +188,11 @@ See the Lisp Lesser GNU Public License for more details.
                                  (char= #\; (schar trim 0)))))
         count 1)))
 
-#+save
-(defun source-line-count (path)
-   (with-open-file (s path)
-     (loop with lines = 0
-         for c = (read-char s nil nil)
-         while c
-         when (find c '(#\newline #\return))
-         do (incf lines)
-         finally (return lines))))
-
 #+(or)
 (line-count (make-pathname
              :device "c"
-             :directory `(:absolute "0Algebra" "Cells"))
-  nil 1 t)
+             :directory `(:absolute "ALGCOUNT" ))
+  nil 5 t)
 
 #+(or)
 (loop for d1 in '("cl-s3" "kpax" "puri-1.5.1" "s-base64" "s-http-client" "s-http-server" "s-sysdeps" "s-utils" "s-xml")

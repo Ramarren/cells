@@ -76,10 +76,10 @@ See the Lisp Lesser GNU Public License for more details.
           
   (when prior-value
     (assert prior-value-supplied () "How can prior-value-supplied be nil if prior-value is not?!! ~a" c))
-  (let (*call-stack* 
+  (let (*depender* *call-stack* ;; I think both need clearing, cuz we are neither depending nor calling when we prop to callers
         (*c-prop-depth*  (1+ *c-prop-depth*))
         (*defer-changes* t))
-    (trc nil "c.propagate clearing *call-stack*" c)
+    (trc nil "c.propagate clearing *depender*" c)
     
     ;------ debug stuff ---------
     ;
@@ -122,7 +122,7 @@ See the Lisp Lesser GNU Public License for more details.
     ; expected to have side-effects, so we want to propagate fully and be sure no rule
     ; wants a rollback before starting with the side effects.
     ; 
-    (unless nil #+not (member (c-lazy c) '(t :always :once-asked)) ;; 2006-09-26 still fuzzy on this 
+    (progn ;; unless (member (c-lazy c) '(t :always :once-asked)) ;; 2006-09-26 still fuzzy on this 
       (c-propagate-to-callers c))
     
     (trc nil "c.propagate observing" c)
@@ -218,6 +218,7 @@ See the Lisp Lesser GNU Public License for more details.
       #+slow (TRC c "c.propagate-to-callers > queueing notifying callers" (c-callers c))
       (with-integrity (:tell-dependents c)
         (assert (null *call-stack*))
+        (assert (null *depender*))
         (let ((*causation* causation))
           (trc nil "c.propagate-to-callers > actually notifying callers of" c (c-callers c))
           #+c-debug (dolist (caller (c-callers c))
@@ -235,7 +236,20 @@ See the Lisp Lesser GNU Public License for more details.
               (assert (find c (cd-useds caller))() "Caller ~a of ~a does not have it as used" caller c)
               #+slow (trc c "propagating to caller is used" c :caller caller (c-currentp c))
               (let ((*trc-ensure* (trcp c)))
-                (ensure-value-is-current caller :prop-from c)))))))))
+                ;
+                ; we just c-calculate-and-set? at the first level of dependency because
+                ; we do not need to check the next level (as ensure-value-is-current does)
+                ; because we already know /this/ notifying dependency has changed, so yeah,
+                ; any first-level cell /has to/ recalculate. (As for ensuring other dependents
+                ; of the first level guy are current, that happens automatically anyway JIT on
+                ; any read.) This is a minor efficiency enhancement since ensure-value-is-current would
+                ; very quickly decide it has to re-run, but maybe it makes the logic clearer.
+                ;
+                ;(ensure-value-is-current caller :prop-from c) <-- next was this, but see above change reason
+                ;
+                (unless (c-currentp caller) ; happens if I changed when caller used me in current pulse
+                  (calculate-and-set caller))
+                ))))))))
 
 (defparameter *the-unpropagated* nil)
 

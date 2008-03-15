@@ -78,6 +78,11 @@ See the Lisp Lesser GNU Public License for more details.
           `(c-break "failed assertion: ~a" ',assertion)))))
 
 (defvar *call-stack* nil)
+(defvar *depender* nil)
+;; 2008-03-15: *depender* let's us differentiate between the call stack and
+;; and dependency. The problem with overloading *call-stack* with both roles
+;; is that we miss cyclic reentrance when we use without-c-dependency in a 
+;; rule to get "once" behavior or just when fm-traversing to find someone
 
 (defmacro def-c-trace (model-type &optional slot cell-type)
   `(defmethod trcp ((self ,(case cell-type
@@ -92,7 +97,7 @@ See the Lisp Lesser GNU Public License for more details.
   `(call-without-c-dependency (lambda () ,@body)))
 
 (defun call-without-c-dependency (fn)
-  (let (*call-stack*)
+  (let (*depender*)
     (funcall fn)))
 
 (export! .cause)

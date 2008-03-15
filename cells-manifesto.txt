@@ -43,7 +43,7 @@ It might look something like this:
  (defobserver enabled ((self menu-item) new-value old-value old-value-bound?)
      (menu-item-set (c-ptr self) (if new-value 1 0)))
 
-ie, Somr model attributes must be propagated outside the model as they change, and observers 
+ie, Some model attributes must be propagated outside the model as they change, and observers 
 are callbacks we can provide to handle change.
 
 Motivation

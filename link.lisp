@@ -18,17 +18,17 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :cells)
 
-(defun record-caller (used &aux (caller (car *call-stack*)))
+(defun record-caller (used)
   (when (c-optimized-away-p used) ;; 2005-05-21 removed slow type check that used is cell
-    (trc nil "caller not being recorded because used optimized away" caller (c-value used) :used used)
+    (trc nil "depender not being recorded because used optimized away" *depender* (c-value used) :used used)
     (return-from record-caller nil))
-  (trc nil "record-caller entry: used=" used :caller caller)
-  #+cool (when (and (eq :ccheck (md-name (c-model caller)))
+  (trc nil "record-caller entry: used=" used :caller *depender*)
+  #+cool (when (and (eq :ccheck (md-name (c-model *depender*)))
           (eq :cview (md-name (c-model used))))
     (break "bingo"))
   (multiple-value-bind (used-pos useds-len)
       (loop with u-pos
-          for known in (cd-useds caller)
+          for known in (cd-useds *depender*)
           counting known into length
           when (eq used known)
           do
@@ -37,20 +37,20 @@ See the Lisp Lesser GNU Public License for more details.
           finally (return (values (when u-pos (- length u-pos)) length)))
 
     (when (null used-pos)
-      (trc nil "c-link > new caller,used " caller used)
+      (trc nil "c-link > new caller,used " *depender* used)
       (count-it :new-used)
       (setf used-pos useds-len)
-      (push used (cd-useds caller))
-      (caller-ensure used caller) ;; 060604 experiment was in unlink
+      (push used (cd-useds *depender*))
+      (caller-ensure used *depender*) ;; 060604 experiment was in unlink
       )
 
     (handler-case
-        (setf (sbit (cd-usage caller) used-pos) 1)
+        (setf (sbit (cd-usage *depender*) used-pos) 1)
       (type-error (error)
         (declare (ignorable error))
-        (setf (cd-usage caller)
-          (adjust-array (cd-usage caller) (+ used-pos 16) :initial-element 0))
-        (setf (sbit (cd-usage caller) used-pos) 1))))
+        (setf (cd-usage *depender*)
+          (adjust-array (cd-usage *depender*) (+ used-pos 16) :initial-element 0))
+        (setf (sbit (cd-usage *depender*) used-pos) 1))))
   used)
 
 

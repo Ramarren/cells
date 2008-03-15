@@ -76,7 +76,7 @@ See the Lisp Lesser GNU Public License for more details.
                                       *trcdepth*)
     (format stream "~&~v,,,'.<~d~>> " (mod *trcdepth* 100) *trcdepth*)
     (format stream "~&"))
-  (format stream " ~a " (round (- (get-internal-real-time) *last-trc*) 10))
+  ;;(format stream " ~a " (round (- (get-internal-real-time) *last-trc*) 10))
   (setf *last-trc* (get-internal-real-time))
   (format stream "~a" s)
   (let (pkwp)

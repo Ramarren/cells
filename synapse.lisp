@@ -22,14 +22,13 @@ See the Lisp Lesser GNU Public License for more details.
   (export '(mk-synapse f-delta f-sensitivity f-plusp f-zerop fdifferent with-synapse)))
 
 (defmacro with-synapse (synapse-id (&rest closure-vars) &body body)
-  (let ((syn-id (gensym))(syn-caller (gensym)))
+  (let ((syn-id (gensym)))
     `(let* ((,syn-id ,synapse-id)
-            (,syn-caller (car *call-stack*))
-            (synapse (or (find ,syn-id (cd-useds ,syn-caller) :key 'c-slot-name)
+            (synapse (or (find ,syn-id (cd-useds *depender*) :key 'c-slot-name)
                        (let ((new-syn
                               (let (,@closure-vars)
                                 (make-c-dependent
-                                 :model (c-model ,syn-caller)
+                                 :model (c-model *depender*)
                                  :slot-name ,syn-id
                                  :code ',body
                                  :synaptic t
@@ -39,7 +38,7 @@ See the Lisp Lesser GNU Public License for more details.
        (prog1
            (multiple-value-bind (v p)
                (with-integrity ()
-                 (ensure-value-is-current synapse :synapse (car *call-stack*)))
+                 (ensure-value-is-current synapse :synapse *depender*))
              (values v p))
          (record-caller synapse)))))
 
