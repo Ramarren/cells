@@ -54,7 +54,7 @@ See the Lisp Lesser GNU Public License for more details.
      ; -------  defclass ---------------  (^slot-value ,model ',',slotname)
      ;
      
-     (progn
+     (prog1
        (defclass ,class ,(or directsupers '(model-object)) ;; now we can def the class
          ,(mapcar (lambda (s)
                     (list* (car s)
@@ -120,8 +120,7 @@ the defmodel form for ~a" ',class ',class))))
                             )
                          ))
                      ))
-           slotspecs)
-       (find-class ',class))))
+           slotspecs))))
 
 (defun defmd-canonicalize-slot (slotname
                                 &key
