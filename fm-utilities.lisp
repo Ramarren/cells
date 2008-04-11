@@ -115,6 +115,17 @@ See the Lisp Lesser GNU Public License for more details.
       :with-dependency dependently)
     (nreverse collection)))
 
+(export! fm-collect-some)
+
+(defun fm-collect-some (tree test &optional skip-top dependently)
+  (let (collection)
+    (fm-traverse tree (lambda (node)
+                        (unless (and skip-top (eq node tree))
+                          (bwhen (s (funcall test node))
+                            (push s collection))))
+      :with-dependency dependently)
+    (nreverse collection)))
+
 (defun fm-value-dictionary (tree value-fn &optional include-top)
   (let (collection)
     (fm-traverse tree

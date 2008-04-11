@@ -110,13 +110,26 @@ See the Lisp Lesser GNU Public License for more details.
 ;sum pXYs up the family tree    ;gave an odd result for cursor display....
 
 (defun v2-xlate (outer inner outer-v2)
-  (if (eql outer inner)
+  (if (eq outer inner)
      outer-v2
      (v2-xlate outer (fm-parent inner)
                (v2-subtract outer-v2
                             (mkv2 (px inner) (py inner))))))
 
-(export! h-xlate v-xlate)
+(defun v2-xlate-out (inner outer inner-v2)
+  (if (eq outer inner)
+      inner-v2
+    (v2-xlate (fm-parent inner) outer
+      (v2-add inner-v2
+        (mkv2 (px inner) (py inner))))))
+
+(defun v2-xlate-between (from-v2 from to)
+  (cond
+   ((fm-includes from to)(v2-xlate from to from-v2))
+   ((fm-includes to from)(v2-xlate-out from to from-v2))
+   (t (break "time to extend v2-xlate-between"))))
+
+(export! h-xlate v-xlate v2-xlate-between)
 
 (defun h-xlate (outer inner outer-h)
   (if (eql outer inner)

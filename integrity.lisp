@@ -48,7 +48,15 @@ See the Lisp Lesser GNU Public License for more details.
     (return-from call-with-integrity))
   (if *within-integrity*
       (if opcode
-          (ufb-add opcode (cons defer-info action))
+          (progn
+            (ufb-add opcode (cons defer-info action))
+            ;
+            ; SETF is supposed to return the value being installed
+            ; in the place, but if the SETF is deferred we return
+            ; something that will help someone who tries to use
+            ; the setf'ed value figure out what is going on:
+            ;
+            :deferred-to-ufb-1)
         (funcall action opcode defer-info))
     (let ((*within-integrity* t)
           *unfinished-business*
@@ -63,18 +71,15 @@ See the Lisp Lesser GNU Public License for more details.
         (finish-business)))))
 
 (defun ufb-queue (opcode)
-  (assert (find opcode *ufb-opcodes*))
   (cdr (assoc opcode *unfinished-business*)))
 
 (defun ufb-queue-ensure (opcode)
-  (assert (find opcode *ufb-opcodes*))
   (or (ufb-queue opcode)
     (cdr (car (push (cons opcode (make-fifo-queue)) *unfinished-business*)))))
 
 (defparameter *no-tell* nil)
 
 (defun ufb-add (opcode continuation)
-  (assert (find opcode *ufb-opcodes*))
   #+trythis (when (and *no-tell* (eq opcode :tell-dependents))
     (break "truly queueing tell under no-tell"))
   (trc nil "ufb-add deferring" opcode (when (eql opcode :client)(car continuation)))
@@ -137,7 +142,7 @@ See the Lisp Lesser GNU Public License for more details.
     ; dependent reverses the arrow and puts the burden on the prosecution to prove nested tells are a problem.
     
     (bwhen (uqp (fifo-peek (ufb-queue :tell-dependents)))
-      (trc "retelling dependenst, one new one being" uqp)
+      #+x42 (trc "retelling dependenst, one new one being" uqp)
       (go tell-dependents))
     
     ;--- process client queue ------------------------------
@@ -175,7 +180,7 @@ See the Lisp Lesser GNU Public License for more details.
     (bwhen (task-info (fifo-pop (ufb-queue :change)))
       (trc nil "!!! finbiz --- CHANGE ---- (first of)" (fifo-length (ufb-queue :change)))
       (destructuring-bind (defer-info . task-fn) task-info
-        (trc nil  "finbiz: deferred state change" defer-info)
+        #+xxx (trc  "fbz: dfrd chg" defer-info (fifo-length (ufb-queue :change)))
         (data-pulse-next (list :finbiz defer-info))
         (funcall task-fn :change defer-info)
         ;

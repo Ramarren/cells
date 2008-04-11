@@ -77,7 +77,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro py-maintain-pB (pB)
   `(- ,pB (^lB)))
 
-(export! centered-h? centered-v?)
+(export! centered-h? centered-v? lb-maintain-pB)
 
 (defmacro ^fill-down (upper-type &optional (padding 0))
   (let ((filled (gensym)))

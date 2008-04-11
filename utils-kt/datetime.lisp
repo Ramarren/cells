@@ -193,12 +193,13 @@ See the Lisp Lesser GNU Public License for more details.
                                  month year day-of-week
                                  daylight-saving-time-p time-zone))
     (format nil "~4,,,'0@A:~2,,,'0@A:~2,,,'0@A:~2,,,'0@A:~2,,,'0@A:~2,,,'0@A:~2,,,'0@A"
-      year month date hours minutes seconds (floor (now) 10))))
+      year month date hours minutes seconds (floor (* 10 (mod (now) 1.0))))))
 
 (defun hyphenated-time-string ()
   (substitute #\- #\: (ymdhmsh)))
 
 #+test
 (hyphenated-time-string)
-  
 
+#+test
+(ymdhmsh)

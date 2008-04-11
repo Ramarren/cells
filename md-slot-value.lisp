@@ -131,7 +131,7 @@ See the Lisp Lesser GNU Public License for more details.
   (bwhen (v (c-value c))
     (if (mdead v)
         (progn
-          (format t "~&on pulse ~a ensure-value still got and still not returning ~a dead value ~a" *data-pulse-id* c v)
+          #+shhh (format t "~&on pulse ~a ensure-value still got and still not returning ~a dead value ~a" *data-pulse-id* c v)
           nil)
       v)))
 
@@ -227,7 +227,8 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun (setf md-slot-value) (new-value self slot-name
                               &aux (c (md-slot-cell self slot-name)))
-  
+  #+shhh (when *within-integrity*
+    (trc "mdsetf>" self (type-of self) slot-name :new new-value))
   (when *c-debug*
     (c-setting-debug self slot-name c new-value))
   

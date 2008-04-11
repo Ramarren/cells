@@ -91,9 +91,7 @@ See the Lisp Lesser GNU Public License for more details.
    (.kids :initform (c-in nil) ;; most useful
      :owning t
      :accessor kids
-     :initarg :kids)
-   )
-  (:default-initargs :fm-parent (when (boundp '*parent*) *parent*)))
+     :initarg :kids)))
 
 (defmacro the-kids (&rest kids)
   `(let ((*parent* self))

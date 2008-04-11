@@ -120,64 +120,35 @@ See the Lisp Lesser GNU Public License for more details.
 ;--------------- geo.row.flow ----------------------------
 (export! geo-row-flow)
 
-(defmodel geo-row-flow (geo-inline)
-  ((spacing-hz :cell nil :initarg :spacing-hz :initform 0 :reader spacing-hz)
-   (spacing-vt :cell nil :initarg :spacing-vt :initform 0 :reader spacing-vt)
-   (aligned :cell nil :initarg :aligned :initform nil :reader aligned))
-  (:default-initargs
-      :lb  (c? (geo-kid-wrap self 'pb))
-    :kid-slots (lambda (self)
-                 (declare (ignore self))
-                 
-                 (list
-                  (mk-kid-slot (py)
-                    (c? (py-maintain-pt
-                         (let ((ph (^prior-sib-pr self (spacing-hz .parent) (aligned .parent))))
-                           (if (> (+ ph (l-width self)(outset .parent))  (l-width .parent))
-                               (^prior-sib-pb self (spacing-vt .parent))
-                             (^prior-sib-pt self))))))
-                  (mk-kid-slot (px)
-                    (c? (px-maintain-pl
-                         (let ((ph (^prior-sib-pr self (spacing-hz .parent) (aligned .parent))))
-                           (if (> (+ ph (l-width self)(outset .parent))  (l-width .parent))
-                               0
-                             ph)))))))))
+(defmd geo-row-flow (geo-inline)
+  (spacing-hz  0)
+  (spacing-vt  0)
+  (aligned :cell nil)
+  (row-flow-layout
+   (c? (loop with max-pb = 0 and pl = 0 and pt = 0
+           for k in (^kids)
+           for kpr = (+ pl (l-width k))
+           when (unless (= pl 0)
+                  (> kpr (- (l-width self) (outset self)))) do
+             (setf pl 0
+               pt (+ max-pb (downs (^spacing-vt))))
 
-#| archive
+           collect (cons pl pt) into pxys
+           do (incf pl (+ (l-width k)(^spacing-hz)))
+             (setf max-pb (min max-pb (+ pt (downs (l-height k)))))
+           finally (return (cons max-pb pxys)))))
+  :lb  (c? (+ (bif (xys (^row-flow-layout))
+                (car xys) 0)
+             (downs (outset self))))
+  :kid-slots (lambda (self)
+               (declare (ignore self))
+               (list
+                (mk-kid-slot (px)
+                  (c? (px-maintain-pl (car (nth (kid-no self) (cdr (row-flow-layout .parent)))))))
+                (mk-kid-slot (py)
+                  (c? (py-maintain-pt (cdr (nth (kid-no self) (cdr (row-flow-layout .parent))))))))))
 
-(defmodel geo-row-fv (family-values geo-row)())
-(defmodel geo-inline-fv (family-values geo-inline)())
 
-;-------------------------- IMMatrix ------------------------------------------
-
-(defmodel im-matrix (geo-zero-tl)
-  ((columns :cell nil :initarg :columns :initform nil :accessor columns)
-   (indent-hz :cell nil :initarg :indent-hz :initform 0 :accessor indent-hz)
-   (spacing-hz :cell nil :initarg :spacing-hz :initform 0 :accessor spacing-hz)
-   (spacing-vt :cell nil :initarg :spacing-vt :initform 0 :accessor spacing-vt))
-  (:default-initargs
-      :kid-slots (lambda (self)
-                   (declare (ignore self))
-                   (list
-                    (mk-kid-slot (px)
-                                 (c? (let ((parent (fm-parent self)))
-                                       (+ (indent-hz parent)
-                                          (if (zerop (mod (fm-pos self)
-                                                          (or (columns parent)
-                                                              (length (kids parent)))))
-                                              0
-                                            (+ (spacing-hz parent)
-                                               (pr (find-prior self (kids parent)))))))))
-                    (mk-kid-slot (py)
-                                 (c? (let* ((parent (fm-parent self))
-                                            (psib (find-prior self (kids parent))))
-                                       (if (and psib (columns parent))
-                                           (if (zerop (mod (fm-pos self) (columns parent)))
-                                               (+ (- (abs (spacing-vt parent))) (pb psib))
-                                             (pt psib))
-                                         0))))))))
-
-|#
 
 
 

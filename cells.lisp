@@ -16,14 +16,26 @@ See the Lisp Lesser GNU Public License for more details.
 
 |#
 
+#| Notes
+
+I don't like the way with-cc defers twice, first the whole thing and then when the
+body finally runs we are still within the original integrity and each setf gets queued
+to UFB separately before md-slot-value-assume finally runs. I think all that is going on here 
+is that we want the programmer to use with-cc to show they know the setf will not be returning
+a useful value. But since they have coded the with-cc we should be able to figure out a way to
+let those SETFs thru as if they were outside integrity, and then we get a little less UFBing
+but even better SETF behaves as it should.
+
+It would be nice to do referential integrity and notice any time a model object gets stored in
+a cellular slot (or in a list in such) and then mop those up on not-to-be.
+
+|#
+
+
 (eval-when (compile load)
   (proclaim '(optimize (speed 2) (safety 1) (space 1) (debug 3))))
 
-
-
 (in-package :cells)
-
-
 
 (defparameter *c-prop-depth* 0)
 (defparameter *causation* nil)
@@ -94,11 +106,8 @@ See the Lisp Lesser GNU Public License for more details.
           `t))))
 
 (defmacro without-c-dependency (&body body)
-  `(call-without-c-dependency (lambda () ,@body)))
-
-(defun call-without-c-dependency (fn)
-  (let (*depender*)
-    (funcall fn)))
+  ` (let (*depender*)
+      ,@body))
 
 (export! .cause)
 
@@ -117,7 +126,8 @@ See the Lisp Lesser GNU Public License for more details.
   (slot-name self new old old-boundp cell)
   (declare (ignorable slot-name self new old old-boundp cell)))
 
-
+#+hunh
+(fmakunbound 'slot-value-observe)
 ; -------- cell conditions (not much used) ---------------------------------------------
 
 (define-condition xcell () ;; new 2k0227
