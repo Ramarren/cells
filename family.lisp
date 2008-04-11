@@ -14,8 +14,6 @@ the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
-## useless edit by PH
-
 |#
 
 (in-package :cells)
