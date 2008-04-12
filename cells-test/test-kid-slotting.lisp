@@ -26,8 +26,8 @@
 
 (defmd image (family) left top width height)
 
-(defun right (x) (+ (left x) (width x)))
-(defun bottom (x) (+ (top x) (height x)))
+(defun i-right (x) (+ (left x) (width x)))
+(defun i-bottom (x) (+ (top x) (height x)))
 
 (defmd stack (image)
   justify
@@ -42,7 +42,7 @@
                                      (:right (- (width .parent) (^width)))))))
                            (mk-kid-slot (top)
                              (c? (bif (psib (psib))
-                                   (bottom psib)
+                                   (i-bottom psib)
                                    (top .parent))))))
     :accessor kid-slots
     :initarg :kid-slots))
@@ -53,7 +53,7 @@
 ;; because they will be endowed with rules as necessary to achieve that end by the parent stack.
 ;;
 ;; note the ifmissing option, which defaults to nil. the stack's goal is mainly to manage the
-;; top attribute of each kid to match any predecessor's bottom attribute. the stack will as a
+;; top attribute of each kid to match any predecessor's i-bottom attribute. the stack will as a
 ;; a convenience arrange for horizontal justification, but if some kid chose to define its
 ;; left attribute that would be honored.
 ;;
@@ -74,11 +74,11 @@
                     (every (lambda (k) (eql 10 (left k)))
                            (kids stack))))
     (ct-assert (every (lambda (k)
-                        (eql (top k) (bottom (fm-prior-sib k))))
+                        (eql (top k) (i-bottom (fm-prior-sib k))))
                       (cdr (kids stack))))
 
     (setf (justify stack) :right)
-    (ct-assert (and (eql 510 (right stack))
-                    (every (lambda (k) (eql 510 (right k)))
+    (ct-assert (and (eql 510 (i-right stack))
+                    (every (lambda (k) (eql 510 (i-right k)))
                            (kids stack))))
     ))

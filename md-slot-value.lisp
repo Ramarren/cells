@@ -21,8 +21,9 @@ See the Lisp Lesser GNU Public License for more details.
 (defparameter *ide-app-hard-to-kill* t)
 
 (defun md-slot-value (self slot-name &aux (c (md-slot-cell self slot-name)))
-  (when (mdead self)
-    (trc "md-slot-value passed dead self, returning NIL" self)
+  (when (and (not *not-to-be*)
+          (mdead self))
+    (trc "md-slot-value passed dead self, returning NIL" self slot-name c)
     (inspect self)
     (break "see inspector for dead ~a" self)
     (return-from md-slot-value nil))
@@ -57,7 +58,7 @@ See the Lisp Lesser GNU Public License for more details.
       (record-caller c))))
   
 (defun chk (s &optional (key 'anon))
-  (when (eq :eternal-rest (md-state s))
+  (when (mdead s)
     (break "model ~a is dead at ~a" s key)))
 
 ;;;(defmethod trcp ((c cell))
@@ -76,6 +77,9 @@ See the Lisp Lesser GNU Public License for more details.
   (declare (ignorable debug-id ensurer))
   (count-it :ensure-value-is-current)
   ;; (trc c "ensure-value-is-current > entry" c (c-state c) :now-pulse *data-pulse-id* debug-id ensurer)
+
+  (when *not-to-be*
+    (return-from ensure-value-is-current t))
 
   (when (and (not (symbolp (c-model c)))(eq :eternal-rest (md-state (c-model c))))
     (break "model ~a of cell ~a is dead" (c-model c) c))

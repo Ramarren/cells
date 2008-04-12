@@ -31,9 +31,9 @@ See the Lisp Lesser GNU Public License for more details.
 ;___________________ birth / death__________________________________
   
 (defgeneric mdead (self)
-
   (:method ((self model-object))
-    (eq :eternal-rest (md-state self)))
+    (unless *not-to-be*
+      (eq :eternal-rest (md-state self))))
 
   (:method (self)
     (declare (ignore self))
@@ -45,20 +45,20 @@ See the Lisp Lesser GNU Public License for more details.
 
   (:method :around ((self model-object))
     (declare (ignorable self))
-    (trc nil #+not (typep self '(or mathx::problem mathx::prb-solvers mathx::prb-solver))
-      "not.to-be nailing" self)
-    ;;showpanic (c-assert (not (eq (md-state self) :eternal-rest)))
-    (unless (eq (md-state self) :eternal-rest)
-      (call-next-method)
+    (let ((*not-to-be* t))
+      (trc nil #+not (typep self '(or mathx::problem mathx::prb-solvers mathx::prb-solver))
+        "not.to-be nailing" self)
+      (unless (eq (md-state self) :eternal-rest)
+        (call-next-method)
+        
+        (setf (fm-parent self) nil
+          (md-state self) :eternal-rest)
 
-      (setf (fm-parent self) nil
-        (md-state self) :eternal-rest)
+        (md-map-cells self nil
+          (lambda (c)
+            (c-assert (eq :quiesced (c-state c))))) ;; fails if user obstructs not.to-be with primary method (use :before etc)
 
-      (md-map-cells self nil
-        (lambda (c)
-          (c-assert (eq :quiesced (c-state c))))) ;; fails if user obstructs not.to-be with primary method (use :before etc)
-
-      (trc nil "not.to-be cleared 2 fm-parent, eternal-rest" self))))
+        (trc nil "not.to-be cleared 2 fm-parent, eternal-rest" self)))))
 
 (defun md-quiesce (self)
   (trc nil "md-quiesce nailing cells" self (type-of self))

@@ -47,6 +47,7 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
 (defparameter *within-integrity* nil)
 (defparameter *client-queue-handler* nil)
 (defparameter *unfinished-business* nil)
+(defparameter *not-to-be* nil)
 
 #+test
 (cells-reset)
