@@ -77,13 +77,18 @@ See the Lisp Lesser GNU Public License for more details.
   (declare (ignorable debug-id ensurer))
   (count-it :ensure-value-is-current)
   ;; (trc c "ensure-value-is-current > entry" c (c-state c) :now-pulse *data-pulse-id* debug-id ensurer)
-
+  
   (when *not-to-be*
-    (return-from ensure-value-is-current  (c-value c)))
-
-  (when (and (not (symbolp (c-model c)))(eq :eternal-rest (md-state (c-model c))))
+    (when (c-unboundp c)
+      (error 'unbound-cell :cell c :instance (c-model c) :name (c-slot-name c)))
+    (return-from ensure-value-is-current
+      (when (c-validp c) ;; probably accomplishes nothing
+        (c-value c))))
+  
+  (when (and (not (symbolp (c-model c))) ;; damn, just here because of playing around with global vars and cells
+          (eq :eternal-rest (md-state (c-model c))))
     (break "model ~a of cell ~a is dead" (c-model c) c))
-
+  
   (cond
    ((c-currentp c)
     (trc nil "EVIC yep: c-currentp" c)) ;; used to follow c-inputp, but I am toying with letting ephemerals (inputs) fall obsolete
@@ -94,7 +99,7 @@ See the Lisp Lesser GNU Public License for more details.
       (not (and (typep c 'c-dependent)
              (eq (cd-optimize c) :when-value-t)
              (null (c-value c))))))
-
+   
    ((or (not (c-validp c))
       ;;
       ;; new for 2006-09-21: a cell ended up checking slots of a dead instance, which would have been
@@ -112,26 +117,26 @@ See the Lisp Lesser GNU Public License for more details.
                        (when (> (c-pulse-last-changed used)(c-pulse c))
                          #+slow (trc c "used changed and newer !!!!!!" c :oldpulse (c-pulse used) debug-id used :lastchg (c-pulse-last-changed used))
                          #+shhh (when (trcp c)
-                           (describe used))
+                                  (describe used))
                          t))))))
         (assert (typep c 'c-dependent))
         (check-reversed (cd-useds c))))
     #+shhh (trc c "kicking off calc-set of" (c-state c) (c-validp c) (c-slot-name c) :vstate (c-value-state c)
              :stamped (c-pulse c) :current-pulse *data-pulse-id*)
     (calculate-and-set c))
-
+   
    ((mdead (c-value c))
     (trc nil "ensure-value-is-current> trying recalc of ~a with current but dead value ~a" c (c-value c))
     (let ((new-v (calculate-and-set c)))
       (trc nil "ensure-value-is-current> GOT new value ~a to replace dead!!" new-v)
       new-v))
-
+   
    (t (trc nil "ensuring current decided current, updating pulse" (c-slot-name c) debug-id)
      (c-pulse-update c :valid-uninfluenced)))
-
+  
   (when (c-unboundp c)
     (error 'unbound-cell :cell c :instance (c-model c) :name (c-slot-name c)))
-
+  
   (bwhen (v (c-value c))
     (if (mdead v)
         (progn
