@@ -79,7 +79,7 @@ See the Lisp Lesser GNU Public License for more details.
   ;; (trc c "ensure-value-is-current > entry" c (c-state c) :now-pulse *data-pulse-id* debug-id ensurer)
 
   (when *not-to-be*
-    (return-from ensure-value-is-current t))
+    (return-from ensure-value-is-current  (c-value c)))
 
   (when (and (not (symbolp (c-model c)))(eq :eternal-rest (md-state (c-model c))))
     (break "model ~a of cell ~a is dead" (c-model c) c))
