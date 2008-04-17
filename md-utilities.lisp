@@ -91,16 +91,28 @@ See the Lisp Lesser GNU Public License for more details.
 ;;; cells store stuff
 ;;;    (w) Peter Hildebrandt
 
-(export! cells-store c?-with-stored with-store-item store-add store-lookup store-remove)
+(export! cells-store bwhen-gethash c?-with-stored with-store-item store-add store-lookup store-remove)
 
 (defmacro c?-with-stored ((var key store &optional default) &body body)
-  `(c? (let ((something (value (get-listener ,key ,store))))
-	 (declare (ignorable something))
-	 (trc nil "executing c?-bwhen" self :something something :lookup (store-lookup ,key ,store))
-	 (bif (,var (store-lookup ,key ,store))
-	      (progn
-		,@body)
-	      ,default))))
+  `(c? (bwhen-gethash (,var ,key ,store ,default)
+	 ,@body)))
+
+(defmacro with-uniqs ((&rest symbols) &body body)
+  `(let ,(mapcar #'(lambda (sym) `(,sym (gensym ,(string sym)))) symbols)
+     ,@body))
+
+(defmacro bwhen-gethash ((var key store &optional if-not) &body body)
+  (with-uniqs (gkey gstore gupdate gifnot)
+    `(let ((,gkey ,key)
+	   (,gstore ,store)
+	   (,gifnot ,if-not))
+	(let ((,gupdate (value (get-listener ,gkey ,gstore))))
+	  (declare (ignorable ,gupdate))
+	  (trc nil "executing bwhen-gethash" self :update-tick ,gupdate :lookup (store-lookup ,gkey ,gstore))
+	  (bif (,var (store-lookup ,gkey ,gstore))
+	       (progn
+		 ,@body)
+	       ,gifnot)))))
 
 (defmodel cells-store (family)
   ((data :accessor data :initarg :data :cell nil)
@@ -183,7 +195,12 @@ See the Lisp Lesser GNU Public License for more details.
 	 (bar (make-instance 'test-store-item :value (c?-with-stored (v :bar store 'nothing)
 						       (bwhen (val (value v)) val))))
 	 (bar-1 (make-instance 'test-store-item :value (c?-with-stored (v :bar store 'nothing)
-							 (bwhen (val (value v)) (1- val))))))
+							 (bwhen (val (value v)) (1- val)))))
+	 (bypass-lookup? (make-instance 'family :value (c-in t)))
+	 (baz (make-instance 'test-store-item :value (c? (if (value bypass-lookup?)
+							     'no-lookup
+							     (bwhen-gethash (v :bar store 'nothing)
+							       (value v)))))))
 
     (assert-values ("assert fresh initialization")
       (foo 'nothing)
@@ -227,6 +244,15 @@ See the Lisp Lesser GNU Public License for more details.
       (bar 2)
       (bar-1 1))
 
+    (assert-values ("baz w/o lookup")
+      (baz 'no-lookup))
+
+    (with-assert-observers ("activating lookup" baz)
+      (setf (value bypass-lookup?) nil))
+
+    (assert-values ("baz w/lookup")
+      (baz 2))
+
     (with-assert-observers ("deleting foo" foo foo+1)
       (store-remove :foo store))
 
@@ -236,11 +262,18 @@ See the Lisp Lesser GNU Public License for more details.
       (bar 2)
       (bar-1 1))
 
-    (with-assert-observers ("deleting bar" bar bar-1)
+    (with-assert-observers ("deleting bar" bar bar-1 baz)
       (store-remove :bar store))
 
     (assert-values ("deleted bar")
       (foo 'nothing)
       (foo+1 'nothing)
       (bar 'nothing)
-      (bar-1 'nothing))))
+      (bar-1 'nothing)
+      (baz 'nothing))
+
+    (with-assert-observers ("de-activating lookup" baz)
+      (setf (value bypass-lookup?) t))
+
+    (assert-values ("baz w/o lookup")
+      (baz 'no-lookup))))
