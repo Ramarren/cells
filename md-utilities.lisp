@@ -138,7 +138,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmethod store-lookup (key (store cells-store) &optional default)
   (gethash key (data store) default))
 
-(defmethod store-remove (key (store cells-hash-store))
+(defmethod store-remove (key (store cells-store))
   (with-store-item (key store)
     (remhash key (data store))))
 
@@ -225,4 +225,22 @@ See the Lisp Lesser GNU Public License for more details.
       (foo 1)
       (foo+1 2)
       (bar 2)
-      (bar-1 1))))
+      (bar-1 1))
+
+    (with-assert-observers ("deleting foo" foo foo+1)
+      (store-remove :foo store))
+
+    (assert-values ("deleted foo")
+      (foo 'nothing)
+      (foo+1 'nothing)
+      (bar 2)
+      (bar-1 1))
+
+    (with-assert-observers ("deleting bar" bar bar-1)
+      (store-remove :bar store))
+
+    (assert-values ("deleted bar")
+      (foo 'nothing)
+      (foo+1 'nothing)
+      (bar 'nothing)
+      (bar-1 'nothing))))
