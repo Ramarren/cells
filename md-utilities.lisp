@@ -86,3 +86,143 @@ See the Lisp Lesser GNU Public License for more details.
      ,@initargs
      :fm-parent (progn (assert self) self)))
 
+
+;;;
+;;; cells store stuff
+;;;    (w) Peter Hildebrandt
+
+(export! cells-store c?-with-stored with-store-item store-add store-lookup store-remove)
+
+(defmacro c?-with-stored ((var key store &optional default) &body body)
+  `(c? (let ((something (value (get-listener ,key ,store))))
+	 (declare (ignorable something))
+	 (trc nil "executing c?-bwhen" self :something something :lookup (store-lookup ,key ,store))
+	 (bif (,var (store-lookup ,key ,store))
+	      (progn
+		,@body)
+	      ,default))))
+
+(defmodel cells-store (family)
+  ((data :accessor data :initarg :data :cell nil)
+   (listeners :accessor listeners :initarg :listeners :cell nil))
+  (:default-initargs
+      :data (make-hash-table)
+    :listeners (make-hash-table)
+    :kids (c-in nil)))
+
+;;; infrastructure for manipulating the store and kicking rules
+
+(defmethod get-listener (key (store cells-store))
+  (or (gethash key (listeners store))
+      (let ((new-listener (make-instance 'family :fm-parent store :value (c-in 0))))
+	(with-integrity (:change)
+	  (push new-listener (kids store))
+	  (setf (gethash key (listeners store)) new-listener))
+	new-listener)))
+
+(defmethod kick-listener (key (store cells-store))
+  (bwhen (listener (gethash key (listeners store)))
+    (incf (value listener))))
+
+(defmacro with-store-item ((key store) &body body)
+  `(prog1
+       (progn ,@body)
+     (kick-listener ,key ,store)))
+
+;;; item management
+
+(defmethod store-add (key (store cells-store) object)
+  (with-store-item (key store)    
+    (setf (gethash key (data store)) object)))
+
+(defmethod store-lookup (key (store cells-store) &optional default)
+  (gethash key (data store) default))
+
+(defmethod store-remove (key (store cells-hash-store))
+  (with-store-item (key store)
+    (remhash key (data store))))
+
+
+;;;  unit test
+
+(export! test-cells-store)
+
+(defmodel test-store-item (family)
+  ())
+
+(defvar *observers*)
+
+(defobserver .value ((self test-store-item))
+  (trc "    changed value" :self self :to (value self))
+  (when (boundp '*observers*)
+    (push self *observers*)))
+
+(defmacro with-assert-observers ((desc &rest asserted-observers) &body body)  
+  `(let ((*observers* nil))
+     (trc ,desc " -- checking observers")
+     ,@body
+     (let ((superflous-observers (loop for run in *observers* if (not (member run (list ,@asserted-observers))) collect run))
+	   (failed-observers (loop for asserted in (list ,@asserted-observers) if (not (member asserted *observers*)) collect asserted)))
+       (trc "called observers on" *observers* :superflous superflous-observers :failed failed-observers)
+       (assert (not superflous-observers))
+       (assert (not failed-observers)))))
+
+(defmacro assert-values ((desc) &body objects-and-values)
+  `(progn
+     (trc ,desc)
+     ,@(loop for (obj val) in objects-and-values
+	    collect `(assert (eql (value ,obj) ,val)))))
+
+(defun test-cells-store ()
+  (trc "testing cells-store -- making objects")
+  (let* ((store (make-instance 'cells-store))
+	 (foo (make-instance 'test-store-item :value (c?-with-stored (v :foo store 'nothing)
+						       (bwhen (val (value v)) val))))
+	 (foo+1 (make-instance 'test-store-item :value (c?-with-stored (v :foo store 'nothing)
+							 (bwhen (val (value v)) (1+ val)))))
+	 (bar (make-instance 'test-store-item :value (c?-with-stored (v :bar store 'nothing)
+						       (bwhen (val (value v)) val))))
+	 (bar-1 (make-instance 'test-store-item :value (c?-with-stored (v :bar store 'nothing)
+							 (bwhen (val (value v)) (1- val))))))
+
+    (assert-values ("assert fresh initialization")
+      (foo 'nothing)
+      (foo+1 'nothing)
+      (bar 'nothing)
+      (bar-1 'nothing))
+
+    (with-assert-observers ("adding foo" foo foo+1)
+      (store-add :foo store (make-instance 'family :value (c-in nil))))
+
+    (assert-values ("added foo = nil")
+      (foo nil)
+      (foo+1 nil)
+      (bar 'nothing)
+      (bar-1 'nothing))
+    
+    (with-assert-observers ("changing foo" foo foo+1)
+      (setf (value (store-lookup :foo store)) 1))
+
+    (assert-values ("changed foo = 1")
+      (foo 1)
+      (foo+1 2)
+      (bar 'nothing)
+      (bar-1 'nothing))
+   
+    (with-assert-observers ("adding bar = 42" bar bar-1)
+      (store-add :bar store (make-instance 'family :value (c-in 42))))
+
+    (assert-values ("changed foo = 1")
+      (foo 1)
+      (foo+1 2)
+      (bar 42)
+      (bar-1 41))
+    
+    (with-assert-observers ("changing bar to 2" bar bar-1)
+      (setf (value (store-lookup :bar store)) 2))
+
+    (assert-values ("changed foo = 1")
+      (foo 1)
+      (foo+1 2)
+      (bar 2)
+      (bar-1 1))))
