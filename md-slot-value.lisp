@@ -24,7 +24,7 @@ See the Lisp Lesser GNU Public License for more details.
   (when (and (not *not-to-be*)
           (mdead self))
     (trc "md-slot-value passed dead self, returning NIL" self slot-name c)
-    (inspect self)
+    #-sbcl (inspect self)
     (break "see inspector for dead ~a" self)
     (return-from md-slot-value nil))
   (tagbody

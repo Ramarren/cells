@@ -91,68 +91,109 @@ See the Lisp Lesser GNU Public License for more details.
 ;;; cells store stuff
 ;;;    (w) Peter Hildebrandt
 
-(export! cells-store bwhen-gethash c?-with-stored with-store-item store-add store-lookup store-remove)
+(export! cells-store bwhen-c-stored c?-with-stored with-store-item store-add store-lookup store-remove)
 
 (defmacro c?-with-stored ((var key store &optional default) &body body)
-  `(c? (bwhen-gethash (,var ,key ,store ,default)
+  `(c? (bwhen-c-stored (,var ,key ,store ,default)
 	 ,@body)))
 
 (defmacro with-uniqs ((&rest symbols) &body body)
   `(let ,(mapcar #'(lambda (sym) `(,sym (gensym ,(string sym)))) symbols)
      ,@body))
 
-(defmacro bwhen-gethash ((var key store &optional if-not) &body body)
-  (with-uniqs (gkey gstore gupdate gifnot)
+(defmacro bwhen-c-stored ((var key store &optional if-not) &body body)
+  (with-uniqs (gkey gstore glink gifnot)
     `(let ((,gkey ,key)
 	   (,gstore ,store)
 	   (,gifnot ,if-not))
-	(let ((,gupdate (value (get-listener ,gkey ,gstore))))
-	  (declare (ignorable ,gupdate))
-	  (trc nil "executing bwhen-gethash" self :update-tick ,gupdate :lookup (store-lookup ,gkey ,gstore))
+	(let ((,glink (query-c-link ,gkey ,gstore)))
+	  (declare (ignorable ,glink))
+	  (trc nil "executing bwhen-c-stored" self :update-tick ,glink :lookup (store-lookup ,gkey ,gstore))
 	  (bif (,var (store-lookup ,gkey ,gstore))
 	       (progn
 		 ,@body)
 	       ,gifnot)))))
 
 (defmodel cells-store (family)
-  ((data :accessor data :initarg :data :cell nil)
-   (listeners :accessor listeners :initarg :listeners :cell nil))
+  ((data :accessor data :initarg :data :cell nil))
   (:default-initargs
-      :data (make-hash-table)
-    :listeners (make-hash-table)
-    :kids (c-in nil)))
+      :data (make-hash-table)))
 
 ;;; infrastructure for manipulating the store and kicking rules
 
-(defmethod get-listener (key (store cells-store))
-  (or (gethash key (listeners store))
-      (let ((new-listener (make-instance 'family :fm-parent store :value (c-in 0))))
-	(with-integrity (:change)
-	  (push new-listener (kids store))
-	  (setf (gethash key (listeners store)) new-listener))
-	new-listener)))
+(defmethod entry (key (store cells-store))
+  (gethash key (data store)))
 
-(defmethod kick-listener (key (store cells-store))
-  (bwhen (listener (gethash key (listeners store)))
-    (incf (value listener))))
+(defmethod (setf entry) (new-data key (store cells-store))
+  (setf (gethash key (data store)) new-data))
 
-(defmacro with-store-item ((key store) &body body)
+(defmethod c-link (key (store cells-store))
+  (car (entry key store)))
+
+(defmethod (setf c-link) (new-c-link key (store cells-store))
+  (if (consp (entry key store))
+      (setf (car (entry key store)) new-c-link)
+      (setf (entry key store) (cons new-c-link nil)))
+  new-c-link)
+
+(defmethod item (key (store cells-store))
+  (cdr (entry key store)))
+
+(defmethod (setf item) (new-item key (store cells-store))
+  (if (consp (entry key store))
+      (setf (cdr (entry key store)) new-item)
+      (setf (entry key store) (cons nil new-item)))
+  new-item)
+
+;;; c-links
+
+(defmodel c-link ()
+  ((value :accessor value :initform (c-in 0) :initarg :value)))
+
+(defmethod query-c-link (key (store cells-store))
+  (trc "c-link> query link" key store (c-link key store))
+  (value (or (c-link key store)
+	     (setf (c-link key store) (make-instance 'c-link)))))
+
+(defmethod kick-c-link (key (store cells-store))
+  (bwhen (link (c-link key store))
+    (trc "c-link> kick link" key store link)
+    (with-integrity (:change :kick-c-link)
+     (incf (value link)))))
+
+(defmacro with-store-item ((item key store) &body body)
   `(prog1
-       (progn ,@body)
-     (kick-listener ,key ,store)))
+       (symbol-macrolet ((,item '(item key store)))
+	(progn
+	  ,@body))
+     (kick-c-link ,key ,store)))
+
+
+(defmacro with-store-entry ((key store &key quiet) &body body)
+  `(prog1
+       (progn
+	 ,@body)
+     (unless ,quiet
+       (kick-c-link ,key ,store))))
 
 ;;; item management
 
-(defmethod store-add (key (store cells-store) object)
-  (with-store-item (key store)    
-    (setf (gethash key (data store)) object)))
+(defmethod store-add (key (store cells-store) object &key quiet)
+  (with-store-entry (key store :quiet quiet)
+    (when (item key store)
+      (trc "overwriting item" key (item key store)))
+    (setf (item key store) object)))
 
 (defmethod store-lookup (key (store cells-store) &optional default)
-  (gethash key (data store) default))
+  (when (mdead (item key store))
+    (with-store-entry (key store)
+      (trc "looked up dead item -- resetting to nil" key store)
+      (setf (item key store) nil)))
+  (or (item key store) default))
 
-(defmethod store-remove (key (store cells-store))
-  (with-store-item (key store)
-    (remhash key (data store))))
+(defmethod store-remove (key (store cells-store) &key quiet)
+  (with-store-entry (key store :quiet quiet)
+    (setf (item key store) nil)))
 
 
 ;;;  unit test
@@ -199,7 +240,7 @@ See the Lisp Lesser GNU Public License for more details.
 	 (bypass-lookup? (make-instance 'family :value (c-in t)))
 	 (baz (make-instance 'test-store-item :value (c? (if (value bypass-lookup?)
 							     'no-lookup
-							     (bwhen-gethash (v :bar store 'nothing)
+							     (bwhen-c-stored (v :bar store 'nothing)
 							       (value v)))))))
 
     (assert-values ("assert fresh initialization")
