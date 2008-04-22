@@ -1,4 +1,4 @@
-;; -*- lisp-version: "8.1 [Windows] (Oct 30, 2007 12:37)"; cg: "1.103.2.10"; -*-
+;; -*- lisp-version: "8.1 [Windows] (Apr 3, 2008 23:47)"; cg: "1.103.2.10"; -*-
 
 (in-package :cg-user)
 
@@ -16,7 +16,8 @@
                  (make-instance 'module :name "test-cycle.lisp")
                  (make-instance 'module :name "test-ephemeral.lisp")
                  (make-instance 'module :name "test-synapse.lisp")
-                 (make-instance 'module :name "deep-cells.lisp"))
+                 (make-instance 'module :name "deep-cells.lisp")
+                 (make-instance 'module :name "cells-store.lisp"))
   :projects (list (make-instance 'project-module :name "..\\cells"))
   :libraries nil
   :distributed-files nil

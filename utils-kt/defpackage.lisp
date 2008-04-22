@@ -38,6 +38,7 @@ See the Lisp Lesser GNU Public License for more details.
     #:intern$
     #:define-constant #:*count* #:*stop*
     #:*dbg*
+   #:with-gensyms
     #:make-fifo-queue #:fifo-queue #:fifo-add #:fifo-delete
     #:fifo-empty #:fifo-pop #:fifo-clear
     #:fifo-map #:fifo-peek #:fifo-data #:with-fifo-map #:fifo-length
@@ -45,4 +46,3 @@ See the Lisp Lesser GNU Public License for more details.
     #-(or lispworks mcl) #:true
     #+(and mcl (not openmcl-partial-mop)) #:class-slots
     ))
-
