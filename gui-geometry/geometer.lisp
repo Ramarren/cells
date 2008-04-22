@@ -46,6 +46,7 @@ See the Lisp Lesser GNU Public License for more details.
                    (mk-kid-slot (py :if-missing t)
                      (c? (py-maintain-pt 0))))))
 
+(export! geo-kid-sized)
 (defmodel geo-kid-sized (family) 
     ()
     (:default-initargs

@@ -19,7 +19,7 @@ See the Lisp Lesser GNU Public License for more details.
 (in-package :cells)
 
 (eval-when (:compile-toplevel :execute :load-toplevel)
-  (export '(model value family dbg
+  (export '(model value family dbg .pa
              kids kid1 ^k1 kid2 ^k2 last-kid ^k-last perishable)))
 
 (defmodel model ()
@@ -47,6 +47,7 @@ See the Lisp Lesser GNU Public License for more details.
     (or (md-name self) (type-of self))))
 
 (define-symbol-macro .parent (fm-parent self))
+(define-symbol-macro .pa (fm-parent self))
 
 (defmethod md-name (other)
   (trc "yep other md-name" other (type-of other))
@@ -180,11 +181,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmethod kids ((other model-object))  nil)
 
-(defmethod not-to-be :before ((fm family))
-  (let ((sv-kids (slot-value fm '.kids)))
-    (when (listp sv-kids)
-      (dolist ( kid sv-kids)
-        (not-to-be kid)))))
+
 
 ;------------------  kid slotting ----------------------------
 ;

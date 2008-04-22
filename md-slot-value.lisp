@@ -69,12 +69,13 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defvar *trc-ensure* nil)
 
-(defun ensure-value-is-current (c debug-id ensurer)
+(defmethod ensure-value-is-current (c debug-id ensurer)
   ;
   ; ensurer can be used cell propagating to callers, or an existing caller who wants to make sure
   ; dependencies are up-to-date before deciding if it itself is up-to-date
   ;
   (declare (ignorable debug-id ensurer))
+
   (count-it :ensure-value-is-current)
   ;; (trc c "ensure-value-is-current > entry" c (c-state c) :now-pulse *data-pulse-id* debug-id ensurer)
   

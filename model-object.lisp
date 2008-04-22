@@ -216,7 +216,7 @@ See the Lisp Lesser GNU Public License for more details.
                 do (setf (md-slot-cell-type (class-name c) slot-name) new-type)))
         (cdar (push (cons slot-name new-type) (get class-name :cell-types)))))))
 
-(defun md-slot-owning (class-name slot-name)
+(defun md-slot-owning? (class-name slot-name)
   (assert class-name)
   (if (eq class-name 'null)
       (get slot-name :owning)
@@ -224,9 +224,9 @@ See the Lisp Lesser GNU Public License for more details.
       (cdr entry)
       (dolist (super (class-precedence-list (find-class class-name)))
         (bwhen (entry (assoc slot-name (get (c-class-name super) :ownings)))
-          (return (setf (md-slot-owning class-name slot-name) (cdr entry))))))))     
+          (return (setf (md-slot-owning? class-name slot-name) (cdr entry))))))))     
 
-(defun (setf md-slot-owning) (value class-name slot-name)
+(defun (setf md-slot-owning?) (value class-name slot-name)
   (assert class-name)
   (if (eq class-name 'null)
       (setf (get slot-name :owning) value)
@@ -236,7 +236,7 @@ See the Lisp Lesser GNU Public License for more details.
           (progn
             (setf (cdr entry) value)
             (loop for c in (class-direct-subclasses (find-class class-name))
-                do (setf (md-slot-owning (class-name c) slot-name) value)))
+                do (setf (md-slot-owning? (class-name c) slot-name) value)))
         (push (cons slot-name value) (get class-name :ownings))))))
 
 (defun md-slot-value-store (self slot-name new-value)

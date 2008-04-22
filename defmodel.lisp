@@ -103,7 +103,7 @@ the defmodel form for ~a" ',class ',class))))
                          `(eval-when (#-sbcl :compile-toplevel :load-toplevel :execute) ; ph -- prevent sbcl warning
                             (setf (md-slot-cell-type ',class ',slotname) ,cell)
                             ,(when owning
-                               `(setf (md-slot-owning ',class ',slotname) ,owning))
+                               `(setf (md-slot-owning? ',class ',slotname) ,owning))
                             ,(when reader-fn
                                `(defmethod ,reader-fn ((self ,class))
                                   (md-slot-value self ',slotname)))

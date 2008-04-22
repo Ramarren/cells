@@ -105,7 +105,7 @@ See the Lisp Lesser GNU Public License for more details.
     ;
     (when (and prior-value-supplied
             prior-value
-            (md-slot-owning (type-of (c-model c)) (c-slot-name c)))
+            (md-slot-owning? (type-of (c-model c)) (c-slot-name c)))
       (trc nil "c.propagate> contemplating lost")
       (flet ((listify (x) (if (listp x) x (list x))))
         (bif (lost (set-difference (listify prior-value) (listify (c-value c))))
