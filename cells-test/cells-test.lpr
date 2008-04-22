@@ -16,8 +16,7 @@
                  (make-instance 'module :name "test-cycle.lisp")
                  (make-instance 'module :name "test-ephemeral.lisp")
                  (make-instance 'module :name "test-synapse.lisp")
-                 (make-instance 'module :name "deep-cells.lisp")
-                 (make-instance 'module :name "cells-store.lisp"))
+                 (make-instance 'module :name "deep-cells.lisp"))
   :projects (list (make-instance 'project-module :name "..\\cells"))
   :libraries nil
   :distributed-files nil
