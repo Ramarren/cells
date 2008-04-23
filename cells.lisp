@@ -45,6 +45,7 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
 (defparameter *c-debug* nil)
 (defparameter *defer-changes* nil)
 (defparameter *within-integrity* nil)
+(defvar *istack*)
 (defparameter *client-queue-handler* nil)
 (defparameter *unfinished-business* nil)
 (defparameter *not-to-be* nil)

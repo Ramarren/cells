@@ -67,11 +67,12 @@ See the Lisp Lesser GNU Public License for more details.
           (call-next-method)
         (progn
           (c-print-value c stream)
-          (format stream "=~d/~a/~a/~a]"
+          (format stream "<~d:~a ~a/~a = ~a>"
             (c-pulse c)
-            (c-state c)
+            (subseq (string (c-state c)) 0 1)
             (symbol-name (or (c-slot-name c) :anoncell))
-            (print-cell-model (c-model c))))))))
+            (print-cell-model (c-model c))
+            (c-value c)))))))
 
 (export! print-cell-model)
 

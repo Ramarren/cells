@@ -216,28 +216,55 @@ See the Lisp Lesser GNU Public License for more details.
                 do (setf (md-slot-cell-type (class-name c) slot-name) new-type)))
         (cdar (push (cons slot-name new-type) (get class-name :cell-types)))))))
 
+#+hunh
+(md-slot-owning? 'mathx::prb-solver '.kids)
+
+#+hunh
+(cdr (assoc '.value (get 'm-index :indirect-ownings)))
+
+#+test
+(md-slot-owning? 'm-index '.value)
+
 (defun md-slot-owning? (class-name slot-name)
   (assert class-name)
   (if (eq class-name 'null)
-      (get slot-name :owning)
-    (bif (entry (assoc slot-name (get class-name :ownings)))
+      (get slot-name :owning) ;; might be wrong -- support for specials is unfinished w.i.p.
+    (bif (entry (assoc slot-name (get class-name :direct-ownings)))
       (cdr entry)
-      (dolist (super (class-precedence-list (find-class class-name)))
-        (bwhen (entry (assoc slot-name (get (c-class-name super) :ownings)))
-          (return (setf (md-slot-owning? class-name slot-name) (cdr entry))))))))     
+      (bif (entry (assoc slot-name (get class-name :indirect-ownings)))
+        (cdr entry)
+        (cdar
+         (push (cons slot-name
+                 (cdr (loop for super in (cdr (class-precedence-list (find-class class-name)))
+                          thereis (assoc slot-name (get (c-class-name super) :direct-ownings)))))
+           (get class-name :indirect-ownings)))))))
 
-(defun (setf md-slot-owning?) (value class-name slot-name)
+(defun (setf md-slot-owning-direct?) (value class-name slot-name)
   (assert class-name)
-  (if (eq class-name 'null)
+  (if (eq class-name 'null) ;; global variables
       (setf (get slot-name :owning) value)
-    
-    (let ((entry (assoc slot-name (get class-name :ownings))))
-      (if entry
-          (progn
-            (setf (cdr entry) value)
-            (loop for c in (class-direct-subclasses (find-class class-name))
-                do (setf (md-slot-owning? (class-name c) slot-name) value)))
-        (push (cons slot-name value) (get class-name :ownings))))))
+    (progn
+      (bif (entry (assoc slot-name (get class-name :direct-ownings)))
+        (setf (cdr entry) value)
+        (push (cons slot-name value) (get class-name :direct-ownings)))
+      ; -- propagate to derivatives ...
+      (labels ((clear-subclass-ownings (c)
+                 (loop for sub-c in (class-direct-subclasses c)
+                     for sub-c-name = (c-class-name sub-c)
+                     do (setf (get sub-c-name :indirect-ownings)
+                          (delete slot-name (get sub-c-name :indirect-ownings) :key 'car)) ;; forces redecide
+                       (setf (get sub-c-name :model-ownings) nil) ;; too much forcing full recalc like this?
+                       (clear-subclass-ownings sub-c))))
+        (clear-subclass-ownings (find-class class-name))))))
+
+(defun md-owning-slots (self &aux (st (type-of self)))
+  (or (get st :model-ownings)
+    (setf (get st :model-ownings)
+      (loop for s in (class-slots (class-of self))
+          for sn = (slot-definition-name s)
+          when (and (md-slot-cell-type st sn)
+                 (md-slot-owning? st sn))
+          collect sn))))
 
 (defun md-slot-value-store (self slot-name new-value)
   (trc nil "md-slot-value-store" self slot-name new-value)

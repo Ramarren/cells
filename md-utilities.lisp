@@ -39,6 +39,7 @@ See the Lisp Lesser GNU Public License for more details.
     (declare (ignore self))
     nil))
 
+
 (defgeneric not-to-be (self)
   (:method ((self list))
     (dolist (s self)
@@ -55,8 +56,7 @@ See the Lisp Lesser GNU Public License for more details.
     (md-quiesce self))
   
   (:method :before ((self model-object))
-    (loop for (slot-name . owning?) in (get (type-of self) :ownings)
-        when owning?
+    (loop for slot-name in (md-owning-slots self)
         do (not-to-be (slot-value self slot-name))))
 
   (:method :around ((self model-object))

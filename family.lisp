@@ -94,6 +94,11 @@ See the Lisp Lesser GNU Public License for more details.
      :accessor kids
      :initarg :kids)))
 
+#+test
+(let ((c (find-class 'family)))
+  (mop::finalize-inheritance c)
+  (class-precedence-list c))
+
 (defmacro the-kids (&rest kids)
   `(let ((*parent* self))
      (packed-flat! ,@kids)))

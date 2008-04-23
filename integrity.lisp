@@ -28,11 +28,14 @@ See the Lisp Lesser GNU Public License for more details.
   (when opcode
     (assert (find opcode *ufb-opcodes*) ()
       "Invalid opcode for with-integrity: ~a. Allowed values: ~a" opcode *ufb-opcodes*))
-  `(call-with-integrity ,opcode ,defer-info (lambda (opcode defer-info)
-                                              (declare (ignorable opcode defer-info))
-                                              ,(when debug
-                                                `(trc "integrity action entry" opcode defer-info ',body))
-                                              ,@body)))
+  `(call-with-integrity ,opcode ,defer-info
+     (lambda (opcode defer-info)
+       (declare (ignorable opcode defer-info))
+       ,(when debug
+          `(trc "integrity action entry" opcode defer-info ',body))
+       ,@body)
+     (when *c-debug*
+       ',body)))
 
 (export! with-cc)
 
@@ -43,7 +46,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defun integrity-managed-p ()
   *within-integrity*)
 
-(defun call-with-integrity (opcode defer-info action)
+(defun call-with-integrity (opcode defer-info action code)
   (when *stop*
     (return-from call-with-integrity))
   (if *within-integrity*
@@ -58,17 +61,32 @@ See the Lisp Lesser GNU Public License for more details.
             ;
             :deferred-to-ufb-1)
         (funcall action opcode defer-info))
-    (let ((*within-integrity* t)
-          *unfinished-business*
-          *defer-changes*)
-      (trc nil "initiating new UFB!!!!!!!!!!!!" opcode defer-info)
-      (when (or (zerop *data-pulse-id*)
-              (eq opcode :change))
-        (eko (nil "!!! New pulse, event" *data-pulse-id* defer-info)
-          (data-pulse-next (cons opcode defer-info))))
-      (prog1
-          (funcall action opcode defer-info)
-        (finish-business)))))
+    (flet ((go-go ()
+             (let ((*within-integrity* t)
+                   *unfinished-business*
+                   *defer-changes*)
+               (trc nil "initiating new UFB!!!!!!!!!!!!" opcode defer-info)
+               (when (or (zerop *data-pulse-id*)
+                       (eq opcode :change))
+                 (eko (nil "!!! New pulse, event" *data-pulse-id* defer-info)
+                   (data-pulse-next (cons opcode defer-info))))
+               (prog1
+                   (funcall action opcode defer-info)
+                 (finish-business)))))
+      (if *c-debug*
+          (let ((*istack* (list (list opcode defer-info)
+                            (list :trigger code)
+                            (list :start-dp *data-pulse-id*))))
+            (handler-case
+                (go-go)
+              (t (c)
+                (if (functionp *c-debug*)
+                    (funcall *c-debug* c (nreverse *istack*))
+                  (loop for f in (nreverse *istack*)
+                      do (format t "~&istk> ~(~a~) " f)
+                      finally (describe c)
+                         (break "integ backtrace: see listener for deets"))))))
+        (go-go)))))
 
 (defun ufb-queue (opcode)
   (cdr (assoc opcode *unfinished-business*)))
@@ -85,14 +103,17 @@ See the Lisp Lesser GNU Public License for more details.
   (trc nil "ufb-add deferring" opcode (when (eql opcode :client)(car continuation)))
   (fifo-add (ufb-queue-ensure opcode) continuation))
 
-(defun just-do-it (op-or-q &aux (q (if (keywordp op-or-q)
-                                       (ufb-queue op-or-q)
-                                     op-or-q)))
+(defun just-do-it (op-or-q &optional (op-code op-or-q) ;; make-better
+                    &aux (q (if (keywordp op-or-q)
+                                (ufb-queue op-or-q)
+                              op-or-q)))
   (trc nil "----------------------------just do it doing---------------------" op-or-q)
   (loop for (defer-info . task) = (fifo-pop q)
         while task
         do (trc nil "unfin task is" opcode task)
-          (funcall task op-or-q defer-info)))
+        (when *c-debug*
+          (push (list op-code defer-info) *istack*))
+        (funcall task op-or-q defer-info)))
 
 (defun finish-business ()
   (when *stop* (return-from finish-business))
@@ -153,7 +174,7 @@ See the Lisp Lesser GNU Public License for more details.
     (bwhen (clientq (ufb-queue :client))
       (if *client-queue-handler*
           (funcall *client-queue-handler* clientq) ;; might be empty/not exist, so handlers must check
-        (just-do-it clientq))
+        (just-do-it clientq :client))
       (when (fifo-peek (ufb-queue :client))
         #+shhh (ukt::fifo-browse (ufb-queue :client) (lambda (entry)
                                                        (trc "surprise client" entry)))

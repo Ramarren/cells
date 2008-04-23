@@ -18,7 +18,8 @@ See the Lisp Lesser GNU Public License for more details.
 (in-package :utils-kt)
 
 (defmacro with-gensyms ((&rest symbols) &body body)
-  `(let ,(mapcar #'(lambda (sym) `(,sym (gensym ,(string sym)))) symbols)
+  `(let ,(loop for sym in symbols
+             collecting `(,sym (gensym ,(string sym))))
      ,@body))
 
 (defmacro eval-now! (&body body)

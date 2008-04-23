@@ -42,6 +42,8 @@ See the Lisp Lesser GNU Public License for more details.
   (declare (ignorable pulse-info))
   (unless *one-pulse?*
     (trc nil "data-pulse-next > " (1+ *data-pulse-id*) pulse-info)
+    (when *c-debug*
+      (push (list :data-pulse-next pulse-info) *istack*))
     (incf *data-pulse-id*)))
 
 (defun c-currentp (c)
@@ -106,11 +108,15 @@ See the Lisp Lesser GNU Public License for more details.
     (when (and prior-value-supplied
             prior-value
             (md-slot-owning? (type-of (c-model c)) (c-slot-name c)))
-      (trc nil "c.propagate> contemplating lost")
+      (trc nil "c.propagate> contemplating lost" c)
       (flet ((listify (x) (if (listp x) x (list x))))
         (bif (lost (set-difference (listify prior-value) (listify (c-value c))))
           (progn
             (trc nil "prop nailing owned!!!!!!!!!!!" c :lost lost :leaving (c-value c))
+            (loop for l in lost
+                  when (numberp l)
+                do (break "got num ~a" (list l (type-of (c-model c))(c-slot-name c)
+                                         (md-slot-owning? (type-of (c-model c)) (c-slot-name c)))))
             (mapcar 'not-to-be lost))
           (trc nil "no owned lost!!!!!"))))
     
