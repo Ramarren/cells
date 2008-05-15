@@ -18,7 +18,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :cells)
 
-(export! cells-store bwhen-c-stored c?-with-stored with-store-item store-add store-lookup store-remove)
+(export! cells-store bwhen-c-stored c?-with-stored with-store-item store-add store-lookup store-remove store-items)
 
 (defmacro c?-with-stored ((var key store &optional default) &body body)
   `(c? (bwhen-c-stored (,var ,key ,store ,default)
@@ -118,6 +118,11 @@ See the Lisp Lesser GNU Public License for more details.
   (with-store-entry (key store :quiet quiet)
     (setf (item key store) nil)))
 
+(defmethod store-items ((store cells-store) &key (include-keys nil))
+  (loop for key being the hash-keys in (data store)
+     for val being the hash-values in (data store)
+     if (and (cdr val) include-keys) collect (cons key (cdr val))
+     else if (cdr val) collect it))
 
 ;;;  unit test
 
