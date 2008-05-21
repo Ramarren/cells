@@ -1,1 +1,2 @@
 cells.fasl cell-types.fasl constructors.fasl defmodel.fasl defpackage.fasl family.fasl family-values.fasl fm-utilities.fasl initialize.fasl integrity.fasl link.fasl md-slot-value.fasl md-utilities.fasl model-object.fasl propagate.fasl slot-utilities.fasl synapse.fasl synapse-types.fasl test-propagation.fasl trc-eko.fasl
+cells-store.fasl
