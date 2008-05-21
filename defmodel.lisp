@@ -54,73 +54,74 @@ See the Lisp Lesser GNU Public License for more details.
      ; -------  defclass ---------------  (^slot-value ,model ',',slotname)
      ;
      
-     (prog1
-       (defclass ,class ,(or directsupers '(model-object)) ;; now we can def the class
-         ,(mapcar (lambda (s)
-                    (list* (car s)
-                      (let ((ias (cdr s)))
-                        (remf ias :persistable)
-                        (remf ias :ps)
-                        ;; We handle accessor below
-                        (when (getf ias :cell t)
-                          (remf ias :reader)
-                          (remf ias :writer)
-                          (remf ias :accessor))
-                        (remf ias :cell)
-                        (remf ias :owning)
-                        (remf ias :unchanged-if)
-                        ias))) (mapcar #'copy-list slotspecs))
-         (:documentation
-          ,@(or (cdr (find :documentation options :key #'car))
-              '("chya")))
-         (:default-initargs ;; nil ok and needed: acl oddity in re not clearing d-i's sans this
-             ,@(cdr (find :default-initargs options :key #'car)))
-         (:metaclass ,(or (cadr (find :metaclass options :key #'car))
-                        'standard-class)))
+     (eval-now! ;; suppress style warning in SBCL
+       (prog1
+	  (defclass ,class ,(or directsupers '(model-object)) ;; now we can def the class
+	    ,(mapcar (lambda (s)
+		       (list* (car s)
+			      (let ((ias (cdr s)))
+				(remf ias :persistable)
+				(remf ias :ps)
+				;; We handle accessor below
+				(when (getf ias :cell t)
+				  (remf ias :reader)
+				  (remf ias :writer)
+				  (remf ias :accessor))
+				(remf ias :cell)
+				(remf ias :owning)
+				(remf ias :unchanged-if)
+				ias))) (mapcar #'copy-list slotspecs))
+	    (:documentation
+	     ,@(or (cdr (find :documentation options :key #'car))
+		   '("chya")))
+	    (:default-initargs ;; nil ok and needed: acl oddity in re not clearing d-i's sans this
+		,@(cdr (find :default-initargs options :key #'car)))
+	    (:metaclass ,(or (cadr (find :metaclass options :key #'car))
+			     'standard-class)))
        
-       (defmethod shared-initialize :after ((self ,class) slot-names &rest iargs &key)
-         (declare (ignore slot-names iargs))
-         ,(when (and directsupers (not (member 'model-object directsupers)))
-            `(unless (typep self 'model-object)
-               (error "If no superclass of ~a inherits directly
+	(defmethod shared-initialize :after ((self ,class) slot-names &rest iargs &key)
+	  (declare (ignore slot-names iargs))
+	  ,(when (and directsupers (not (member 'model-object directsupers)))
+		 `(unless (typep self 'model-object)
+		    (error "If no superclass of ~a inherits directly
 or indirectly from model-object, model-object must be included as a direct super-class in
 the defmodel form for ~a" ',class ',class))))
-       ;
-       ; slot accessors once class is defined...
-       ;
-       ,@(mapcar (lambda (slotspec)
-                   (destructuring-bind
-                       (slotname &rest slotargs
-                         &key (cell t) owning unchanged-if (accessor slotname) reader writer type
-                         &allow-other-keys)
-                       slotspec
+					;
+					; slot accessors once class is defined...
+					;
+	,@(mapcar (lambda (slotspec)
+		    (destructuring-bind
+			  (slotname &rest slotargs
+				    &key (cell t) owning unchanged-if (accessor slotname) reader writer type
+				    &allow-other-keys)
+			slotspec
                      
-                     (declare (ignorable slotargs))
-                     (when cell
-                       (let* ((reader-fn (or reader accessor))
-                              (writer-fn (or writer accessor))
-                              )
-                         `(eval-when (#-sbcl :compile-toplevel :load-toplevel :execute) ; ph -- prevent sbcl warning
-                            (setf (md-slot-cell-type ',class ',slotname) ,cell)
-                            ,(when owning
-                               `(setf (md-slot-owning-direct? ',class ',slotname) ,owning))
-                            ,(when reader-fn
-                               `(defmethod ,reader-fn ((self ,class))
-                                  (md-slot-value self ',slotname)))
+		      (declare (ignorable slotargs))
+		      (when cell
+			(let* ((reader-fn (or reader accessor))
+			       (writer-fn (or writer accessor))
+			       )
+			  `(eval-when (#-sbcl :compile-toplevel :load-toplevel :execute) ; ph -- prevent sbcl warning
+			     (setf (md-slot-cell-type ',class ',slotname) ,cell)
+			     ,(when owning
+				    `(setf (md-slot-owning-direct? ',class ',slotname) ,owning))
+			     ,(when reader-fn
+				    `(defmethod ,reader-fn ((self ,class))
+				       (md-slot-value self ',slotname)))
                             
-                            ,(when writer-fn
-                               `(defmethod (setf ,writer-fn) (new-value (self ,class))
-                                  (setf (md-slot-value self ',slotname)
-                                    ,(if type
-                                         `(coerce new-value ',type)
-                                       'new-value))))
+			     ,(when writer-fn
+				    `(defmethod (setf ,writer-fn) (new-value (self ,class))
+				       (setf (md-slot-value self ',slotname)
+					     ,(if type
+						  `(coerce new-value ',type)
+						  'new-value))))
                             
-                            ,(when unchanged-if
-                               `(def-c-unchanged-test (,class ,slotname) ,unchanged-if))
-                            )
-                         ))
-                     ))
-           slotspecs))))
+			     ,(when unchanged-if
+				    `(def-c-unchanged-test (,class ,slotname) ,unchanged-if))
+			     )
+			  ))
+		      ))
+		  slotspecs)))))
 
 (defun defmd-canonicalize-slot (slotname
                                 &key
