@@ -18,14 +18,105 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :cells)
 
-(defparameter *fmdbg* nil)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export
+   '(;; Family member creation
+     make-part
+     mk-part
+     mk-part-spec
+     upper
+     ^u
+     container
+     container-typed
+     
+     ;; Family member finding
+     fm-descendant-typed
+     fm-ascendant-typed
+     fm-kid-named
+     fm-descendant-named
+     fm-ascendant-named
+     fm-ascendant-some
+     fm-ascendant-if
+     fm-descendant-if
+     fm-descendant-common
+     fm-collect-if
+     fm-collect-some
+     fm-value-dictionary
+     fm-max
+     fm-traverse
+     fm-traverse-bf
+     fm-ordered-p
+     sub-nodes
+     fm-ps-parent
+     with-like-fm-parts
+     do-like-fm-parts
+     true-that
+     fm-do-up
+     fm-gather
+     fm-find-all
+     fm-find-next
+     fm-find-next-within
+     fm-find-prior
+     fm-find-prior-within 
+     fm-find-last-if
+     fm-prior-sib
+     fm-next-sib-if
+     fm-next-sib
+     ^fm-next-sib
+     fm-find-if
 
-(eval-when (compile eval load)
-  (export '(make-part mk-part fm-other fm-other? fm-traverse fm-descendant-typed
-             do-like-fm-parts
-             container-typed *fmdbg* fm-other-v fm! fm!v fm^ fm^v fm-find-one fm-kid-named
-             fm-prior-sib fm-ascendant-p fm-ordered-p
-             fm-value-dictionary fm-otherv?)))
+     ;; Family ordering
+     fm-kid-add
+     fm-kid-insert-last
+     fm-kid-insert-first
+     fm-kid-insert
+     fm-kid-remove
+     fm-quiesce-all
+     fm-kid-replace
+
+     ;; Family high-order ops
+     fm-min-kid
+     fm-max-kid
+     fm-other
+     fmv
+     fm-otherx
+     fm-other-v
+     fm-otherv?
+     fm-other?
+     fm-other!
+     fm^
+     fm?
+     fm!
+     fm!v
+     fm-other?!
+     fm-collect
+     fm-map
+     fm-mapc
+     fm-pos
+     fm-count-named
+     fm-top
+     fm-first-above
+     fm-nearest-if
+     fm-includes
+     fm-ancestor-p
+     fm-kid-containing
+     fm-ascendant-p
+     fm-find-one
+     fm-find-kid
+     fm-kid-typed
+     
+     ;; Other family stuff
+     make-name
+     name-root
+     name-subscript
+     kid-no
+
+     ;; Debug flags
+     *fmdbg*
+     
+     )))
+
+(defparameter *fmdbg* nil)
 
 (defun make-part (partname part-class &rest initargs)
   ;;(trc "make-part > name class" partname partclass)
@@ -42,10 +133,9 @@ See the Lisp Lesser GNU Public License for more details.
 (defmethod make-part-spec ((part model))
   part)
 
+
 (defmacro upper (self &optional (type t))
   `(container-typed ,self ',type))
-
-(export! u^ fm-descendant-if)
 
 (defmacro u^ (type)
   `(upper self ,type))
@@ -115,8 +205,6 @@ See the Lisp Lesser GNU Public License for more details.
       :with-dependency dependently)
     (nreverse collection)))
 
-(export! fm-collect-some)
-
 (defun fm-collect-some (tree test &optional skip-top dependently)
   (let (collection)
     (fm-traverse tree (lambda (node)
@@ -173,7 +261,6 @@ See the Lisp Lesser GNU Public License for more details.
              (without-c-dependency (tv))))))
   (values))
 
-(export! fm-traverse-bf)
 (defun fm-traverse-bf (family applied-fn &optional (cq (make-fifo-queue)))
   (when family
     (flet ((process-node (fm)
@@ -259,8 +346,6 @@ See the Lisp Lesser GNU Public License for more details.
 ;; eventually fm-find-all needs a better name (as does fm-collect) and they
 ;; should be modified to go through 'gather', which should be the real fm-find-all
 ;;
-
-(export! fm-do-up fm-find-next fm-find-prior)
 
 (defun fm-do-up (self &optional (fn 'identity))
   (when self
@@ -454,8 +539,6 @@ See the Lisp Lesser GNU Public License for more details.
                 :global-search t
                 :test ,test))
 
-(export! fmv)
-
 (defmacro fmv (name)
   `(value (fm-other ,name)))
 
@@ -548,7 +631,6 @@ See the Lisp Lesser GNU Public License for more details.
                  :must-find nil
                  :global-search ,global-search)))
 ;---------------------------------------------------------------
-(export! fm-top)
 (defun fm-top (fm &optional (test #'true-that) &aux (fm-parent (fm-parent fm)))
     (cond ((null fm-parent) fm)
                 ((not (funcall test fm-parent)) fm)
