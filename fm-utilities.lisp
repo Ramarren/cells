@@ -14,6 +14,7 @@ the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
+$Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.20 2008/05/24 19:24:05 fgoenninger Exp $
 |#
 
 (in-package :cells)
@@ -723,5 +724,3 @@ See the Lisp Lesser GNU Public License for more details.
   (when (and self (fm-parent self))
     (c-assert (member self (kids (fm-parent self))))
     (position self (kids (fm-parent self)))))
-
-
