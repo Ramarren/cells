@@ -58,12 +58,8 @@ See the Lisp Lesser GNU Public License for more details.
   (setf (c-pulse c) *data-pulse-id*))
 
 ;--------------- propagate  ----------------------------
-
-
 ; n.b. the cell argument may have been optimized away,
 ; though it is still receiving final processing here.
-;
-
 
 (defparameter *per-cell-handler* nil)
 

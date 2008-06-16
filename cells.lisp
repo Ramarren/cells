@@ -150,30 +150,31 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
                  (break "~&i say, unhandled <c-enabling>: ~s" condition))))
 
 (define-condition c-fatal (xcell)
-   ((name :initarg :name :reader name)
-    (model :initarg :model :reader model)
-    (cell :initarg :cell :reader cell))
+   ((name :initform :anon :initarg :name :reader name)
+    (model :initform nil :initarg :model :reader model)
+    (cell :initform nil :initarg :cell :reader cell))
    (:report (lambda (condition stream)
               (format stream "~&fatal cell programming error: ~s" condition)
               (format stream "~&  : ~s" (name condition))
               (format stream "~&  : ~s" (model condition))
               (format stream "~&  : ~s" (cell condition)))))
 
-(define-condition c-unadopted (c-fatal)
-   ()
+
+(define-condition asker-midst-askers (c-fatal)
+  ())
+;; "see listener for cell rule cycle diagnotics"
+
+(define-condition c-unadopted (c-fatal) ()
    (:report
     (lambda (condition stream)
       (format stream "~&unadopted cell >: ~s" (cell condition))
       (format stream "~& >: often you mis-edit (c? (c? ...)) nesting is error"))))
-
 
 (defun c-break (&rest args)
   (unless *stop*
     (let ((*print-level* 5)
           (*print-circle* t)
           (args2 (mapcar 'princ-to-string args)))
-      (c-stop args)
-      
-      (format t "~&c-break > stopping > ~{~a ~}" args2)
-      (print `(c-break-args ,@args2))
+      (c-stop :c-break)
+      ;(format t "~&c-break > stopping > ~{~a ~}" args2)
       (apply 'error args2))))

@@ -185,6 +185,8 @@ the defmodel form for ~a" ',class ',class))))
                            (list* `(:default-initargs ,@definitargs)
                              (nreverse class-options)))))))))
 
+    
+
 #+test
 (progn
   (defclass md-test-super ()())

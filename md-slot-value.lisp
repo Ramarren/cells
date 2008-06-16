@@ -23,9 +23,11 @@ See the Lisp Lesser GNU Public License for more details.
 (defun md-slot-value (self slot-name &aux (c (md-slot-cell self slot-name)))
   (when (and (not *not-to-be*)
           (mdead self))
-    (trc "md-slot-value passed dead self, returning NIL" self slot-name c)
-    #-sbcl (inspect self)
-    (break "see inspector for dead ~a" self)
+    (unless *stop*
+      (setf *stop* t)
+      (trc "md-slot-value passed dead self, returning NIL" self slot-name c)
+      #-sbcl (inspect self)
+      (break "see inspector for dead ~a" self))
     (return-from md-slot-value nil))
   (tagbody
     retry
@@ -47,7 +49,7 @@ See the Lisp Lesser GNU Public License for more details.
   ;; (count-it :md-slot-value slot-name)
   (if c
       (cell-read c)
-    (values (bd-slot-value self slot-name) nil)))
+    (values (slot-value self slot-name) nil)))
 
 (defun cell-read (c)
   (assert (typep c 'cell))
@@ -60,12 +62,6 @@ See the Lisp Lesser GNU Public License for more details.
 (defun chk (s &optional (key 'anon))
   (when (mdead s)
     (break "model ~a is dead at ~a" s key)))
-
-;;;(defmethod trcp ((c cell))
-;;;  (and *dbg*
-;;;    (case (c-slot-name c)
-;;;      (mathx::show-time t)
-;;;      (ctk::app-time t))))
 
 (defvar *trc-ensure* nil)
 
@@ -145,6 +141,7 @@ See the Lisp Lesser GNU Public License for more details.
           nil)
       v)))
 
+
 (defun calculate-and-set (c)
   (flet ((body ()
            (when (c-stopped)
@@ -154,19 +151,18 @@ See the Lisp Lesser GNU Public License for more details.
            #-its-alive!
            (bwhen (x (find c *call-stack*)) ;; circularity
              (unless nil ;; *stop*
-               (let ((stack (copy-list *call-stack*)))
-                 (trc "calculating cell ~a appears in call stack: ~a" c x stack )))
-             (setf *stop* t)
-             (c-break "yep" c)
-             (loop with caller-reiterated
-                 for caller in *call-stack*
-                 until caller-reiterated
-                 do (trc "caller:" caller)
-                   ;; not necessary (pprint (cr-code c))
-                   (setf caller-reiterated (eq caller c)))
+               (let ()
+                 (inspect c)
+                 (trc "calculating cell:" c (cr-code c))
+                 (trc "appears-in-call-stack (newest first): " (length *call-stack*))
+                 (loop for caller in (copy-list *call-stack*)
+                     for n below (length *call-stack*)
+                     do (trc "caller> " caller #+shhh (cr-code caller))
+                       when (eq caller c) do (loop-finish))))
+             (setf *stop* t)  
              (c-break ;; break is problem when testing cells on some CLs
               "cell ~a midst askers (see above)" c)
-             (error "see listener for cell rule cycle diagnotics"))
+             (error 'asker-midst-askers :cell c))
   
            (multiple-value-bind (raw-value propagation-code)
                (calculate-and-link c)
@@ -196,6 +192,20 @@ See the Lisp Lesser GNU Public License for more details.
     (multiple-value-prog1
         (funcall (cr-rule c) c)
       (c-unlink-unused c))))
+
+#+theabove!
+(defun calculate-and-set (c)
+  (multiple-value-bind (raw-value propagation-code)
+      (let ((*call-stack* (cons c *call-stack*))
+            (*depender* c)
+            (*defer-changes* t))
+        (cd-usage-clear-all c)
+        (multiple-value-prog1
+            (funcall (cr-rule c) c)
+          (c-unlink-unused c)))
+    (unless (c-optimized-away-p c)
+      (md-slot-value-assume c raw-value propagation-code))))
+
 
 ;-------------------------------------------------------------
 

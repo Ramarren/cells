@@ -14,7 +14,7 @@ the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
-$Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.20 2008/05/24 19:24:05 fgoenninger Exp $
+$Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.21 2008/06/16 12:38:04 ktilton Exp $
 |#
 
 (in-package :cells)
@@ -702,7 +702,6 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
                      :global-search global-search))))
       (when (and must-find (null match))
         (trc "fm-find-one > erroring fm-not-found, in family: " family :seeking md-name :global? global-search)
-        ;;(inspect family)
         (setq diag t must-find nil)
         (fm-traverse family #'matcher
                      :skip-tree skip-tree

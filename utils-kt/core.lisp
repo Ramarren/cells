@@ -46,41 +46,26 @@ resulting in implementation-specific behavior."
 		value)))
       ,@(when docstring (list docstring)))))
 
+(defun test-setup (&optional drib)
+  #+(and allegro ide)
+  (ide.base::find-new-prompt-command
+   (cg.base::find-window :listener-frame))
+  (when drib
+    (dribble (merge-pathnames 
+              (make-pathname :name drib :type "TXT")
+              (project-path)))))
 
-(export! exe-path exe-dll font-path)
-
-#-iamnotkenny
-(defun exe-path ()
-  #+its-alive!
-  (excl:current-directory)
-  #-its-alive!
+(export! test-setup test-prep test-init)
+(export! project-path)
+(defun project-path ()
+  #+(and allegro ide)
   (excl:path-pathname (ide.base::project-file ide.base:*current-project*)))
 
-#-iamnotkenny 
-(defun font-path ()
-  (merge-pathnames
-   (make-pathname
-    :directory #+its-alive! (list :relative "font")
-    #-its-alive! (append (butlast (pathname-directory 
-       (exe-path)
-  ))
-   (list "TY Extender" "font")))
-   (exe-path)))
-
 #+test
-(list (exe-path)(font-path))
+(test-setup)
 
-(defmacro exe-dll (&optional filename)
-  (assert filename)
-  (concatenate 'string filename ".dll"))
+(defun test-prep (&optional drib)
+  (test-setup drib))
 
-#+chya
-(defun exe-dll (&optional filename)
-  (merge-pathnames
-   (make-pathname :name filename :type "DLL"
-     :directory (append (butlast (pathname-directory (exe-path)))
-                  (list "dll")))
-   (exe-path)))
-
-#+test
-(probe-file (exe-dll "openal32"))
+(defun test-init (&optional drib)
+  (test-setup drib))

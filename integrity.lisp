@@ -66,6 +66,7 @@ See the Lisp Lesser GNU Public License for more details.
                    *unfinished-business*
                    *defer-changes*)
                (trc nil "initiating new UFB!!!!!!!!!!!!" opcode defer-info)
+               (when *c-debug* (assert (boundp '*istack*)))
                (when (or (zerop *data-pulse-id*)
                        (eq opcode :change))
                  (eko (nil "!!! New pulse, event" *data-pulse-id* defer-info)
@@ -77,15 +78,17 @@ See the Lisp Lesser GNU Public License for more details.
           (let ((*istack* (list (list opcode defer-info)
                             (list :trigger code)
                             (list :start-dp *data-pulse-id*))))
+            (trc "*istack* bound")
             (handler-case
                 (go-go)
-              (t (c)
+              (xcell (c)
                 (if (functionp *c-debug*)
                     (funcall *c-debug* c (nreverse *istack*))
                   (loop for f in (nreverse *istack*)
                       do (format t "~&istk> ~(~a~) " f)
                       finally (describe c)
-                         (break "integ backtrace: see listener for deets"))))))
+                         (break "integ backtrace: see listener for deets")))))
+            (trc "*istack* unbinding"))
         (go-go)))))
 
 (defun ufb-queue (opcode)
@@ -163,7 +166,7 @@ See the Lisp Lesser GNU Public License for more details.
     ; dependent reverses the arrow and puts the burden on the prosecution to prove nested tells are a problem.
     
     (bwhen (uqp (fifo-peek (ufb-queue :tell-dependents)))
-      #+x42 (trc "retelling dependenst, one new one being" uqp)
+      #+xxx (trc "retelling dependenst, one new one being" uqp)
       (go tell-dependents))
     
     ;--- process client queue ------------------------------

@@ -26,9 +26,13 @@ See the Lisp Lesser GNU Public License for more details.
   ((.md-name :cell nil :initform nil :initarg :md-name :accessor md-name)
    (.fm-parent :cell nil :initform nil :initarg :fm-parent :accessor fm-parent)
    (.value :initform nil :accessor value :initarg :value)
+   (register? :cell nil :initform nil :initarg :register? :reader register?)
    (zdbg :initform nil :accessor dbg :initarg :dbg))
   )
 
+(defmethod initialize-instance :after ((self model) &key)
+  (when (register? self)
+    (fm-register self)))
 
 (defmethod print-cell-object ((md model))
   (or (md-name md) :md?))
@@ -92,7 +96,14 @@ See the Lisp Lesser GNU Public License for more details.
    (.kids :initform (c-in nil) ;; most useful
      :owning t
      :accessor kids
-     :initarg :kids)))
+     :initarg :kids)
+   (registry? :cell nil
+     :initform nil
+     :initarg :registry?
+     :accessor registry?)
+   (registry :cell nil
+     :initform nil
+     :accessor registry)))
 
 #+test
 (let ((c (find-class 'family)))
@@ -143,14 +154,11 @@ See the Lisp Lesser GNU Public License for more details.
       `(let ((,kid ,self))
           (find-prior ,kid (kids (fm-parent ,kid))))))
 
-
-(defun md-be-adopted (self &aux (fm-parent (fm-parent self)) (selftype (type-of self)))
-    
+(defun md-be-adopted (self &aux (fm-parent (fm-parent self)) (selftype (type-of self))) 
   (c-assert self)
   (c-assert fm-parent)
   (c-assert (typep fm-parent 'family))
   
-
   (trc nil "md be adopted >" :kid self (adopt-ct self) :by fm-parent)
   
   (when (plusp (adopt-ct self))
@@ -209,5 +217,45 @@ See the Lisp Lesser GNU Public License for more details.
      (declare (ignorable self))
      (list ,@slot-defs)))
 
+; --- registry "namespacing" ---
+
+(defmethod registry? (other) (declare (ignore other)) nil)
+
+(defmethod initialize-instance :after ((self family) &key)
+  (when (registry? self)
+    (setf (registry self) (make-hash-table :test 'eq))))
+
+(defmethod fm-register (self &optional (guest self))
+  (assert self)
+  (if (registry? self)
+      (progn
+        (trc "fm-registering" (md-name guest) :with self)
+        (setf (gethash (md-name guest) (registry self)) guest))
+    (fm-register (fm-parent self) guest)))
+
+(defmethod fm-check-out (self &optional (guest self))
+  (assert self () "oops ~a ~a ~a" self (fm-parent self) (slot-value self '.fm-parent))
+  (if (registry? self)
+      (remhash (md-name guest) (registry self))
+    (bif (p (fm-parent self))
+      (fm-check-out p guest)
+      (break "oops ~a ~a ~a" self (fm-parent self) (slot-value self '.fm-parent)))))
+
+(defmethod fm-find-registered (id self &optional (must-find? self  must-find?-supplied?))
+  (or (if (registry? self)
+          (gethash id (registry self))
+        (bwhen (p (fm-parent self))
+          (fm-find-registered id p must-find?)))
+    (when (and must-find? (not must-find?-supplied?))
+      (break "fm-find-registered failed seeking ~a starting search at node ~a" id self))))
+
+(export! rg? rg!)
+
+(defmacro rg? (id)
+  `(fm-find-registered ,id self nil))
+
+(defmacro rg! (id)
+  `(fm-find-registered ,id self))
 
 
+               

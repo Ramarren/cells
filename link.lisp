@@ -58,8 +58,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun c-unlink-unused (c &aux (usage (cd-usage c))
                          (usage-size (array-dimension (cd-usage c) 0))
-                         (dbg nil)) ;; #+not (and (typep (c-model c) 'mathx::mx-solver-stack)
-                                ;;(eq (c-slot-name c) '.kids))))
+                         (dbg nil))
   (declare (ignorable dbg usage-size))
   (when (cd-useds c)
     (let (rev-pos)

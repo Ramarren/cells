@@ -22,7 +22,7 @@
 
 (defun tcprop ()
   (untrace)
-  (test-prep)
+  (ukt:test-prep)
   (LET ((box (make-instance 'tcp)))
     (trc "changing top to 10" *data-pulse-id*)
     (setf (top box) 10)

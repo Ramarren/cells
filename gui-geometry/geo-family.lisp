@@ -102,6 +102,7 @@ See the Lisp Lesser GNU Public License for more details.
                                         (^prior-sib-pr self (spacing .parent)))))))))))
 
 
+
 (defun ^prior-sib-pb (self &optional (spacing 0)) ;; just keeping with -pt variant till both converted to defun
   (bif (psib (find-prior self (kids .parent)
                :test (lambda (sib)
@@ -118,23 +119,35 @@ See the Lisp Lesser GNU Public License for more details.
   (c? (py-maintain-pt (round (- (l-height .parent) (l-height self)) -2))))
 
 ;--------------- geo.row.flow ----------------------------
-(export! geo-row-flow)
+(export! geo-row-flow fixed-col-width ^fixed-col-width ^spacing-hz spacing-hz
+  max-per-row ^max-per-row)
 
 (defmd geo-row-flow (geo-inline)
   (spacing-hz  0)
   (spacing-vt  0)
   (aligned :cell nil)
+  fixed-col-width
+  max-per-row
   (row-flow-layout
    (c? (loop with max-pb = 0 and pl = 0 and pt = 0
            for k in (^kids)
-           for kpr = (+ pl (l-width k))
+           for kn upfrom 0
+           for kw = (or (^fixed-col-width) (l-width k))
+           for kpr = (+ pl kw)
            when (unless (= pl 0)
-                  (> kpr (- (l-width self) (outset self)))) do
+                  (if (^max-per-row)
+                      (zerop (mod kn (^max-per-row)))
+                    (> kpr (- (l-width self) (outset self)))))
+           do
+             (when (> kpr (- (l-width self) (outset self)))
+               (trc nil "LR overflow break" kpr :gt (- (l-width self) (outset self))))
+             (when (zerop (mod kn (^max-per-row)))
+               (trc nil "max/row break" kn (^max-per-row) (mod kn (^max-per-row))))
              (setf pl 0
                pt (+ max-pb (downs (^spacing-vt))))
-
+             
            collect (cons pl pt) into pxys
-           do (incf pl (+ (l-width k)(^spacing-hz)))
+           do (incf pl (+ kw (^spacing-hz)))
              (setf max-pb (min max-pb (+ pt (downs (l-height k)))))
            finally (return (cons max-pb pxys)))))
   :lb  (c? (+ (bif (xys (^row-flow-layout))

@@ -13,8 +13,8 @@ For example, in a text editor application we might have (condensed):
   (make-instance 'menu-item
 	:label "Cut"
 	:enabled (c? (bwhen (f (focus *window*))
-				(and (typep focus 'text-widget)
-				    (selection-range focus)))))
+			    (and (typep f 'text-widget)
+				   (selection-range f)))))
 
 Translated, the enabled state of the Cut menu item follows 
 whether or not the user is focused on a text-edit widget and
@@ -102,7 +102,9 @@ way around it, and thus his prediction that a software silver bullet was
 in principle impossible.
 
 Which brings us to Cells. See also [axiom] Phillip Eby's developing axiomatic 
-definition he is developing in support of Ryan Forseth's SoC project.
+definition he is developing in support of Ryan Forseth's SoC project. Mr. Eby was
+inspired by his involvement to develop Trellis, his own Cells work-alike library
+for Python.
 
 DEFMODEL and Slot types
 -----------------------
@@ -350,6 +352,9 @@ The entire constraint programming field, beginning I guess with Guy Steele's
 PhD Thesis in which he develops a constraint programming language or two:
   http://portal.acm.org/citation.cfm?id=889490&dl=ACM&coll=ACM
   http://www.cs.utk.edu/~bvz/quickplan.html
+
+Flow-based programming, developed by J. Paul Morrison at IBM, 1971.
+  http://en.wikipedia.org/wiki/Flow-based_programming
 
 Sutherland, I. Sketchpad: A Man Machine Graphical Communication System. PhD thesis, MIT, 1963.
 Steele himself cites Sketchpad as inexplicably unappreciated prior

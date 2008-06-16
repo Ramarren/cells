@@ -55,13 +55,13 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmacro count-it (&rest keys)
   (declare (ignorable keys))
-  #+(or) `(progn)
-  `(when (car *counting*)
+  `(progn)
+  #+(or) `(when (car *counting*)
      (call-count-it ,@keys)))
 
 (defun call-count-it (&rest keys)
     (declare (ignorable keys))
-  (when (find (car keys) '(:trcfailed :TGTNILEVAL))
+  #+nahh (when (find (car keys) '(:trcfailed :TGTNILEVAL))
     (break "clean up time ~a" keys))
   (let ((entry (assoc keys *count* :test #'equal)))
       (if entry
@@ -85,6 +85,7 @@ See the Lisp Lesser GNU Public License for more details.
   (when clearp (count-clear "show-count")))
   
 
+               
 ;-------------------- timex ---------------------------------
 
 (export! timex)

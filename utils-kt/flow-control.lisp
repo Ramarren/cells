@@ -150,11 +150,15 @@ See the Lisp Lesser GNU Public License for more details.
 (defun -1?1 (x) (* -1?1 x))
 
 (defun prime? (n)
-  (and (> n 1)
-    (or (= 2 n)(oddp n))
-    (loop for d upfrom 3 by 2 to (sqrt n)
-        when (zerop (mod n d)) return nil
-        finally (return t))))
+  (when (> n 1)
+    (cond
+     ((= 2 n) t)
+     ((evenp n) (values nil 2))
+     (t (loop for d upfrom 3 by 2 to (sqrt n)
+            when (zerop (mod n d)) do (return-from prime? (values nil d))
+            finally (return t))))))
+
+
 
 ; --- cloucell support for struct access of slots ------------------------
 

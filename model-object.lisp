@@ -21,15 +21,17 @@ See the Lisp Lesser GNU Public License for more details.
 ;;; --- model-object ----------------------
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-    (export '(md-name fm-parent .parent)))
+  (export '(md-name fm-parent .parent z-owned)))
 
 (defclass model-object ()
   ((.md-state :initform :nascent :accessor md-state) ; [nil | :nascent | :alive | :doomed]
-   (.awaken-on-init-p :initform nil :initarg :awaken-on-init-p :accessor awaken-on-init-p) ; [nil | :nascent | :alive | :doomed]
+   (.awaken-on-init-p :initform nil :initarg :awaken-on-init-p :accessor awaken-on-init-p)
    (.cells :initform nil :accessor cells)
    (.cells-flushed :initform nil :accessor cells-flushed
                    :documentation "cells supplied but un-whenned or optimized-away")
-   (adopt-ct :initform 0 :accessor adopt-ct)))
+   (adopt-ct :initform 0 :accessor adopt-ct)
+   (z-owned :initform nil :accessor z-owned ;; experimental, not yet operative
+     :documentation "Things such as kids to be taken down when self is taken down")))
 
 (defmethod md-state ((self symbol))
   :alive)
@@ -202,7 +204,8 @@ See the Lisp Lesser GNU Public License for more details.
       (dolist (super (class-precedence-list (find-class class-name))
                 (setf (md-slot-cell-type class-name slot-name) nil))
         (bwhen (entry (assoc slot-name (get (c-class-name super) :cell-types)))
-          (return-from md-slot-cell-type (setf (md-slot-cell-type class-name slot-name) (cdr entry))))))))
+          (return-from md-slot-cell-type
+            (setf (md-slot-cell-type class-name slot-name) (cdr entry))))))))
 
 (defun (setf md-slot-cell-type) (new-type class-name slot-name)
   (assert class-name)
@@ -215,12 +218,6 @@ See the Lisp Lesser GNU Public License for more details.
             (loop for c in (class-direct-subclasses (find-class class-name))
                 do (setf (md-slot-cell-type (class-name c) slot-name) new-type)))
         (cdar (push (cons slot-name new-type) (get class-name :cell-types)))))))
-
-#+hunh
-(md-slot-owning? 'mathx::prb-solver '.kids)
-
-#+hunh
-(cdr (assoc '.value (get 'm-index :indirect-ownings)))
 
 #+test
 (md-slot-owning? 'm-index '.value)
@@ -289,6 +286,10 @@ See the Lisp Lesser GNU Public License for more details.
 (defun (setf md-slot-cell) (new-cell self slot-name)
   (if self ;; not on def-c-variables
       (bif (entry (assoc slot-name (cells self)))
+        ; this next branch guessed it would only occur during kid-slotting,
+        ; before any dependency-ing could have happened, but a math-editor
+        ; is silently switching between implied-multiplication and mixed numbers
+        ; while they type and it 
         (let ((old (cdr entry))) ;; s/b being supplanted by kid-slotter
           (declare (ignorable old))
           (c-assert (null (c-callers old)))

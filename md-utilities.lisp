@@ -54,7 +54,7 @@ See the Lisp Lesser GNU Public License for more details.
 
   (:method ((self model-object))
     (md-quiesce self))
-  
+
   (:method :before ((self model-object))
     (loop for slot-name in (md-owning-slots self)
         do (not-to-be (slot-value self slot-name))))
@@ -62,8 +62,7 @@ See the Lisp Lesser GNU Public License for more details.
   (:method :around ((self model-object))
     (declare (ignorable self))
     (let ((*not-to-be* t)
-          (dbg nil #+not (or (eq (md-name self) :eclm-owner)
-                 (typep self '(or mathx::eclm-2008 clo:ix-form mathx::a1-panel mathx::edit-caret ctk:window)))))
+          (dbg nil))
       
       (flet ((gok ()
                (unless (eq (md-state self) :eternal-rest)
@@ -85,13 +84,15 @@ See the Lisp Lesser GNU Public License for more details.
                                                   (mapcar 'type-of (slot-value self '.kids))))
             (gok)
             (when dbg (trc "finished nailing" self))))))))
-  
+
 (defun md-quiesce (self)
   (trc nil "md-quiesce nailing cells" self (type-of self))
   (md-map-cells self nil (lambda (c)
                            (trc nil "quiescing" c)
                            (c-assert (not (find c *call-stack*)))
-                           (c-quiesce c))))
+                           (c-quiesce c)))
+  (when (register? self)
+    (fm-check-out self)))
 
 (defun c-quiesce (c)
   (typecase c
@@ -112,3 +113,78 @@ See the Lisp Lesser GNU Public License for more details.
      ,@initargs
      :fm-parent (progn (assert self) self)))
 
+(export! self-owned self-owned?)
+
+(defun (setf self-owned) (new-value self thing)
+  (if (consp thing)
+      (loop for e in thing do
+            (setf (self-owned self e) new-value))
+    (if new-value
+        (progn
+          (assert (not (find thing (z-owned self))))
+          (push thing (z-owned self)))
+      (progn
+        (assert (find thing (z-owned self)))
+        (setf (z-owned self)(delete thing (z-owned self)))))))
+
+(defun self-owned? (self thing)
+  (find thing (z-owned self)))
+
+(defvar *c-d-d*)
+(defvar *max-d-d*)
+
+
+(defun count-model (self)
+  (setf *c-d-d* (make-hash-table :test 'eq) *max-d-d* 0)
+  (with-metrics (t nil "cells statistics for" self)
+    (labels ((cc (self)
+               (count-it :thing)
+               (count-it :thing (type-of self))
+               ;(count-it :thing-type (type-of self))
+               (loop for (id . c) in (cells self)
+                   do (count-it :live-cell)
+                     ;(count-it :live-cell id)
+
+                     (typecase c
+                       (c-dependent
+                        (count-it :dependent-cell)
+                        (loop repeat (length (c-useds c))
+                            do (count-it :cell-useds)
+                              (count-it :dep-depth (c-depend-depth c))))
+                       (otherwise (if (c-inputp c)
+                                      (count-it :c-input id)
+                                    (count-it :c-unknow))))
+                     
+                     (loop repeat (length (c-callers c))
+                         do (count-it :cell-callers)))
+               
+               (loop repeat (length (cells-flushed self))
+                   do (count-it :flushed-cell #+toomuchinfo id))
+               
+               (loop for slot in (md-owning-slots self) do
+                     (loop for k in (let ((sv (SLOT-VALUE self slot)))
+                                      (if (listp sv) sv (list sv)))
+                         do (cc k)))))
+      (cc self))))
+
+(defun c-depend-depth (ctop)
+  (if (null (c-useds ctop))
+      0
+    (or (gethash ctop *c-d-d*)
+      (labels ((cdd (c &optional (depth 1) chain)
+                 (when (and (not (c-useds c))
+                         (> depth *max-d-d*))
+                   (setf *max-d-d* depth)
+                   (trc "new dd champ from user"  depth :down-to c)
+                   (when (= depth 41)
+                     (trc "end at" (c-slot-name c) :of (type-of (c-model c)))
+                     (loop for c in chain do
+                           (trc "called by" (c-slot-name c) :of (type-of (c-model c))))))
+                 (setf (gethash c *c-d-d*)
+                   ;(break "c-depend-depth ~a" c)
+                   (progn
+                     ;(trc "dd" c)
+                     (1+ (loop for u in (c-useds c)
+                             maximizing (cdd u (1+ depth) (cons c chain))))))))
+        (cdd ctop)))))
+    

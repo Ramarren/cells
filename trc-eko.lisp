@@ -19,12 +19,11 @@ See the Lisp Lesser GNU Public License for more details.
 (in-package :cells)
 
 ;----------- trc -------------------------------------------
-
+(defparameter *last-trc* (get-internal-real-time))
 (defparameter *trcdepth* 0)
 
 (defun trcdepth-reset ()
   (setf *trcdepth* 0))
-
 
 (defmacro trc (tgt-form &rest os)
   (if (eql tgt-form 'nil)
@@ -45,8 +44,23 @@ See the Lisp Lesser GNU Public License for more details.
                 (count-it :trcfailed)))
             (count-it :tgtnileval)))))))
 
-(export! brk brkx .bgo)
+(defun call-trc (stream s &rest os)
+  ;(break)
+  (if #+cormanlisp nil #-cormanlisp (and (boundp '*trcdepth*)
+                                      *trcdepth*)
+    (format stream "~&~v,,,'.<~d~>> " (mod *trcdepth* 100) *trcdepth*)
+    (format stream "~&"))
+  ;;(format stream " ~a " (round (- (get-internal-real-time) *last-trc*) 10))
+  (setf *last-trc* (get-internal-real-time))
+  (format stream "~a" s)
+  (let (pkwp)
+    (dolist (o os)
+      (format stream (if pkwp " ~(~s~)" " ~(~s~)") o) ;; save, used to insert divider, trcx dont like
+      (setf pkwp (keywordp o))))
+  (force-output stream)
+  (values))
 
+(export! brk brkx .bgo)
 
 (define-symbol-macro .bgo (break "go"))
 
@@ -68,23 +82,8 @@ See the Lisp Lesser GNU Public License for more details.
                    nconcing (list (intern (format nil "~a" obj) :keyword) obj))))))
 
 
-(defparameter *last-trc* (get-internal-real-time))
 
-(defun call-trc (stream s &rest os)
-  ;(break)
-  (if #+cormanlisp nil #-cormanlisp (and (boundp '*trcdepth*)
-                                      *trcdepth*)
-    (format stream "~&~v,,,'.<~d~>> " (mod *trcdepth* 100) *trcdepth*)
-    (format stream "~&"))
-  ;;(format stream " ~a " (round (- (get-internal-real-time) *last-trc*) 10))
-  (setf *last-trc* (get-internal-real-time))
-  (format stream "~a" s)
-  (let (pkwp)
-    (dolist (o os)
-      (format stream (if pkwp " ~(~s~)" " ~(~s~)") o) ;; save, used to insert divider, trcx dont like
-      (setf pkwp (keywordp o))))
-  (force-output stream)
-  (values))
+
   
 (defun call-trc-to-string (fmt$ &rest fmt-args)
     (let ((o$ (make-array '(0) :element-type 'base-char
