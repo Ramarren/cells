@@ -58,28 +58,38 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmacro c? (&body body)
   `(make-c-dependent
-    :code ',body
+    :code #+its-alive! nil #-its-alive! ',body
     :value-state :unevaluated
     :rule (c-lambda ,@body)))
 
 (defmacro c?+n (&body body)
   `(make-c-dependent
     :inputp t
-    :code ',body
+    :code #+its-alive! nil #-its-alive! ',body
     :value-state :unevaluated
     :rule (c-lambda ,@body)))
 
 (defmacro c?n (&body body)
   `(make-c-dependent
-    :code '(without-c-dependency ,@body)
+    :code #+its-alive! nil #-its-alive! '(without-c-dependency ,@body)
     :inputp t
+    :value-state :unevaluated
+    :rule (c-lambda (without-c-dependency ,@body))))
+
+(export! c?n-dbg)
+
+(defmacro c?n-dbg (&body body)
+  `(make-c-dependent
+    :code #+its-alive! nil #-its-alive! '(without-c-dependency ,@body)
+    :inputp t
+    :debug t
     :value-state :unevaluated
     :rule (c-lambda (without-c-dependency ,@body))))
 
 (defmacro c?n-until (args &body body)
   `(make-c-dependent
     :optimize :when-value-t
-    :code ',body
+    :code #+its-alive! nil #-its-alive! ',body
     :inputp t
     :value-state :unevaluated
     :rule (c-lambda ,@body)
@@ -87,14 +97,14 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmacro c?once (&body body)
   `(make-c-dependent
-    :code '(without-c-dependency ,@body)
+    :code #+its-alive! nil #-its-alive! '(without-c-dependency ,@body)
     :inputp nil
     :value-state :unevaluated
     :rule (c-lambda (without-c-dependency ,@body))))
 
 (defmacro c_1 (&body body)
   `(make-c-dependent
-    :code '(without-c-dependency ,@body)
+    :code #+its-alive! nil #-its-alive! '(without-c-dependency ,@body)
     :inputp nil
     :lazy t
     :value-state :unevaluated
@@ -105,14 +115,14 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmacro c?dbg (&body body)
   `(make-c-dependent
-    :code ',body
+    :code #+its-alive! nil #-its-alive! ',body
     :value-state :unevaluated
     :debug t
     :rule (c-lambda ,@body)))
 
 (defmacro c?_ (&body body)
   `(make-c-dependent
-    :code ',body
+    :code #+its-alive! nil #-its-alive! ',body
     :value-state :unevaluated
     :lazy t
     :rule (c-lambda ,@body)))
@@ -120,7 +130,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro c_? (&body body)
   "Lazy until asked, then eagerly propagating"
   `(make-c-dependent
-    :code ',body
+    :code #+its-alive! nil #-its-alive! ',body
     :value-state :unevaluated
     :lazy :until-asked
     :rule (c-lambda ,@body)))
@@ -128,7 +138,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro c_?dbg (&body body)
   "Lazy until asked, then eagerly propagating"
   `(make-c-dependent
-    :code ',body
+    :code #+its-alive! nil #-its-alive! ',body
     :value-state :unevaluated
     :lazy :until-asked
     :rule (c-lambda ,@body)
@@ -155,7 +165,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro c-formula ((&rest keys &key lazy &allow-other-keys) &body forms)
   (assert (member lazy '(nil t :once-asked :until-asked :always)))
   `(make-c-dependent
-    :code ',forms
+    :code #+its-alive! nil #-its-alive! ',forms
     :value-state :unevaluated
     :rule (c-lambda ,@forms)
     ,@keys))
@@ -172,6 +182,14 @@ See the Lisp Lesser GNU Public License for more details.
     :inputp t
     :value-state :valid
     :value ,value))
+
+(export! c-in-lazy c_in)
+
+(defmacro c-in-lazy (&body body)
+  `(c-input (:lazy :once-asked) (progn ,@body)))
+
+(defmacro c_in (&body body)
+  `(c-input (:lazy :once-asked) (progn ,@body)))
 
 (defmacro c-input-dbg (&optional (value nil valued-p))
   `(make-cell

@@ -25,17 +25,21 @@ See the Lisp Lesser GNU Public License for more details.
                                  :change))
 
 (defmacro with-integrity ((&optional opcode defer-info debug) &rest body)
+  (declare (ignorable debug))
   (when opcode
     (assert (find opcode *ufb-opcodes*) ()
       "Invalid opcode for with-integrity: ~a. Allowed values: ~a" opcode *ufb-opcodes*))
   `(call-with-integrity ,opcode ,defer-info
      (lambda (opcode defer-info)
        (declare (ignorable opcode defer-info))
-       ,(when debug
-          `(trc "integrity action entry" opcode defer-info ',body))
+       ;;;       ,(when debug
+       ;;;          `(trc "integrity action entry" opcode defer-info ',body))
+       ;;;       (when *c-debug*
+       ;;;         (when (eq opcode :change)
+       ;;;           (trc "-------w/integ :change go--------------->:" defer-info)))
        ,@body)
-     (when *c-debug*
-       ',body)))
+     nil
+     #+noway (when *c-debug* ',body)))
 
 (export! with-cc)
 
@@ -47,34 +51,39 @@ See the Lisp Lesser GNU Public License for more details.
   *within-integrity*)
 
 (defun call-with-integrity (opcode defer-info action code)
+  (declare (ignorable code))
   (when *stop*
     (return-from call-with-integrity))
   (if *within-integrity*
       (if opcode
-          (progn
-            (ufb-add opcode (cons defer-info action))
-            ;
-            ; SETF is supposed to return the value being installed
+          (prog1
+              :deferred-to-ufb-1 ; SETF is supposed to return the value being installed
             ; in the place, but if the SETF is deferred we return
             ; something that will help someone who tries to use
             ; the setf'ed value figure out what is going on:
-            ;
-            :deferred-to-ufb-1)
+            (ufb-add opcode (cons defer-info action)))
+
+        ; thus by not supplying an opcode one can get something
+        ; executed immediately, potentially breaking data integrity
+        ; but signifying by having coded the with-integrity macro
+        ; that one is aware of this. If you read this comment.
         (funcall action opcode defer-info))
+
     (flet ((go-go ()
              (let ((*within-integrity* t)
                    *unfinished-business*
                    *defer-changes*)
                (trc nil "initiating new UFB!!!!!!!!!!!!" opcode defer-info)
-               (when *c-debug* (assert (boundp '*istack*)))
+               ;(when *c-debug* (assert (boundp '*istack*)))
                (when (or (zerop *data-pulse-id*)
                        (eq opcode :change))
                  (eko (nil "!!! New pulse, event" *data-pulse-id* defer-info)
                    (data-pulse-next (cons opcode defer-info))))
                (prog1
                    (funcall action opcode defer-info)
+                 (setf *finbiz-id* 0)
                  (finish-business)))))
-      (if *c-debug*
+      (if nil ;; *c-debug*
           (let ((*istack* (list (list opcode defer-info)
                             (list :trigger code)
                             (list :start-dp *data-pulse-id*))))
@@ -106,20 +115,22 @@ See the Lisp Lesser GNU Public License for more details.
   (trc nil "ufb-add deferring" opcode (when (eql opcode :client)(car continuation)))
   (fifo-add (ufb-queue-ensure opcode) continuation))
 
-(defun just-do-it (op-or-q &optional (op-code op-or-q) ;; make-better
+(defun just-do-it (op-or-q &optional (op-code op-or-q) ;; [mb]
                     &aux (q (if (keywordp op-or-q)
                                 (ufb-queue op-or-q)
                               op-or-q)))
+  (declare (ignorable op-code))
   (trc nil "----------------------------just do it doing---------------------" op-or-q)
   (loop for (defer-info . task) = (fifo-pop q)
         while task
         do (trc nil "unfin task is" opcode task)
-        (when *c-debug*
+        #+chill (when *c-debug*
           (push (list op-code defer-info) *istack*))
         (funcall task op-or-q defer-info)))
 
 (defun finish-business ()
   (when *stop* (return-from finish-business))
+  (incf *finbiz-id*)
   (tagbody
     tell-dependents
     (just-do-it :tell-dependents)
@@ -135,8 +146,9 @@ See the Lisp Lesser GNU Public License for more details.
     ; during their awakening to be handled along with those enqueued by cells of
     ; existing model instances.
     ;
+    #-its-alive!
     (bwhen (uqp (fifo-peek (ufb-queue :tell-dependents)))
-      (trcx finish-business uqp)
+      (trcx fin-business uqp)
       (dolist (b (fifo-data (ufb-queue :tell-dependents)))
         (trc "unhandled :tell-dependents" (car b) (c-callers (car b))))
       (break "unexpected 1> ufb needs to tell dependnents after telling dependents"))
@@ -184,7 +196,9 @@ See the Lisp Lesser GNU Public License for more details.
         (go handle-clients)))
     ;--- now we can reset ephemerals --------------------
     ;
-    ; one might be wondering when the observers got notified. That happens
+    ; one might be wondering when the observers got notified. That happens right during
+    ; slot.value.assume, via c-propagate.
+    ;
     ; Nice historical note: by accident, in the deep-cells test to exercise the new behavior
     ; of cells3, I coded an ephemeral cell and initialized it to non-nil, hitting a runtime
     ; error (now gone) saying I had no idea what a non-nil ephemeral would mean. That had been

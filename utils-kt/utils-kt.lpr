@@ -1,4 +1,4 @@
-;; -*- lisp-version: "8.1 [Windows] (Feb 1, 2008 18:35)"; cg: "1.103.2.10"; -*-
+;; -*- lisp-version: "8.1 [Windows] (Oct 11, 2008 17:00)"; cg: "1.103.2.10"; -*-
 
 (in-package :cg-user)
 
@@ -32,6 +32,7 @@
   :old-space-size 256000
   :new-space-size 6144
   :runtime-build-option :standard
+  :build-number 0
   :on-initialization 'default-init-function
   :on-restart 'do-default-restart)
 

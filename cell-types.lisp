@@ -60,7 +60,13 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmethod print-object ((c cell) stream)
   (declare (ignorable stream))
-  (unless *stop*
+  (if *stop*
+      (format stream "<~d:~a ~a/~a = ~a>"
+        (c-pulse c)
+        (subseq (string (c-state c)) 0 1)
+        (symbol-name (or (c-slot-name c) :anoncell))
+        (md-name (c-model c))
+        (type-of (c-value c)))
     (let ((*print-circle* t))
       #+failsafe (format stream "~a/~a" (c-model c)(c-slot-name c))
       (if *print-readably*
@@ -72,7 +78,8 @@ See the Lisp Lesser GNU Public License for more details.
             (subseq (string (c-state c)) 0 1)
             (symbol-name (or (c-slot-name c) :anoncell))
             (print-cell-model (c-model c))
-            (c-value c)))))))
+            (if (consp (c-value c))
+                "LST" (c-value c))))))))
 
 (export! print-cell-model)
 
@@ -80,8 +87,9 @@ See the Lisp Lesser GNU Public License for more details.
   (:method (other) (print-object other nil)))
 
 (defmethod trcp :around ((c cell))
-  (or (c-debug c)
-    (call-next-method)))
+  (and ;*c-debug*
+    (or (c-debug c)
+      (call-next-method))))
 
 (defun c-callers (c)
   "Make it easier to change implementation"
@@ -107,7 +115,7 @@ See the Lisp Lesser GNU Public License for more details.
     ;
     ; as of Cells3 we defer resetting ephemerals because everything
     ; else gets deferred and we cannot /really/ reset it until
-    ; within finish-business we are sure all callers have been recalculated
+    ; within finish_business we are sure all callers have been recalculated
     ; and all outputs completed.
     ;
     ; ;; good q: what does (setf <ephem> 'x) return? historically nil, but...?

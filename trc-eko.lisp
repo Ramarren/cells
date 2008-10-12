@@ -60,18 +60,21 @@ See the Lisp Lesser GNU Public License for more details.
   (force-output stream)
   (values))
 
-(export! brk brkx .bgo)
+(export! brk brkx .bgo bgo)
 
-(define-symbol-macro .bgo (break "go"))
+(define-symbol-macro .bgo
+    #+gimme-a-break (break "go")
+  #-gimme-a-break nil)
 
-(defun brk (&rest args)
-  #+its-alive! (print args)
-  #-its-alive! (progn
-                 ;;(setf *ctk-dbg* t)
-                 (apply 'break args)))
+(defmacro bgo (msg)
+  (declare (ignorable msg))
+  #+gimme-a-break `(break "BGO ~a" ',msg)
+  #-gimme-a-break `(progn))
 
 (defmacro brkx (msg)
-  `(break "At ~a: OK?" ',msg))
+  (declare (ignorable msg))
+  #+gimme-a-break  `(break "At ~a: OK?" ',msg)
+  #-gimme-a-break `(progn))
 
 (defmacro trcx (tgt-form &rest os)
   (if (eql tgt-form 'nil)
@@ -80,10 +83,6 @@ See the Lisp Lesser GNU Public License for more details.
          (call-trc t ,(format nil "TX> ~(~s~)" tgt-form)
            ,@(loop for obj in (or os (list tgt-form))
                    nconcing (list (intern (format nil "~a" obj) :keyword) obj))))))
-
-
-
-
   
 (defun call-trc-to-string (fmt$ &rest fmt-args)
     (let ((o$ (make-array '(0) :element-type 'base-char
@@ -114,6 +113,19 @@ See the Lisp Lesser GNU Public License for more details.
                          (1+ *trcdepth*)
                        0)))
      ,(when banner `(when (>= *trcdepth* ,min)
+                      (if (< *trcdepth* ,max)
+                          (trc ,@banner)
+                        (progn
+                          (break "excess trace notttt!!! ~d" *trcdepth*) ;; ,@banner)
+                          nil))))
+     (when (< *trcdepth* ,max)
+       ,@body)))
+
+(defmacro wtrcx ((&key (min 1) (max 50) (on? t))(&rest banner) &body body )
+  `(let ((*trcdepth* (if *trcdepth*
+                         (1+ *trcdepth*)
+                       0)))
+     ,(when banner `(when (and ,on? (>= *trcdepth* ,min))
                       (if (< *trcdepth* ,max)
                           (trc ,@banner)
                         (progn

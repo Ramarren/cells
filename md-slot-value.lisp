@@ -21,20 +21,22 @@ See the Lisp Lesser GNU Public License for more details.
 (defparameter *ide-app-hard-to-kill* t)
 
 (defun md-slot-value (self slot-name &aux (c (md-slot-cell self slot-name)))
-  (when (and (not *not-to-be*)
-          (mdead self))
+  (when (and (not *not-to-be*) (mdead self))
+    ;#-its-alive!
     (unless *stop*
-      (setf *stop* t)
-      (trc "md-slot-value passed dead self, returning NIL" self slot-name c)
-      #-sbcl (inspect self)
-      (break "see inspector for dead ~a" self))
-    (return-from md-slot-value nil))
+      (trc nil "md-slot-value passed dead self:" self :asked4slot slot-name :cell c)
+      ;#-sbcl (inspect self)
+      ;(setf *stop* t)
+      ;(break "md-slot-value sees dead ~a" self)
+      )
+    (return-from md-slot-value (slot-value self slot-name))) ;; we can dream
   (tagbody
     retry
     (when *stop*
       (if *ide-app-hard-to-kill*
           (progn
             (princ #\.)
+            (princ "stopped")
             (return-from md-slot-value))
         (restart-case
             (error "Cells is stopped due to a prior error.")
@@ -65,84 +67,122 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defvar *trc-ensure* nil)
 
-(defmethod ensure-value-is-current (c debug-id ensurer)
+(defun qci (c)
+  (when c
+    (cons (md-name (c-model c)) (c-slot-name c))))
+
+
+(defun ensure-value-is-current (c debug-id ensurer)
   ;
   ; ensurer can be used cell propagating to callers, or an existing caller who wants to make sure
   ; dependencies are up-to-date before deciding if it itself is up-to-date
   ;
   (declare (ignorable debug-id ensurer))
-
-  (count-it :ensure-value-is-current)
-  ;; (trc c "ensure-value-is-current > entry" c (c-state c) :now-pulse *data-pulse-id* debug-id ensurer)
-  
-  (when *not-to-be*
+  ;(count-it! :ensure.value-is-current)
+  ;(trc "evic entry" (qci c))
+  (wtrcx (:on? nil) ("evic>" (qci c) debug-id (qci ensurer))
+    ;(count-it! :ensure.value-is-current )
+    #+chill 
+    (when ensurer ; (trcp c)
+      (count-it! :ensure.value-is-current (c-slot-name c) (md-name (c-model c))(c-slot-name ensurer) (md-name (c-model ensurer))))
+    #+chill
+    (when (and *c-debug* (trcp c)
+            (> *data-pulse-id* 650))
+      (bgo ens-high))
+    
+    (trc nil ; c ;; (and *c-debug* (> *data-pulse-id* 495)(trcp c))
+      "ensure.value-is-current > entry1" debug-id (qci c) :st (c-state c) :vst (c-value-state c)
+      :my/the-pulse (c-pulse c) *data-pulse-id* 
+      :current (c-currentp c) :valid (c-validp c))
+    
+    #+nahhh
+    (when ensurer
+      (trc (and *c-debug* (> *data-pulse-id* 495)(trcp c))
+        "ensure.value-is-current > entry2" 
+        :ensurer (qci ensurer)))
+    
+    (when *not-to-be*
+      (when (c-unboundp c)
+        (error 'unbound-cell :cell c :instance (c-model c) :name (c-slot-name c)))
+      (return-from ensure-value-is-current
+        (when (c-validp c) ;; probably accomplishes nothing
+          (c-value c))))
+    
+    (when (and (not (symbolp (c-model c))) ;; damn, just here because of playing around with global vars and cells
+            (eq :eternal-rest (md-state (c-model c))))
+      (break "model ~a of cell ~a is dead" (c-model c) c))
+    
+    (cond
+     ((c-currentp c)
+      (count-it! :ensvc-is-indeed-currentp)
+      (trc nil "EVIC yep: c-currentp" c)
+      ) ;; used to follow c-inputp, but I am toying with letting ephemerals (inputs) fall obsolete
+     ;; and then get reset here (ie, ((c-input-p c) (ephemeral-reset c))). ie, do not assume inputs are never obsolete
+     ;;
+     ((and (c-inputp c)
+        (c-validp c) ;; a c?n (ruled-then-input) cell will not be valid at first
+        (not (and (typep c 'c-dependent)
+               (eq (cd-optimize c) :when-value-t)
+               (null (c-value c)))))
+      (trc nil "evic: cool: inputp" (qci c)))
+     
+     ((or (bwhen (nv (not (c-validp c)))
+            (count-it! :ens-val-not-valid)
+            (trc nil "not c-validp, gonna run regardless!!!!!!" c)
+            nv)
+        ;;
+        ;; new for 2006-09-21: a cell ended up checking slots of a dead instance, which would have been
+        ;; refreshed when checked, but was going to be checked last because it was the first used, useds
+        ;; being simply pushed onto a list as they come up. We may need fancier handling of dead instance/cells
+        ;; still being encountered by consulting the prior useds list, but checking now in same order as
+        ;; accessed seems Deeply Correct (and fixed the immediate problem nicely, always a Good Sign).
+        ;;
+        (labels ((check-reversed (useds)
+                   (when useds
+                     (or (check-reversed (cdr useds))
+                       (let ((used (car useds)))
+                         (ensure-value-is-current used :nested c)
+                         #+slow (trc nil "comparing pulses (ensurer, used, used-changed): "  c debug-id used (c-pulse-last-changed used))
+                         (when (> (c-pulse-last-changed used)(c-pulse c))
+                           (count-it! :ens-val-someused-newer)
+                           (trc nil "used changed and newer !!!!######!!!!!! used" (qci used) :oldpulse (c-pulse used)
+                             :lastchg (c-pulse-last-changed used))
+                           #+shhh (when (trcp c)
+                                    (describe used))
+                           t))))))
+          (assert (typep c 'c-dependent))
+          (check-reversed (cd-useds c))))
+      (trc nil "kicking off calc-set of!!!!" (c-state c) (c-validp c) (qci c) :vstate (c-value-state c)
+        :stamped (c-pulse c) :current-pulse *data-pulse-id*)
+      (calculate-and-set c :evic ensurer)
+      (trc nil "kicked off calc-set of!!!!" (c-state c) (c-validp c) (qci c) :vstate (c-value-state c)
+        :stamped (c-pulse c) :current-pulse *data-pulse-id*))
+     
+     ((mdead (c-value c))
+      (trc nil "ensure.value-is-current> trying recalc of ~a with current but dead value ~a" c (c-value c))
+      (let ((new-v (calculate-and-set c :evic-mdead ensurer)))
+        (trc nil "ensure.value-is-current> GOT new value ~a to replace dead!!" new-v)
+        new-v))
+     
+     (t (trc nil "ensure.current decided current, updating pulse" (c-slot-name c) debug-id)
+       (c-pulse-update c :valid-uninfluenced)))
+    
     (when (c-unboundp c)
       (error 'unbound-cell :cell c :instance (c-model c) :name (c-slot-name c)))
-    (return-from ensure-value-is-current
-      (when (c-validp c) ;; probably accomplishes nothing
-        (c-value c))))
-  
-  (when (and (not (symbolp (c-model c))) ;; damn, just here because of playing around with global vars and cells
-          (eq :eternal-rest (md-state (c-model c))))
-    (break "model ~a of cell ~a is dead" (c-model c) c))
-  
-  (cond
-   ((c-currentp c)
-    (trc nil "EVIC yep: c-currentp" c)) ;; used to follow c-inputp, but I am toying with letting ephemerals (inputs) fall obsolete
-   ;; and then get reset here (ie, ((c-input-p c) (ephemeral-reset c))). ie, do not assume inputs are never obsolete
-   ;;
-   ((and (c-inputp c)
-      (c-validp c) ;; a c?n (ruled-then-input) cell will not be valid at first
-      (not (and (typep c 'c-dependent)
-             (eq (cd-optimize c) :when-value-t)
-             (null (c-value c))))))
-   
-   ((or (not (c-validp c))
-      ;;
-      ;; new for 2006-09-21: a cell ended up checking slots of a dead instance, which would have been
-      ;; refreshed when checked, but was going to be checked last because it was the first used, useds
-      ;; being simply pushed onto a list as they come up. We may need fancier handling of dead instance/cells
-      ;; still being encountered by consulting the prior useds list, but checking now in same order as
-      ;; accessed seems Deeply Correct (and fixed the immediate problem nicely, always a Good Sign).
-      ;;
-      (labels ((check-reversed (useds)
-                 (when useds
-                   (or (check-reversed (cdr useds))
-                     (let ((used (car useds)))
-                       (ensure-value-is-current used :nested c)
-                       #+slow (trc c "comparing pulses (ensurer, used, used-changed): "  c debug-id used (c-pulse-last-changed used))
-                       (when (> (c-pulse-last-changed used)(c-pulse c))
-                         #+slow (trc c "used changed and newer !!!!!!" c :oldpulse (c-pulse used) debug-id used :lastchg (c-pulse-last-changed used))
-                         #+shhh (when (trcp c)
-                                  (describe used))
-                         t))))))
-        (assert (typep c 'c-dependent))
-        (check-reversed (cd-useds c))))
-    #+shhh (trc c "kicking off calc-set of" (c-state c) (c-validp c) (c-slot-name c) :vstate (c-value-state c)
-             :stamped (c-pulse c) :current-pulse *data-pulse-id*)
-    (calculate-and-set c))
-   
-   ((mdead (c-value c))
-    (trc nil "ensure-value-is-current> trying recalc of ~a with current but dead value ~a" c (c-value c))
-    (let ((new-v (calculate-and-set c)))
-      (trc nil "ensure-value-is-current> GOT new value ~a to replace dead!!" new-v)
-      new-v))
-   
-   (t (trc nil "ensuring current decided current, updating pulse" (c-slot-name c) debug-id)
-     (c-pulse-update c :valid-uninfluenced)))
-  
-  (when (c-unboundp c)
-    (error 'unbound-cell :cell c :instance (c-model c) :name (c-slot-name c)))
-  
-  (bwhen (v (c-value c))
-    (if (mdead v)
-        (progn
-          #+shhh (format t "~&on pulse ~a ensure-value still got and still not returning ~a dead value ~a" *data-pulse-id* c v)
-          nil)
-      v)))
+    
+    (bwhen (v (c-value c))
+      (if (mdead v)
+          (progn
+            #-its-alive!
+            (progn
+              (format t "~&on pulse ~a ensure.value still got and still not returning ~a dead value ~a" *data-pulse-id* c v)
+              (inspect v))
+            nil)
+        v))))
 
 
-(defun calculate-and-set (c)
+(defun calculate-and-set (c dbgid dbgdata)
+  (declare (ignorable dbgid dbgdata)) ;; just there for inspection of the stack during debugging
   (flet ((body ()
            (when (c-stopped)
              (princ #\.)
@@ -187,24 +227,11 @@ See the Lisp Lesser GNU Public License for more details.
         (*depender* c)
         (*defer-changes* t))
     (assert (typep c 'c-ruled))
-    #+shhh (trc c "calculate-and-link" c)
+    (trc nil "calculate-and-link" c)
     (cd-usage-clear-all c)
     (multiple-value-prog1
         (funcall (cr-rule c) c)
       (c-unlink-unused c))))
-
-#+theabove!
-(defun calculate-and-set (c)
-  (multiple-value-bind (raw-value propagation-code)
-      (let ((*call-stack* (cons c *call-stack*))
-            (*depender* c)
-            (*defer-changes* t))
-        (cd-usage-clear-all c)
-        (multiple-value-prog1
-            (funcall (cr-rule c) c)
-          (c-unlink-unused c)))
-    (unless (c-optimized-away-p c)
-      (md-slot-value-assume c raw-value propagation-code))))
 
 
 ;-------------------------------------------------------------
@@ -237,7 +264,7 @@ See the Lisp Lesser GNU Public License for more details.
             (c-state c) :awake)
           (bd-slot-makunbound self slot-name)
           ;
-          ; --- data flow propagation -----------
+           ; --- data flow propagation -----------
           ;
           (without-c-dependency
               (c-propagate c prior-value t)))))))
@@ -277,9 +304,9 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
   ;; anyway, if they no longer diverge the question of which to return is moot
   )
                     
-(defmethod md-slot-value-assume (c raw-value propagation-code)
+(defun md-slot-value-assume (c raw-value propagation-code)
   (assert c)
-  #+shhh (trc c "md-slot-value-assume entry" (c-state c))
+  (trc nil "md-slot-value-assume entry" (qci c)(c-state c))
   (without-c-dependency
       (let ((prior-state (c-value-state c))
             (prior-value (c-value c))
@@ -291,13 +318,14 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
         (when (and (not (eq propagation-code :propagate))
                 (find prior-state '(:valid :uncurrent))
                 (c-no-news c absorbed-value prior-value))
+          (setf (c-value-state c) :valid) ;; new for 2008-07-15
           (trc nil "(setf md-slot-value) > early no news" propagation-code prior-state prior-value  absorbed-value)
           (count-it :nonews)
           (return-from md-slot-value-assume absorbed-value))
 
         ; --- slot maintenance ---
         
-        (unless (c-synaptic c)
+        (unless (c-synaptic c) 
           (md-slot-value-store (c-model c) (c-slot-name c) absorbed-value))
         
         ; --- cell maintenance ---
@@ -316,7 +344,7 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
         (unless (eq propagation-code :no-propagate)
           (trc nil "md-slot-value-assume flagging as changed: prior state, value:" prior-state prior-value )
           (c-propagate c prior-value (cache-state-bound-p prior-state)))  ;; until 06-02-13 was (not (eq prior-state :unbound))
-        
+        (trc nil "exiting md-slot-val-assume" (c-state c) (c-value-state c))
         absorbed-value)))
 
 (defun cache-bound-p (c)
@@ -333,7 +361,7 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
   (rassoc c (cells-flushed (c-model c))))
 
 (defun c-optimize-away?! (c)
-  #+shhh (trc c "c-optimize-away?! entry" (c-state c) c)
+  #+shhh (trc nil "c-optimize-away?! entry" (c-state c) c)
   (when (and (typep c 'c-dependent)
           (null (cd-useds c))
           (cd-optimize c)

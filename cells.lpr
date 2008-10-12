@@ -1,4 +1,4 @@
-;; -*- lisp-version: "8.1 [Windows] (Apr 3, 2008 23:47)"; cg: "1.103.2.10"; -*-
+;; -*- lisp-version: "8.1 [Windows] (Oct 11, 2008 17:00)"; cg: "1.103.2.10"; -*-
 
 (in-package :cg-user)
 
@@ -25,9 +25,11 @@
                  (make-instance 'module :name "fm-utilities.lisp")
                  (make-instance 'module :name "family-values.lisp")
                  (make-instance 'module :name "test-propagation.lisp")
-                 (make-instance 'module :name "cells-store.lisp"))
+                 (make-instance 'module :name "cells-store.lisp")
+                 (make-instance 'module :name "test-cc.lisp"))
   :projects (list (make-instance 'project-module :name
-                                 "utils-kt\\utils-kt"))
+                                 "utils-kt\\utils-kt" :show-modules
+                                 nil))
   :libraries nil
   :distributed-files nil
   :internally-loaded-files nil
@@ -48,7 +50,8 @@
   :old-space-size 256000
   :new-space-size 6144
   :runtime-build-option :standard
-  :on-initialization 'cells::tcprop
+  :build-number 0
+  :on-initialization 'cells::test-with-cc
   :on-restart 'do-default-restart)
 
 ;; End of Project Definition

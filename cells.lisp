@@ -31,17 +31,17 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
 
 |#
 
-
-(eval-when (compile load)
-  (proclaim '(optimize (speed 2) (safety 1) (space 1) (debug 3))))
-
 (in-package :cells)
 
 (defparameter *c-prop-depth* 0)
 (defparameter *causation* nil)
 
 (defparameter *data-pulse-id* 0)
+(define-symbol-macro .dpid *data-pulse-id*)
+(defparameter *finbiz-id* 0) ;; debugging tool only
+(define-symbol-macro .fbid *finbiz-id*)
 
+(export! .dpid .fbid)
 (defparameter *c-debug* nil)
 (defparameter *defer-changes* nil)
 (defparameter *within-integrity* nil)
@@ -49,6 +49,9 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
 (defparameter *client-queue-handler* nil)
 (defparameter *unfinished-business* nil)
 (defparameter *not-to-be* nil)
+
+(defparameter *awake* nil)
+(defparameter *awake-ct* nil)
 
 #+test
 (cells-reset)
@@ -58,7 +61,11 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
   (setf 
    *c-debug* debug
    *c-prop-depth* 0
+   *awake-ct* nil
+   *awake* nil
+   *not-to-be* nil
    *data-pulse-id* 0
+   *finbiz-id* 0
    *defer-changes* nil ;; should not be necessary, but cannot be wrong
    *client-queue-handler* client-queue-handler
    *within-integrity* nil
@@ -77,7 +84,10 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
 (defun c-stopped ()
   *stop*)
 
-(export! .stopped)
+(export! .stopped .cdbg)
+
+(define-symbol-macro .cdbg
+    *c-debug*)
 
 (define-symbol-macro .stopped
     (c-stopped))

@@ -40,13 +40,13 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmethod awaken-cell ((c c-ruled))
   (let (*depender*)
-    (calculate-and-set c)))
+    (calculate-and-set c :fn-awaken-cell nil)))
 
 #+cormanlisp ; satisfy CormanCL bug
 (defmethod awaken-cell ((c c-dependent))
   (let (*depender*)
     (trc nil "awaken-cell c-dependent clearing *depender*" c)
-    (calculate-and-set c)))
+    (calculate-and-set c :fn-awaken-cell nil)))
 
 (defmethod awaken-cell ((c c-drifter))
   ;
@@ -57,7 +57,7 @@ See the Lisp Lesser GNU Public License for more details.
   ; awakening, because awakening's other role is to get an instance up to speed
   ; at once upon instantiation 
   ;
-  (calculate-and-set c)
+  (calculate-and-set c :fn-awaken-cell nil)
   (cond ((c-validp c) (c-value c))
         ((c-unboundp c) nil)
         (t "illegal state!!!")))

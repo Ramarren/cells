@@ -15,14 +15,27 @@ See the Lisp Lesser GNU Public License for more details.
 
 |#
 
+
 (in-package :cl-user)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (setf *features* (delete :its-alive! *features*)))
+  (setf *features* (remove :its-alive! *features*)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (setf *features* (pushnew :gimme-a-break *features*)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (setf *features* (remove :debugging-alive! *features*)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  ;;;  #+(and its-alive! (not debugging-alive!))
+  ;;;  (proclaim '(optimize (speed 3) (safety 1) (space 1) (debug 0)))
+  ;;;  #-(and its-alive! (not debugging-alive!))
+  (proclaim '(optimize (speed 2) (safety 1) (space 1) (debug 3))))
 
 (defpackage :utils-kt
   (:nicknames #:ukt)
-  (:use #:common-lisp
+  (:use #:common-lisp #:excl
     #+(or allegro lispworks clisp) #:clos
     #+cmu  #:mop
     #+sbcl #:sb-mop

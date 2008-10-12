@@ -25,10 +25,14 @@ See the Lisp Lesser GNU Public License for more details.
 (defmodel model ()
   ((.md-name :cell nil :initform nil :initarg :md-name :accessor md-name)
    (.fm-parent :cell nil :initform nil :initarg :fm-parent :accessor fm-parent)
+   (.dbg-par :cell nil :initform nil)
    (.value :initform nil :accessor value :initarg :value)
    (register? :cell nil :initform nil :initarg :register? :reader register?)
-   (zdbg :initform nil :accessor dbg :initarg :dbg))
-  )
+   (zdbg :initform nil :accessor dbg :initarg :dbg)))
+
+(defmethod not-to-be :around ((self model))
+  (setf (slot-value self '.dbg-par) (fm-parent self)) ;; before it gets zapped
+  (call-next-method))
 
 (defmethod initialize-instance :after ((self model) &key)
   (when (register? self)
@@ -84,7 +88,6 @@ See the Lisp Lesser GNU Public License for more details.
 (defobserver expiration ()
   (when new-value
     (not-to-be self)))
-
 
 (defvar *parent* nil)
 
@@ -229,7 +232,7 @@ See the Lisp Lesser GNU Public License for more details.
   (assert self)
   (if (registry? self)
       (progn
-        (trc "fm-registering" (md-name guest) :with self)
+        ;(trc "fm-registering" (md-name guest) :with self)
         (setf (gethash (md-name guest) (registry self)) guest))
     (fm-register (fm-parent self) guest)))
 

@@ -20,7 +20,7 @@ See the Lisp Lesser GNU Public License for more details.
 (in-package :utils-kt)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(eval-now! export! assocd rassoca)))
+  (export '(eval-now! export! assocd rassoca class-proto brk)))
 
 (defmacro wdbg (&body body)
   `(let ((*dbg* t))
@@ -29,11 +29,37 @@ See the Lisp Lesser GNU Public License for more details.
 (defun assocd (x y) (cdr (assoc x y)))
 (defun rassoca (x y) (car (assoc x y)))
 
-;;;(defmethod class-slot-named ((classname symbol) slotname)
-;;;  (class-slot-named (find-class classname) slotname))
-;;;
-;;;(defmethod class-slot-named (class slotname)
-;;;  (find slotname (class-slots class) :key #'slot-definition-name))
+(defun class-proto (c)
+  (let ((cc (find-class c)))
+    (when cc
+      (finalize-inheritance cc))
+    (mop::class-prototype cc)))
+
+
+(defun brk (&rest args)
+  #+its-alive! (apply 'error args)
+  #-its-alive! (progn
+                 ;;(setf *ctk-dbg* t)
+                 (apply 'break args)))
+
+(defun find-after (x l)
+  (bIf (xm (member x l))
+    (cadr xm)
+    (brk "find-after ~a not member of ~a" x l)))
+
+(defun find-before (x l)
+  (loop with prior = nil
+        for i in l
+        if (eql i x)
+        return prior
+        else do (setf prior i)
+        finally (brk "find-before ~a not member of ~a" x l)))
+
+(defun list-insert-after (list after new )
+  (let* ((new-list (copy-list list))
+         (m (member after new-list)))
+    (rplacd m (cons new (cdr m)))
+    new-list))
 
 #+(and mcl (not openmcl-partial-mop))
 (defun class-slots (c)
@@ -49,7 +75,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defun xor (c1 c2)
   (if c1 (not c2) c2))
 
-(export! collect collect-if)
+(export! collect collect-if find-after find-before list-insert-after)
 
 (defun collect (x list &key (key 'identity) (test 'eql))
   (loop for i in list
@@ -121,6 +147,8 @@ See the Lisp Lesser GNU Public License for more details.
     (loop until (fifo-empty q)
           do (print (fifo-pop q)))))
 
+#+test
+(line-count "/openair" t 10 t)
 
 #+allegro
 (defun line-count (path &optional show-files (max-depth most-positive-fixnum) no-semis (depth 0))
@@ -167,14 +195,14 @@ See the Lisp Lesser GNU Public License for more details.
 #+(or)
 (line-count (make-pathname
              :device "c"
-             :directory `(:absolute "ALGCOUNT" ))
+             :directory `(:absolute "0algcount" ))
   nil 5 t)
 
 #+(or)
 (loop for d1 in '("cl-s3" "kpax" "puri-1.5.1" "s-base64" "s-http-client" "s-http-server" "s-sysdeps" "s-utils" "s-xml")
       summing (line-count (make-pathname
                       :device "c"
-                      :directory `(:absolute "1-devtools" ,d1))))
+                      :directory `(:absolute "0Algebra" "1-devtools" ,d1))))
 
 
 (export! tree-includes tree-traverse tree-intersect)

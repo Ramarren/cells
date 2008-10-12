@@ -14,8 +14,9 @@ the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
-$Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.21 2008/06/16 12:38:04 ktilton Exp $
+$Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.22 2008/10/12 01:21:07 ktilton Exp $
 |#
+
 
 (in-package :cells)
 
@@ -26,7 +27,7 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
      mk-part
      mk-part-spec
      upper
-     ^u
+     u^
      container
      container-typed
      
@@ -143,12 +144,19 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
 
 (defmethod container (self) (fm-parent self))
 
+;;;(defmethod container-typed ((self model-object) type)
+;;;   (let ((parent (container self))) ;; fm- or ps-parent
+;;;      (cond
+;;;       ((null parent) nil)
+;;;       ((typep parent type) parent)
+;;;       (t (container-typed parent type)))))
+
 (defmethod container-typed ((self model-object) type)
-   (let ((parent (container self))) ;; fm- or ps-parent
-      (cond
-       ((null parent) nil)
-       ((typep parent type) parent)
-       (t (container-typed parent type)))))
+  (let ((parent (fm-parent self))) ;; fm- or ps-parent
+    (cond
+     ((null parent) nil)
+     ((typep parent type) parent)
+     (t (container-typed parent type)))))
 
 (defun fm-descendant-typed (self type)
   (when self
@@ -585,6 +593,8 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
       :must-find ,must-find
       :global-search t)))
 
+
+(export! fm^v)
 (defmacro fm^v (id)
   `(value (fm^ ,id)))
 

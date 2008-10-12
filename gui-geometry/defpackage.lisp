@@ -16,7 +16,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defpackage #:gui-geometry
   (:nicknames #:geo)
-  (:use #:common-lisp #:utils-kt #:cells)
+  (:use #:common-lisp #:excl #:utils-kt #:cells)
   (:export #:geometer #:geo-zero-tl #:geo-inline #:a-stack #:a-row
     #:px #:py #:ll #:lt #:lr #:lb #:pl #:pt #:pr #:pb
     #:^px #:^py #:^ll #:^lt #:^lr #:^lb #:^lb-height

@@ -131,11 +131,15 @@ See the Lisp Lesser GNU Public License for more details.
          ,yup
        ,nope)))
 
+(defmacro b1 ((bindvar boundform) &body body)
+  `(let ((,bindvar ,boundform))
+     ,@body))
+
 (defmacro maptimes ((nvar count) &body body)
   `(loop for ,nvar below ,count
        collecting (progn ,@body)))
 
-(export! maphash* hashtable-assoc -1?1 -1?1 prime? b-if b-when)
+(export! b1 maphash* hashtable-assoc -1?1 -1?1 prime? b-if b-when)
 
 (defun maphash* (f h)
   (loop for k being the hash-keys of h
@@ -213,6 +217,7 @@ See the Lisp Lesser GNU Public License for more details.
         (head (let ((v (shuffle all)))
                 (nconc v v))))
     (lambda ()
+      ;(print (list "without-repeating-generator sees len all =" len :decent-interval decent-interval))
       (if (< len 2)
           (car all)
         (prog2
@@ -233,11 +238,17 @@ See the Lisp Lesser GNU Public License for more details.
 
 (export! without-repeating shuffle)
 
-(let ((generators (make-hash-table :test 'equalp)))
-  (defun reset-without-repeating ()
-    (setf generators (make-hash-table :test 'equalp)))
-  (defun without-repeating (key all &optional (decent-interval (floor (length all) 2)))
-    (funcall (or (gethash key generators)
-               (setf (gethash key generators)
+(defparameter *without-repeating-generators* nil)
+
+(defun reset-without-repeating ()
+  (if *without-repeating-generators*
+      (clrhash *without-repeating-generators*)
+    (setf *without-repeating-generators* (make-hash-table :test 'equalp))))
+
+(defun without-repeating (key all &optional (decent-interval (floor (length all) 2)))
+  (funcall (or (gethash key *without-repeating-generators*)
+             (progn
+               ;(print (list "without-repeating makes new gen" key :all-len (length all) :int decent-interval))
+               (setf (gethash key *without-repeating-generators*)
                  (without-repeating-generator decent-interval all))))))
 

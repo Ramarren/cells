@@ -61,7 +61,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 ;---------- gOffset -------------------
 
-(export! offset-within)
+(export! offset-within inset-lb)
 ;
 (defun offset-within (inner outer &optional dbg)
   (declare (ignorable dbg))
@@ -212,6 +212,9 @@ See the Lisp Lesser GNU Public License for more details.
 (defun inset-lb (self)
    (+ (lb self) (outset self)))
 
+(defun inset-lt (self)
+  (downs (lt self) (outset self)))
+
 (defun inset-height (self)
    (- (l-height self) (outset self) (outset self)))
 
@@ -219,7 +222,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 ;----------------------------------
 
-(export! geo-kid-wrap)
+(export! geo-kid-wrap inset-lt)
 
 (defun geo-kid-wrap (self bound)
   (funcall (ecase bound ((pl pb) '-)((pr pt) '+))

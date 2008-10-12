@@ -22,10 +22,11 @@ See the Lisp Lesser GNU Public License for more details.
   (when (c-optimized-away-p used) ;; 2005-05-21 removed slow type check that used is cell
     (trc nil "depender not being recorded because used optimized away" *depender* (c-value used) :used used)
     (return-from record-caller nil))
-  (trc nil "record-caller entry: used=" used :caller *depender*)
-  #+cool (when (and (eq :ccheck (md-name (c-model *depender*)))
-          (eq :cview (md-name (c-model used))))
-    (break "bingo"))
+  #+shhh (trc *depender* "record-caller depender entry: used=" used :caller *depender*)
+  (assert *depender*)
+  #+shhh (trc used "record-caller caller entry: used=" (qci used)
+    :caller *depender*)
+  
   (multiple-value-bind (used-pos useds-len)
       (loop with u-pos
           for known in (cd-useds *depender*)
@@ -43,7 +44,15 @@ See the Lisp Lesser GNU Public License for more details.
       (push used (cd-useds *depender*))
       (caller-ensure used *depender*) ;; 060604 experiment was in unlink
       )
-
+    (let ((cd-usage (cd-usage *depender*)))
+      (when (>= used-pos (array-dimension cd-usage 0))
+        (setf cd-usage
+          (setf (cd-usage *depender*)
+            (adjust-array (cd-usage *depender*)
+              (+ used-pos 16)
+              :initial-element 0))))
+      (setf (sbit cd-usage used-pos) 1))
+    #+nonportable
     (handler-case
         (setf (sbit (cd-usage *depender*) used-pos) 1)
       (type-error (error)
@@ -68,8 +77,7 @@ See the Lisp Lesser GNU Public License for more details.
                                 (zerop (sbit usage rpos)))
                               (progn
                                 (count-it :unlink-unused)
-                                #+save (when (eq 'mathx::progress (c-slot-name c))
-                                  (trc "c-unlink-unused" c :dropping-used (car useds)) )
+                                (trc nil "c-unlink-unused" c :dropping-used (car useds))
                                 (c-unlink-caller (car useds) c)
                                 (rplaca useds nil))
                             (progn
@@ -82,8 +90,10 @@ See the Lisp Lesser GNU Public License for more details.
                          (handle-used (incf rev-pos)))
                      (handle-used (setf rev-pos 0))))))
         (trc nil "cd-useds length" (length (cd-useds c)) c)
+        
         (nail-unused (cd-useds c))
-        (setf (cd-useds c) (delete nil (cd-useds c)))))))
+        (setf (cd-useds c) (delete nil (cd-useds c)))
+        (trc nil "useds of" c :now (mapcar 'qci (cd-useds c)))))))
 
 (defun c-caller-path-exists-p (from-used to-caller)
   (count-it :caller-path-exists-p)
@@ -95,7 +105,12 @@ See the Lisp Lesser GNU Public License for more details.
 ; ---------------------------------------------
 
 (defun cd-usage-clear-all (c)
-  (setf (cd-usage c) (blank-usage-mask)))
+  (setf (cd-usage c) (blank-usage-mask))
+  #+wowo (loop with mask = (cd-usage c)
+        for n fixnum below (array-dimension mask 0)
+        do (setf (sbit mask n) 0)
+        finally (return mask))
+  )
 
 
 ;--- unlink from used ----------------------

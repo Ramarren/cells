@@ -32,7 +32,7 @@ See the Lisp Lesser GNU Public License for more details.
   
 (defgeneric mdead (self)
   (:method ((self model-object))
-    (unless *not-to-be*
+    (unless *not-to-be* ;; weird
       (eq :eternal-rest (md-state self))))
 
   (:method (self)
@@ -40,10 +40,13 @@ See the Lisp Lesser GNU Public License for more details.
     nil))
 
 
+
 (defgeneric not-to-be (self)
-  (:method ((self list))
-    (dolist (s self)
-      (not-to-be s)))
+  (:method (other)
+    (declare (ignore other)))
+  (:method ((self cons))
+    (not-to-be (car self))
+    (not-to-be (cdr self)))
   (:method ((self array))
     (loop for s across self
           do (not-to-be s)))
@@ -53,6 +56,7 @@ See the Lisp Lesser GNU Public License for more details.
                (not-to-be v)) self))
 
   (:method ((self model-object))
+    (setf (md-census-count self) -1)
     (md-quiesce self))
 
   (:method :before ((self model-object))
@@ -65,25 +69,31 @@ See the Lisp Lesser GNU Public License for more details.
           (dbg nil))
       
       (flet ((gok ()
-               (unless (eq (md-state self) :eternal-rest)
-                 (call-next-method)
-                 
-                 (setf (fm-parent self) nil
-                   (md-state self) :eternal-rest)
-                 
-                 (md-map-cells self nil
-                   (lambda (c)
-                     (c-assert (eq :quiesced (c-state c)) ()
-                       "Cell ~a of dead model ~a not quiesced. Was not-to-be shadowed by
- a primary method? Use :before instead."))) ;; fails if user obstructs not.to-be with primary method (use :before etc)
-                 
-                 )))
+               (if (eq (md-state self) :eternal-rest)
+                   (trc nil "n2be already dead" self)
+                 (progn
+                   (call-next-method)
+                   (setf (fm-parent self) nil
+                     (md-state self) :eternal-rest)
+;;;                   (bif (a (assoc (type-of self) *awake-ct*))
+;;;                     (decf (cdr a))
+;;;                     (break "no awake for" (type-of self) *awake-ct*))
+;;;                   (setf *awake* (delete self *awake*))
+                   (md-map-cells self nil
+                     (lambda (c)
+                       (c-assert (eq :quiesced (c-state c)) ()
+                         "Cell ~a of dead model ~a not quiesced. Was not-to-be shadowed by
+ a primary method? Use :before instead." c self))) ;; fails if user obstructs not.to-be with primary method (use :before etc)
+                   
+                   ))))
         (if (not dbg)
             (gok)
           (wtrc (0 100 "not.to-be nailing" self (when (typep self 'family)
                                                   (mapcar 'type-of (slot-value self '.kids))))
             (gok)
             (when dbg (trc "finished nailing" self))))))))
+
+
 
 (defun md-quiesce (self)
   (trc nil "md-quiesce nailing cells" self (type-of self))
@@ -101,7 +111,7 @@ See the Lisp Lesser GNU Public License for more details.
      (c-unlink-from-used c)
      (dolist (caller (c-callers c))
        (setf (c-value-state caller) :uncurrent)
-       (trc nil "c-quiesce unlinking caller and making uncurrent" :q c :caller caller)
+       (trc nil "c-quiesce totlalaly unlinking caller and making uncurrent" .dpid :q c :caller caller)
        (c-unlink-caller c caller))
      (setf (c-state c) :quiesced) ;; 20061024 for debugging for now, might break some code tho
      )))
@@ -113,59 +123,104 @@ See the Lisp Lesser GNU Public License for more details.
      ,@initargs
      :fm-parent (progn (assert self) self)))
 
-(export! self-owned self-owned?)
-
-(defun (setf self-owned) (new-value self thing)
-  (if (consp thing)
-      (loop for e in thing do
-            (setf (self-owned self e) new-value))
-    (if new-value
-        (progn
-          (assert (not (find thing (z-owned self))))
-          (push thing (z-owned self)))
-      (progn
-        (assert (find thing (z-owned self)))
-        (setf (z-owned self)(delete thing (z-owned self)))))))
-
-(defun self-owned? (self thing)
-  (find thing (z-owned self)))
-
 (defvar *c-d-d*)
 (defvar *max-d-d*)
 
+(defparameter *model-pop* nil)
 
-(defun count-model (self)
+(export! md-census-start md-census-report md-census-count)
+
+(defun md-census-start ()
+  (setf *model-pop* (make-hash-table :test 'eq)))
+
+(defun (setf md-census-count) (delta self)
+  (when *model-pop*
+    (incf (gethash (type-of self) *model-pop* 0) delta)))
+
+(defun md-census-report ()
+  (when *model-pop*
+    (loop for (ct . type)
+        in (sort (let (raw)
+                   (maphash (lambda (k v)
+                              (push (cons v k) raw))
+                     *model-pop*)
+                   raw) '< :key 'car)
+        unless (zerop ct)
+        do (trc "pop" ct type))))
+
+#+test
+(md-census-report)
+
+#+test
+(md-census-count)
+
+(defun md-census-count (&optional type)
+  (when *model-pop*
+  (if type
+      (gethash type *model-pop* 0)
+    (loop for v being the hash-values of *model-pop*
+          summing v))))
+
+
+(defun count-model (self &key count-cells &aux (ccc 0))
+  
   (setf *c-d-d* (make-hash-table :test 'eq) *max-d-d* 0)
-  (with-metrics (t nil "cells statistics for" self)
-    (labels ((cc (self)
-               (count-it :thing)
-               (count-it :thing (type-of self))
-               ;(count-it :thing-type (type-of self))
-               (loop for (id . c) in (cells self)
-                   do (count-it :live-cell)
-                     ;(count-it :live-cell id)
-
-                     (typecase c
-                       (c-dependent
-                        (count-it :dependent-cell)
-                        (loop repeat (length (c-useds c))
-                            do (count-it :cell-useds)
-                              (count-it :dep-depth (c-depend-depth c))))
-                       (otherwise (if (c-inputp c)
-                                      (count-it :c-input id)
-                                    (count-it :c-unknow))))
-                     
-                     (loop repeat (length (c-callers c))
-                         do (count-it :cell-callers)))
-               
-               (loop repeat (length (cells-flushed self))
-                   do (count-it :flushed-cell #+toomuchinfo id))
-               
-               (loop for slot in (md-owning-slots self) do
-                     (loop for k in (let ((sv (SLOT-VALUE self slot)))
-                                      (if (listp sv) sv (list sv)))
-                         do (cc k)))))
-      (cc self))))
+  (let ((*counted* (make-hash-table :test 'eq :size 5000)))
+    (with-metrics (t nil "cells statistics for" self)
+      (labels ((cc (self from)
+                 (unless (gethash self *counted*)
+                   (setf (gethash self *counted*) t)
+                   (typecase self
+                     (cons (cc (car self) from)
+                       (cc (cdr self) from))
+                     #+nahhhh (mathx::box (count-it! :mathx-box-struct)
+                                    (cc (mathx::bx-mx self) from))
+                     (model
+                      (when (zerop (mod (incf ccc) 100))
+                        (trc "cc" (md-name self) (type-of self)))
+                      (count-it! :thing)
+                      (count-it! :thing (type-of self))
+                      #+nahhhh (when (typep self 'mathx::problem)
+                                (count-it! :thing-from (type-of self) (type-of from)))
+                      (when count-cells
+                        (loop for (nil . c) in (cells self)
+                            do (count-it! :live-cell)
+                              ;(count-it! :live-cell id)
+                              (when (c-lazy c)
+                                (count-it! :lazy)
+                                (count-it! :lazy (c-value-state c)))
+                              (typecase c
+                                (c-dependent
+                                 (count-it! :dependent-cell)
+                                 #+chill (loop repeat (length (c-useds c))
+                                             do (count-it! :cell-useds)
+                                               (count-it! :dep-depth (c-depend-depth c))))
+                                (otherwise (if (c-inputp c)
+                                               (progn
+                                                 (count-it! :c-input-altogether)
+                                                 ;(count-it! :c-input id)
+                                                 )
+                                             (count-it! :c-unknown))))
+                              
+                              (loop repeat (length (c-callers c))
+                                  do (count-it! :cell-callers)))
+                        
+                        (loop repeat (length (cells-flushed self))
+                            do (count-it! :flushed-cell #+toomuchinfo id)))
+                      
+                      (loop for slot in (md-owning-slots self) do
+                            (loop for k in (let ((sv (SLOT-VALUE self slot)))
+                                             (if (listp sv) sv (list sv)))
+                                do (cc k self)))
+                      #+nahhh
+                      (progn
+                        (when (typep self 'mathx::mx-optr)
+                          (cc (mathx::opnds self) from))
+                        (when (typep self 'mathx::math-expression)
+                          (count-it! :math-expression))))
+                     (otherwise
+                      (count-it (type-of self)))))))
+        (cc self nil)))))
 
 (defun c-depend-depth (ctop)
   (if (null (c-useds ctop))

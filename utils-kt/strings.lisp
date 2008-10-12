@@ -24,8 +24,8 @@ See the Lisp Lesser GNU Public License for more details.
              left$  mid$  seg$  right$  insert$  remove$
              trim$  trunc$  abbrev$  empty$ find$  num$
              normalize$  down$  lower$  up$  upper$  equal$
-              min$  numeric$  alpha$  assoc$  member$  match-left$
-             +return$+ +lf$+)))
+              min$  numeric$  alpha$  assoc$  member$  starts$
+             +return$+ +lf$+ case-string-equal)))
 
 (defmacro case$ (string-form &rest cases)
   (let ((v$ (gensym))
@@ -39,6 +39,19 @@ See the Lisp Lesser GNU Public License for more details.
                         `((string-equal ,v$ ,(car case-forms)) ,@(rest case-forms)))
                     cases)
           (t ,@(or (cdr default) `(nil)))))))
+
+(defmacro case-string-equal (string-form &rest cases)
+  (let ((v$ (gensym))
+        (default (or (find 'otherwise cases :key #'car)
+                   (find 'otherwise cases :key #'car))))
+    (when default
+      (setf cases (delete default cases)))
+    `(let ((,v$ ,string-form))
+       (cond
+        ,@(mapcar (lambda (case-forms)
+                    `((string-equal ,v$ ,(string (car case-forms))) ,@(rest case-forms)))
+            cases)
+        (t ,@(or (cdr default) `(nil)))))))
 
 ;--------
 
@@ -200,8 +213,9 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro member$ (item list &rest kws)
    `(member ,item ,list :test #'string= ,@kws))
 
-(defun match-left$ (a b) 
-  (string-equal a (subseq b 0 (length a))))
+(defun starts$ (a b)
+  (bwhen (s (search b a))
+    (zerop s)))
 
 (defparameter *return$* (conc$ (char$ #\return) (char$ #\linefeed)))
 (defparameter *lf$* (string #\linefeed))

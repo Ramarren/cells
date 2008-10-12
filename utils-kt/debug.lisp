@@ -40,7 +40,7 @@ See the Lisp Lesser GNU Public License for more details.
   `(if ,onp
        (let ((*counting* (cons t *counting*)))
          (prog2
-           (count-clear ,@msg)
+           (count-clear nil ,@msg)
              (progn ,@body)
            (show-count t ,@msg)))
      (progn ,@body)))
@@ -48,28 +48,38 @@ See the Lisp Lesser GNU Public License for more details.
 (defun count-of (key)
   (cdr (assoc key *count* :key 'car)))
   
-(defun count-clear (&rest msg)
+(defun count-clear (announce &rest msg)
   (declare (ignorable msg))
-  (format t "~&count-clear > ~a" msg)
+  (when announce (format t "~&count-clear > ~a" msg))
   (setf *count* nil))
 
 (defmacro count-it (&rest keys)
   (declare (ignorable keys))
+  #+nahhh
   `(progn)
-  #+(or) `(when (car *counting*)
+  `(when (car *counting*)
+     (call-count-it ,@keys)))
+
+(export! count-it!)
+(defmacro count-it! (&rest keys)
+  (declare (ignorable keys))
+  #+(and its-alive! (not debugging-alive!))
+  `(progn)
+  #-(and its-alive! (not debugging-alive!))
+  `(when (car *counting*)
      (call-count-it ,@keys)))
 
 (defun call-count-it (&rest keys)
     (declare (ignorable keys))
   #+nahh (when (find (car keys) '(:trcfailed :TGTNILEVAL))
-    (break "clean up time ~a" keys))
+           (break "clean up time ~a" keys))
   (let ((entry (assoc keys *count* :test #'equal)))
       (if entry
           (setf (cdr entry) (1+ (cdr entry)))
         (push (cons keys 1) *count*))))
 
-(defun show-count (clearp &rest msg)
-  (format t "~&Counts after: clearp ~a, length ~d: ~s" clearp (length *count*) msg)
+(defun show-count (clearp &rest msg &aux announced)
+  
   (let ((res (sort (copy-list *count*) (lambda (v1 v2)
                                            (let ((v1$ (symbol-name (caar v1)))
                                                  (v2$ (symbol-name (caar v2))))
@@ -81,10 +91,11 @@ See the Lisp Lesser GNU Public License for more details.
          for occs = (cdr entry)
          when (plusp occs)
            sum occs into running
-           and do (format t "~&~4d ... ~2d ... ~s" running occs (car entry))))
-  (when clearp (count-clear "show-count")))
-  
-
+           and do (unless announced
+                    (setf announced t)
+                    (format t "~&Counts after: clearp ~a, length ~d: ~s" clearp (length *count*) msg))
+           (format t "~&~4d ... ~2d ... ~(~{~a ~}~)" running occs (car entry))))
+  (when clearp (count-clear announced "show-count" )))
                
 ;-------------------- timex ---------------------------------
 

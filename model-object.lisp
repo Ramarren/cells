@@ -21,7 +21,7 @@ See the Lisp Lesser GNU Public License for more details.
 ;;; --- model-object ----------------------
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(md-name fm-parent .parent z-owned)))
+  (export '(md-name fm-parent .parent )))
 
 (defclass model-object ()
   ((.md-state :initform :nascent :accessor md-state) ; [nil | :nascent | :alive | :doomed]
@@ -29,9 +29,9 @@ See the Lisp Lesser GNU Public License for more details.
    (.cells :initform nil :accessor cells)
    (.cells-flushed :initform nil :accessor cells-flushed
                    :documentation "cells supplied but un-whenned or optimized-away")
-   (adopt-ct :initform 0 :accessor adopt-ct)
-   (z-owned :initform nil :accessor z-owned ;; experimental, not yet operative
-     :documentation "Things such as kids to be taken down when self is taken down")))
+   (adopt-ct :initform 0 :accessor adopt-ct)))
+
+(defmethod register? ((self model-object)))
 
 (defmethod md-state ((self symbol))
   :alive)
@@ -40,6 +40,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmethod shared-initialize :after ((self model-object) slotnames
                                       &rest initargs &key fm-parent)
   (declare (ignorable initargs slotnames fm-parent))
+  (setf (md-census-count self) 1) ;; bad idea if we get into reinitializing
   ;
   ; for convenience and transparency of mechanism we allow client code 
   ; to intialize a slot to a cell, but we want the slot to hold the functional
@@ -104,8 +105,23 @@ See the Lisp Lesser GNU Public License for more details.
 ; -- do initial evaluation of all ruled slots
 ; -- call observers of all slots
 
+
+
+(export! md-awake-ct md-awake-ct-ct)
+(defun md-awake-ct ()
+  *awake-ct*)
+
+(defun md-awake-ct-ct ()
+  (reduce '+ *awake-ct* :key 'cdr))
+
+
 (defmethod md-awaken :around ((self model-object))
-  (when (eql :nascent (md-state self))
+  (when (eql :nascent (md-state self))	
+    #+nahh (bif (a (assoc (type-of self) *awake-ct*))
+             (incf (cdr a))
+             (push (cons (type-of self) 1) *awake-ct*))
+    ;(trc "awake" (type-of self))
+    #+chya (push self *awake*)
     (call-next-method))
   self)
 
@@ -159,7 +175,6 @@ See the Lisp Lesser GNU Public License for more details.
               (when flushed
                 (setf (c-pulse-observed flushed) *data-pulse-id*)) ;; probably unnecessary
               (slot-value-observe slot-name self (bd-slot-value self slot-name) nil nil flushed))))
-
 
          ((find (c-lazy c) '(:until-asked :always t))
           (trc nil "md-awaken deferring c-awaken since lazy" 
@@ -263,6 +278,9 @@ See the Lisp Lesser GNU Public License for more details.
                  (md-slot-owning? st sn))
           collect sn))))
 
+#+test
+(md-slot-owning? 'cells::family '.kids)
+
 (defun md-slot-value-store (self slot-name new-value)
   (trc nil "md-slot-value-store" self slot-name new-value)
   (if self
@@ -290,12 +308,15 @@ See the Lisp Lesser GNU Public License for more details.
         ; before any dependency-ing could have happened, but a math-editor
         ; is silently switching between implied-multiplication and mixed numbers
         ; while they type and it 
-        (let ((old (cdr entry))) ;; s/b being supplanted by kid-slotter
-          (declare (ignorable old))
-          (c-assert (null (c-callers old)))
-          (c-assert (null (cd-useds old)))
-          (trc nil "replacing in model .cells" old new-cell self)
-          (rplacd entry new-cell))
+        (progn
+          (trc nil "second cell same slot:" slot-name :old entry :new new-cell)
+          (let ((old (cdr entry))) ;; s/b being supplanted by kid-slotter
+            (declare (ignorable old))
+            (c-assert (null (c-callers old)))
+            (when (typep entry 'c-dependent)
+              (c-assert (null (cd-useds old))))
+            (trc nil "replacing in model .cells" old new-cell self)
+            (rplacd entry new-cell)))
         (progn
           (trc nil "adding to model .cells" new-cell self)
           (push (cons slot-name new-cell)

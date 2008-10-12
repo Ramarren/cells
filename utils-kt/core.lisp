@@ -17,6 +17,8 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :utils-kt)
 
+
+
 (defmacro with-gensyms ((&rest symbols) &body body)
   `(let ,(loop for sym in symbols
              collecting `(,sym (gensym ,(string sym))))
@@ -47,7 +49,7 @@ resulting in implementation-specific behavior."
       ,@(when docstring (list docstring)))))
 
 (defun test-setup (&optional drib)
-  #+(and allegro ide)
+  #+(and allegro ide (or (not its-alive!) debugging-alive!))
   (ide.base::find-new-prompt-command
    (cg.base::find-window :listener-frame))
   (when drib
@@ -58,8 +60,9 @@ resulting in implementation-specific behavior."
 (export! test-setup test-prep test-init)
 (export! project-path)
 (defun project-path ()
-  #+(and allegro ide)
-  (excl:path-pathname (ide.base::project-file ide.base:*current-project*)))
+  #+(and allegro ide (not its-alive!))
+  (excl:path-pathname (ide.base::project-file ide.base:*current-project*))
+  )
 
 #+test
 (test-setup)

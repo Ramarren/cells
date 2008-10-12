@@ -4,9 +4,9 @@
 (defvar *obs-1-count*)
 
 (defmodel deep ()
-  ((cell-2 :cell :ephemeral :initform (c-in 'two) :accessor :cell-2)
-   (cell-1 :initform (c? (list 'one (^cell-2) (^cell-3))) :accessor :cell-1)
-   (cell-3 :initform (c-in 'c3-unset) :accessor :cell-3)))
+  ((cell-2 :cell :ephemeral :initform (c-in 'two) :accessor cell-2)
+   (cell-1 :initform (c? (list 'one (^cell-2) (^cell-3))) :accessor cell-1)
+   (cell-3 :initform (c-in 'c3-unset) :accessor cell-3)))
 
 (defobserver cell-1 ()
   (trc "cell-1 observer raw now enqueing client to run first. (new,old)=" new-value old-value)

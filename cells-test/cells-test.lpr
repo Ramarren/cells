@@ -1,4 +1,4 @@
-;; -*- lisp-version: "8.1 [Windows] (Apr 3, 2008 23:47)"; cg: "1.103.2.10"; -*-
+;; -*- lisp-version: "8.1 [Windows] (Oct 11, 2008 17:00)"; cg: "1.103.2.10"; -*-
 
 (in-package :cg-user)
 
@@ -16,8 +16,11 @@
                  (make-instance 'module :name "test-cycle.lisp")
                  (make-instance 'module :name "test-ephemeral.lisp")
                  (make-instance 'module :name "test-synapse.lisp")
-                 (make-instance 'module :name "deep-cells.lisp"))
-  :projects (list (make-instance 'project-module :name "..\\cells"))
+                 (make-instance 'module :name "deep-cells.lisp")
+                 (make-instance 'module :name "clos-training.lisp")
+                 (make-instance 'module :name "do-req.lisp"))
+  :projects (list (make-instance 'project-module :name "..\\cells"
+                                 :show-modules nil))
   :libraries nil
   :distributed-files nil
   :internally-loaded-files nil
@@ -94,6 +97,7 @@
   :old-space-size 256000
   :new-space-size 6144
   :runtime-build-option :standard
+  :build-number 0
   :on-initialization 'cells::test-cells
   :on-restart 'do-default-restart)
 

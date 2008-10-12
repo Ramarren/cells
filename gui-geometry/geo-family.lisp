@@ -17,7 +17,7 @@ See the Lisp Lesser GNU Public License for more details.
 (in-package :gui-geometry)
 
 (export! geo-inline-lazy ^px-self-centered justify py-maintain-pt
-                       ^prior-sib-pb spacing lr-maintain-pr)
+  ^prior-sib-pb spacing lr-maintain-pr orientation)
 
 ;--------------- geo-inline -----------------------------
 ;
@@ -146,7 +146,10 @@ See the Lisp Lesser GNU Public License for more details.
              (setf pl 0
                pt (+ max-pb (downs (^spacing-vt))))
              
-           collect (cons pl pt) into pxys
+           collect (cons (+ pl (case (justify self)
+                                 (:center (/ (- kw (l-width k)) 2))
+                                 (:right (- kw (l-width k)))
+                                 (otherwise 0))) pt) into pxys
            do (incf pl (+ kw (^spacing-hz)))
              (setf max-pb (min max-pb (+ pt (downs (l-height k)))))
            finally (return (cons max-pb pxys)))))
