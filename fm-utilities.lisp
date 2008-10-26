@@ -689,27 +689,26 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
    (when (consp md-name) (cadr md-name)))
 
 (defun fm-find-one (family md-name &key (must-find t)
-                     (global-search t) skip-tree (test #'true-that)
-                     &aux diag)
+		    (global-search t) skip-tree (test #'true-that)
+		    &aux diag)
   (count-it :fm-find-one)
   (flet ((matcher (fm)
            (when diag
              (trc nil
-               "fm-find-one matcher sees name" (md-name fm) :ofthing (type-of fm) :seeking md-name global-search))
+		  "fm-find-one matcher sees name" (md-name fm) :ofthing (type-of fm) :seeking md-name global-search))
            (when (and (eql (name-root md-name)(md-name fm))
-                   (or (null (name-subscript md-name))
-                     (eql (name-subscript md-name) (fm-pos fm)))
-                   (progn
-                     (when diag
-                       (trc "fm-find-one testing" fm))
-                     (funcall test fm)))
+		      (or (null (name-subscript md-name))
+			  (eql (name-subscript md-name) (fm-pos fm)))
+		      (progn
+			(when diag
+			  (trc "fm-find-one testing" fm))
+			(funcall test fm)))
              (throw 'fm-find-one fm))))
-    #-lispworks (declare (dynamic-extent matcher))
     (trc nil "fm-find-one> entry " md-name family)    
     (let ((match (catch 'fm-find-one
                    (fm-traverse family #'matcher
-                     :skip-tree skip-tree
-                     :global-search global-search))))
+				:skip-tree skip-tree
+				:global-search global-search))))
       (when (and must-find (null match))
         (trc "fm-find-one > erroring fm-not-found, in family: " family :seeking md-name :global? global-search)
         (setq diag t must-find nil)

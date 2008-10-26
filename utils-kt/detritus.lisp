@@ -33,7 +33,7 @@ See the Lisp Lesser GNU Public License for more details.
   (let ((cc (find-class c)))
     (when cc
       (finalize-inheritance cc))
-    (mop::class-prototype cc)))
+    (class-prototype cc)))
 
 
 (defun brk (&rest args)

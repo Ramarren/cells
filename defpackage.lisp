@@ -23,7 +23,7 @@
 (in-package :common-lisp-user)
 
 (defpackage :cells
-  (:use #:common-lisp #:excl #:utils-kt)
+  (:use #:common-lisp #:utils-kt)
   (:import-from
    ;; MOP
    #+allegro #:excl
