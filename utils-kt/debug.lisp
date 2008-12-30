@@ -32,7 +32,7 @@ See the Lisp Lesser GNU Public License for more details.
     *stop* nil
     *dbg* nil)
   
- (print "----------UTILSRESET----------------------------------"))
+ )
 
 ;------------- counting ---------------------------
 
