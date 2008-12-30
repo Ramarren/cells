@@ -119,14 +119,14 @@ the defmodel form for ~a" ',class ',class))))
                                   (md-slot-value self ',slotname)))
                             ,(when unchanged-if
                                `(def-c-unchanged-test (,class ,slotname) ,unchanged-if)))))))
-           slotspecs))
-     (loop for slotspec in ',slotspecs
-         do (destructuring-bind
-                (slotname &rest slotargs &key (cell t) owning &allow-other-keys)
-                slotspec
-              (declare (ignorable slotargs))
-              (when (and cell owning)
-                (setf (md-slot-owning-direct? ',class slotname) owning))))))
+           slotspecs)
+       (loop for slotspec in ',slotspecs
+             do (destructuring-bind
+                      (slotname &rest slotargs &key (cell t) owning &allow-other-keys)
+                    slotspec
+                  (declare (ignorable slotargs))
+                  (when (and cell owning)
+                    (setf (md-slot-owning-direct? ',class slotname) owning)))))))
 
 (defun defmd-canonicalize-slot (slotname
                                 &key
