@@ -58,30 +58,32 @@ See the Lisp Lesser GNU Public License for more details.
      ;
      ; -------  defclass ---------------  (^slot-value ,model ',',slotname)
      ;
+     ;; create class before prog1 to shut up "can't find type for specializer CLASS in" warnings
+     ;; prog1 kills toplevelness, and eval-when :compile-toplevel part from sbcl defclass is dropped
+     (defclass ,class ,(or directsupers '(model-object)) ;; now we can def the class
+       ,(mapcar (lambda (s)
+                  (list* (car s)
+                         (let ((ias (cdr s)))
+                           (remf ias :persistable)
+                           (remf ias :ps)
+                           ;; We handle accessor below
+                           (when (getf ias :cell t)
+                             (remf ias :reader)
+                             (remf ias :writer)
+                             (remf ias :accessor))
+                           (remf ias :cell)
+                           (remf ias :owning)
+                           (remf ias :unchanged-if)
+                           ias))) (mapcar #'copy-list slotspecs))
+       (:documentation
+        ,@(or (cdr (find :documentation options :key #'car))
+              '("chya")))
+       (:default-initargs ;; nil ok and needed: acl oddity in re not clearing d-i's sans this
+           ,@(cdr (find :default-initargs options :key #'car)))
+       (:metaclass ,(or (cadr (find :metaclass options :key #'car))
+                        'standard-class)))
      (prog1
-         (defclass ,class ,(or directsupers '(model-object)) ;; now we can def the class
-           ,(mapcar (lambda (s)
-                      (list* (car s)
-                        (let ((ias (cdr s)))
-                          (remf ias :persistable)
-                          (remf ias :ps)
-                          ;; We handle accessor below
-                          (when (getf ias :cell t)
-                            (remf ias :reader)
-                            (remf ias :writer)
-                            (remf ias :accessor))
-                          (remf ias :cell)
-                          (remf ias :owning)
-                          (remf ias :unchanged-if)
-                          ias))) (mapcar #'copy-list slotspecs))
-           (:documentation
-            ,@(or (cdr (find :documentation options :key #'car))
-                '("chya")))
-           (:default-initargs ;; nil ok and needed: acl oddity in re not clearing d-i's sans this
-               ,@(cdr (find :default-initargs options :key #'car)))
-           (:metaclass ,(or (cadr (find :metaclass options :key #'car))
-                          'standard-class)))
-       
+         (find-class ,class)
        (defmethod shared-initialize :after ((self ,class) slot-names &rest iargs &key)
          (declare (ignore slot-names iargs))
          ,(when (and directsupers (not (member 'model-object directsupers)))
