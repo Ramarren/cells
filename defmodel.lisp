@@ -83,7 +83,7 @@ See the Lisp Lesser GNU Public License for more details.
        (:metaclass ,(or (cadr (find :metaclass options :key #'car))
                         'standard-class)))
      (prog1
-         (find-class ,class)
+         (find-class ',class)
        (defmethod shared-initialize :after ((self ,class) slot-names &rest iargs &key)
          (declare (ignore slot-names iargs))
          ,(when (and directsupers (not (member 'model-object directsupers)))
