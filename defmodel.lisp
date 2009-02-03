@@ -23,41 +23,41 @@ See the Lisp Lesser GNU Public License for more details.
   `(progn
      (setf (get ',class :cell-types) nil)
      (setf (get ',class 'slots-excluded-from-persistence)
-       (loop for slotspec in ',slotspecs
-           unless (and (getf (cdr slotspec) :ps t)
-                    (getf (cdr slotspec) :persistable t))
-           collect (car slotspec)))
+           (loop for slotspec in ',slotspecs
+                 unless (and (getf (cdr slotspec) :ps t)
+                             (getf (cdr slotspec) :persistable t))
+                   collect (car slotspec)))
      (loop for slotspec in ',slotspecs
-         do (destructuring-bind
-                (slotname &rest slotargs
-                  &key (cell t)      
-                  &allow-other-keys)
-                slotspec
-              (declare (ignorable slotargs))
-              (when cell
-                (setf (md-slot-cell-type ',class slotname) cell))))
+           do (destructuring-bind
+                    (slotname &rest slotargs
+                     &key (cell t)      
+                     &allow-other-keys)
+                  slotspec
+                (declare (ignorable slotargs))
+                (when cell
+                  (setf (md-slot-cell-type ',class slotname) cell))))
      ;; define slot macros before class so they can appear in
      ;; initforms and default-initargs 
      ,@(loop for slotspec in slotspecs
-           nconcing (destructuring-bind
-                        (slotname &rest slotargs
-                          &key (cell t) (accessor slotname) reader
-                          &allow-other-keys)
-                        slotspec
-                      (declare (ignorable slotargs ))
-                      (when cell
-                        (list (let* ((reader-fn (or reader accessor))
-                                     (deriver-fn (intern$ "^" (symbol-name reader-fn))))
-                                `(eval-when (:compile-toplevel :execute :load-toplevel)
-                                   (unless (macro-function ',deriver-fn)
-                                     (defmacro ,deriver-fn ()
-                                       `(,',reader-fn self)))
-                                   #+sbcl (unless (fboundp ',reader-fn)
-                                            (defgeneric ,reader-fn (slot)))))))))
+             nconcing (destructuring-bind
+                            (slotname &rest slotargs
+                             &key (cell t) (accessor slotname) reader
+                             &allow-other-keys)
+                          slotspec
+                        (declare (ignorable slotargs ))
+                        (when cell
+                          (list (let* ((reader-fn (or reader accessor))
+                                       (deriver-fn (intern$ "^" (symbol-name reader-fn))))
+                                  `(eval-when (:compile-toplevel :execute :load-toplevel)
+                                     (unless (macro-function ',deriver-fn)
+                                       (defmacro ,deriver-fn ()
+                                         `(,',reader-fn self)))
+                                     #+sbcl (unless (fboundp ',reader-fn)
+                                              (defgeneric ,reader-fn (slot)))))))))
      
-     ;
-     ; -------  defclass ---------------  (^slot-value ,model ',',slotname)
-     ;
+                                        ;
+                                        ; -------  defclass ---------------  (^slot-value ,model ',',slotname)
+                                        ;
      ;; create class before prog1 to shut up "can't find type for specializer CLASS in" warnings
      ;; prog1 kills toplevelness, and eval-when :compile-toplevel part from sbcl defclass is dropped
      (defclass ,class ,(or directsupers '(model-object)) ;; now we can def the class
@@ -92,14 +92,14 @@ See the Lisp Lesser GNU Public License for more details.
 or indirectly from model-object, model-object must be included as a direct super-class in
 the defmodel form for ~a" ',class ',class))))
        
-       ;
-       ; slot accessors once class is defined...
-       ;
+                                        ;
+                                        ; slot accessors once class is defined...
+                                        ;
        ,@(mapcar (lambda (slotspec)
                    (destructuring-bind
-                       (slotname &rest slotargs
-                         &key (cell t) unchanged-if (accessor slotname) reader writer type
-                         &allow-other-keys)
+                         (slotname &rest slotargs
+                          &key (cell t) unchanged-if (accessor slotname) reader writer type
+                          &allow-other-keys)
                        slotspec
                      
                      (declare (ignorable slotargs))
@@ -109,17 +109,21 @@ the defmodel form for ~a" ',class ',class))))
                               )
                          `(progn
                             ,(when writer-fn
-                               `(defmethod (setf ,writer-fn) (new-value (self ,class))
-                                  (setf (md-slot-value self ',slotname)
-                                    ,(if type
-                                         `(coerce new-value ',type)
-                                       'new-value))))
+                               `(progn
+                                  (ensure-generic-function (setf ,writer-fn) (new-value (self ,class)))
+                                  (defmethod (setf ,writer-fn) (new-value (self ,class))
+                                    (setf (md-slot-value self ',slotname)
+                                          ,(if type
+                                               `(coerce new-value ',type)
+                                               'new-value)))))
                             ,(when reader-fn
-                               `(defmethod ,reader-fn ((self ,class))
-                                  (md-slot-value self ',slotname)))
+                               `(progn
+                                  (ensure-generic-function ,reader-fn ((self ,class)))
+                                  (defmethod ,reader-fn ((self ,class))
+                                    (md-slot-value self ',slotname))))
                             ,(when unchanged-if
                                `(def-c-unchanged-test (,class ,slotname) ,unchanged-if)))))))
-           slotspecs)
+                 slotspecs)
        (loop for slotspec in ',slotspecs
              do (destructuring-bind
                       (slotname &rest slotargs &key (cell t) owning &allow-other-keys)
