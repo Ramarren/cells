@@ -110,7 +110,7 @@ the defmodel form for ~a" ',class ',class))))
                          `(progn
                             ,(when writer-fn
                                `(progn
-                                  (ensure-generic-function (setf ,writer-fn) (new-value (self ,class)))
+                                  (ensure-generic-function '(setf ,writer-fn) '(new-value (self ,class)))
                                   (defmethod (setf ,writer-fn) (new-value (self ,class))
                                     (setf (md-slot-value self ',slotname)
                                           ,(if type
@@ -118,7 +118,7 @@ the defmodel form for ~a" ',class ',class))))
                                                'new-value)))))
                             ,(when reader-fn
                                `(progn
-                                  (ensure-generic-function ,reader-fn ((self ,class)))
+                                  (ensure-generic-function ',reader-fn '((self ,class)))
                                   (defmethod ,reader-fn ((self ,class))
                                     (md-slot-value self ',slotname))))
                             ,(when unchanged-if
