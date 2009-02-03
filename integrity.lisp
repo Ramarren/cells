@@ -18,7 +18,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (in-package :cells)
 
-(define-constant *ufb-opcodes* '(:tell-dependents
+(define-constant +ufb-opcodes+ '(:tell-dependents
                                  :awaken
                                  :client
                                  :ephemeral-reset
@@ -27,8 +27,8 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro with-integrity ((&optional opcode defer-info debug) &rest body)
   (declare (ignorable debug))
   (when opcode
-    (assert (find opcode *ufb-opcodes*) ()
-      "Invalid opcode for with-integrity: ~a. Allowed values: ~a" opcode *ufb-opcodes*))
+    (assert (find opcode +ufb-opcodes+) ()
+      "Invalid opcode for with-integrity: ~a. Allowed values: ~a" opcode +ufb-opcodes+))
   `(call-with-integrity ,opcode ,defer-info
      (lambda (opcode defer-info)
        (declare (ignorable opcode defer-info))
