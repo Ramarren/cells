@@ -16,14 +16,16 @@
   :licence "MIT Style"
   :description "Kenny's Utilities"
   :long-description "Low-level utilities used by all of Kenny's projects"
-  :components ((:file "defpackage")
-               (:file "core" :depends-on ("defpackage"))
-               (:file "debug" :depends-on ("core"))
-               (:file "flow-control" :depends-on ("core" "debug"))
-               (:file "detritus" :depends-on ("core" "debug"))
-               (:file "strings" :depends-on ("core" "debug"))
-               (:file "datetime" :depends-on ("core" "debug"))
-               (:file "split-sequence" :depends-on ("core" "debug"))))
+  :components ((:module "utils-kt"
+                        :components
+                        ((:file "defpackage")
+                         (:file "core" :depends-on ("defpackage"))
+                         (:file "debug" :depends-on ("core"))
+                         (:file "flow-control" :depends-on ("core" "debug"))
+                         (:file "detritus" :depends-on ("core" "debug"))
+                         (:file "strings" :depends-on ("core" "debug"))
+                         (:file "datetime" :depends-on ("core" "debug"))
+                         (:file "split-sequence" :depends-on ("core" "debug"))))))
 
 (defmethod perform ((o load-op) (c (eql (find-system :utils-kt))))
   ; (pushnew "CELLS" *modules* :test #'string=)
