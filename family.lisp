@@ -51,8 +51,11 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmethod print-object ((self model) s)
   #+shhh (format s "~a" (type-of self))
-  (format s "~a~a" (if (mdead self) "DEAD!" "")
-    (or (md-name self) (type-of self))))
+  (if (and (slot-boundp self '.md-state)
+           (slot-boundp self '.md-name))
+      (format s "~a~a" (if (mdead self) "DEAD!" "")
+              (or (md-name self) (type-of self)))
+      (format s "UNINITIALIZED-~a" (type-of self))))
 
 (define-symbol-macro .parent (fm-parent self))
 (define-symbol-macro .pa (fm-parent self))
