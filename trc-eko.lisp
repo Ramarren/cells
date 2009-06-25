@@ -25,28 +25,26 @@ See the Lisp Lesser GNU Public License for more details.
 (defun trcdepth-reset ()
   (setf *trcdepth* 0))
 
-;; (defmacro trc (tgt-form &rest os)
-;;   (if (eql tgt-form 'nil)
-;;       '(progn)
-;;     (if (stringp tgt-form)
-;;         `(without-c-dependency
-;;           (call-trc t ,tgt-form ,@os))
-;;       (let ((tgt (gensym)))
-;;         ;(break "slowww? ~a" tgt-form)
-;;         `(without-c-dependency
-;;           (bif (,tgt ,tgt-form)
-;;             (if (trcp ,tgt)
-;;                 (progn
-;;                   (assert (stringp ,(car os)) () "trc with test expected string second, got ~a" ,(car os))
-;;                   (call-trc t ,@os)) ;;,(car os) ,tgt ,@(cdr os)))
-;;               (progn
-;;                 ;(trc "trcfailed")
-;;                 (count-it :trcfailed)))
-;;             (count-it :tgtnileval)))))))
+(defvar *trc-stream* (make-broadcast-stream))
 
-(defmacro trc (&rest ignore)
-  (declare (ignore ignore))
-  nil)
+(defmacro trc (tgt-form &rest os)
+  (if (eql tgt-form 'nil)
+      '(progn)
+    (if (stringp tgt-form)
+        `(without-c-dependency
+          (call-trc *trc-stream* ,tgt-form ,@os))
+      (let ((tgt (gensym)))
+        ;(break "slowww? ~a" tgt-form)
+        `(without-c-dependency
+          (bif (,tgt ,tgt-form)
+            (if (trcp ,tgt)
+                (progn
+                  (assert (stringp ,(car os)) () "trc with test expected string second, got ~a" ,(car os))
+                  (call-trc *trc-stream* ,@os)) ;;,(car os) ,tgt ,@(cdr os)))
+              (progn
+                ;(trc "trcfailed")
+                (count-it :trcfailed)))
+            (count-it :tgtnileval)))))))
 
 (defun call-trc (stream s &rest os)
   ;(break)
