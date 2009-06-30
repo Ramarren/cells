@@ -32,10 +32,9 @@
    #+cormanlisp #:common-lisp
    #+lispworks #:clos
    #+sbcl #:sb-mop
-   #+openmcl-partial-mop #:openmcl-mop
-   #+(and mcl (not openmcl-partial-mop)) #:ccl
+   #+(or ccl mcl) #:ccl
    
-   #-(or allegro clisp cmu cormanlisp lispworks mcl sbcl)
+   #-(or allegro clisp cmu cormanlisp lispworks mcl ccl sbcl)
    #.(cerror "Provide a package name."
        "Don't know how to find the MOP package for this Lisp.")
    
