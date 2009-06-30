@@ -36,6 +36,24 @@ See the Lisp Lesser GNU Public License for more details.
                 (declare (ignorable slotargs))
                 (when cell
                   (setf (md-slot-cell-type ',class slotname) cell))))
+     ;; ensure accessors generic functions
+     ,@(mapcan (lambda (slotspec)
+                 (destructuring-bind
+                       (slotname &rest slotargs
+                        &key (cell t) unchanged-if (accessor slotname) reader writer type
+                        &allow-other-keys)
+                     slotspec
+                   (declare (ignorable slotargs unchanged-if type))
+                   (when cell
+                     (let ((reader-fn (or reader accessor))
+                           (writer-fn (or writer accessor)))
+                       (remove nil
+                               (list
+                                (when reader-fn
+                                  `(ensure-generic-function ',reader-fn :lambda-list '(self)))
+                                (when writer-fn
+                                  `(ensure-generic-function '(setf ,writer-fn) :lambda-list '(new-value self)))))))))
+               slotspecs)
      ;; define slot macros before class so they can appear in
      ;; initforms and default-initargs 
      ,@(loop for slotspec in slotspecs
@@ -51,15 +69,10 @@ See the Lisp Lesser GNU Public License for more details.
                                   `(eval-when (:compile-toplevel :execute :load-toplevel)
                                      (unless (macro-function ',deriver-fn)
                                        (defmacro ,deriver-fn ()
-                                         `(,',reader-fn self)))
-                                     #+sbcl (unless (fboundp ',reader-fn)
-                                              (defgeneric ,reader-fn (slot)))))))))
-     
+                                         `(,',reader-fn self)))))))))
                                         ;
                                         ; -------  defclass ---------------  (^slot-value ,model ',',slotname)
                                         ;
-     ;; create class before prog1 to shut up "can't find type for specializer CLASS in" warnings
-     ;; prog1 kills toplevelness, and eval-when :compile-toplevel part from sbcl defclass is dropped
      (defclass ,class ,(or directsupers '(model-object)) ;; now we can def the class
        ,(mapcar (lambda (s)
                   (list* (car s)
@@ -82,55 +95,50 @@ See the Lisp Lesser GNU Public License for more details.
            ,@(cdr (find :default-initargs options :key #'car)))
        (:metaclass ,(or (cadr (find :metaclass options :key #'car))
                         'standard-class)))
-     (progn
-       (defmethod shared-initialize :after ((self ,class) slot-names &rest iargs &key)
-         (declare (ignore slot-names iargs))
-         ,(when (and directsupers (not (member 'model-object directsupers)))
-            `(unless (typep self 'model-object)
-               (error "If no superclass of ~a inherits directly
+     (defmethod shared-initialize :after ((self ,class) slot-names &rest iargs &key)
+       (declare (ignore slot-names iargs))
+       ,(when (and directsupers (not (member 'model-object directsupers)))
+          `(unless (typep self 'model-object)
+             (error "If no superclass of ~a inherits directly
 or indirectly from model-object, model-object must be included as a direct super-class in
 the defmodel form for ~a" ',class ',class))))
        
                                         ;
                                         ; slot accessors once class is defined...
                                         ;
-       ,@(mapcar (lambda (slotspec)
-                   (destructuring-bind
-                         (slotname &rest slotargs
-                          &key (cell t) unchanged-if (accessor slotname) reader writer type
-                          &allow-other-keys)
-                       slotspec
+     ,@(mapcan (lambda (slotspec)
+                 (destructuring-bind
+                       (slotname &rest slotargs
+                        &key (cell t) unchanged-if (accessor slotname) reader writer type
+                        &allow-other-keys)
+                     slotspec
                      
-                     (declare (ignorable slotargs))
-                     (when cell
-                       (let* ((reader-fn (or reader accessor))
-                              (writer-fn (or writer accessor))
-                              )
-                         `(progn
-                            ,(when writer-fn
-                               `(progn
-                                  (ensure-generic-function '(setf ,writer-fn) :lambda-list '(new-value self))
-                                  (defmethod (setf ,writer-fn) (new-value (self ,class))
-                                    (setf (md-slot-value self ',slotname)
-                                          ,(if type
-                                               `(coerce new-value ',type)
-                                               'new-value)))))
-                            ,(when reader-fn
-                               `(progn
-                                  (ensure-generic-function ',reader-fn :lambda-list '(self))
-                                  (defmethod ,reader-fn ((self ,class))
-                                    (md-slot-value self ',slotname))))
-                            ,(when unchanged-if
-                               `(def-c-unchanged-test (,class ,slotname) ,unchanged-if)))))))
-                 slotspecs)
-       (loop for slotspec in ',slotspecs
-             do (destructuring-bind
-                      (slotname &rest slotargs &key (cell t) owning &allow-other-keys)
-                    slotspec
-                  (declare (ignorable slotargs))
-                  (when (and cell owning)
-                    (setf (md-slot-owning-direct? ',class slotname) owning))))
-       (find-class ',class))))
+                   (declare (ignorable slotargs))
+                   (when cell
+                     (let* ((reader-fn (or reader accessor))
+                            (writer-fn (or writer accessor)))
+                       (remove nil
+                               (list
+                                (when writer-fn
+                                  `(defmethod (setf ,writer-fn) (new-value (self ,class))
+                                     (setf (md-slot-value self ',slotname)
+                                           ,(if type
+                                                `(coerce new-value ',type)
+                                                'new-value))))
+                                (when reader-fn
+                                  `(defmethod ,reader-fn ((self ,class))
+                                     (md-slot-value self ',slotname)))
+                                (when unchanged-if
+                                  `(def-c-unchanged-test (,class ,slotname) ,unchanged-if))))))))
+               slotspecs)
+     (loop for slotspec in ',slotspecs
+           do (destructuring-bind
+                    (slotname &rest slotargs &key (cell t) owning &allow-other-keys)
+                  slotspec
+                (declare (ignorable slotargs))
+                (when (and cell owning)
+                  (setf (md-slot-owning-direct? ',class slotname) owning))))
+     (find-class ',class)))
 
 (defun defmd-canonicalize-slot (slotname
                                 &key
