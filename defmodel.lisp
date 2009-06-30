@@ -82,8 +82,7 @@ See the Lisp Lesser GNU Public License for more details.
            ,@(cdr (find :default-initargs options :key #'car)))
        (:metaclass ,(or (cadr (find :metaclass options :key #'car))
                         'standard-class)))
-     (prog1
-         (find-class ',class)
+     (progn
        (defmethod shared-initialize :after ((self ,class) slot-names &rest iargs &key)
          (declare (ignore slot-names iargs))
          ,(when (and directsupers (not (member 'model-object directsupers)))
@@ -130,7 +129,8 @@ the defmodel form for ~a" ',class ',class))))
                     slotspec
                   (declare (ignorable slotargs))
                   (when (and cell owning)
-                    (setf (md-slot-owning-direct? ',class slotname) owning)))))))
+                    (setf (md-slot-owning-direct? ',class slotname) owning))))
+       (find-class ',class))))
 
 (defun defmd-canonicalize-slot (slotname
                                 &key
