@@ -44,8 +44,8 @@
    #:class-direct-subclasses
    )
   (:export #:cell #:.md-name 
-           #:c-input #:c-in #:c-in8
-           #:c-formula #:c? #:c_? #:c?8 #:c?_ #:c??
+           #:c-input #:c-in
+           #:c-formula #:c? #:c_? #:c?_ #:c??
            #:with-integrity #:without-c-dependency #:self #:*parent*
            #:.cache #:.with-c-cache #:c-lambda
            #:defmodel #:defmd #:defobserver #:slot-value-observe #:def-c-unchanged-test
