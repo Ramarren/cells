@@ -84,7 +84,8 @@ See the Lisp Lesser GNU Public License for more details.
 (export! print-cell-model)
 
 (defgeneric print-cell-model (md)
-  (:method (other) (print-object other nil)))
+  (:method (other) (with-output-to-string (str)
+                     (print-object other str))))
 
 (defmethod trcp :around ((c cell))
   (and ;*c-debug*
