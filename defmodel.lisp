@@ -50,9 +50,11 @@ See the Lisp Lesser GNU Public License for more details.
                        (remove nil
                                (list
                                 (when reader-fn
-                                  `(ensure-generic-function ',reader-fn :lambda-list '(self)))
+                                  `(eval-when (:compile-toplevel :load-toplevel :execute)
+                                     (ensure-generic-function ',reader-fn :lambda-list '(self))))
                                 (when writer-fn
-                                  `(ensure-generic-function '(setf ,writer-fn) :lambda-list '(new-value self)))))))))
+                                  `(eval-when (:compile-toplevel :load-toplevel :execute)
+                                     (ensure-generic-function '(setf ,writer-fn) :lambda-list '(new-value self))))))))))
                slotspecs)
      ;; define slot macros before class so they can appear in
      ;; initforms and default-initargs 
