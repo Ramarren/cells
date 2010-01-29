@@ -36,7 +36,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defpackage :utils-kt
   (:nicknames #:ukt)
   (:use #:common-lisp
-    #+(or allegro lispworks clisp) #:clos
+    #+(or allegro lispworks clisp ecl) #:clos
     #+cmu  #:mop
     #+sbcl #:sb-mop
     #+openmcl-partial-mop #:openmcl-mop
