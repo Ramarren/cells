@@ -6,7 +6,7 @@
 ;;;(operate 'load-op :asdf-aclproj)
 ;;;(use-package :asdf-aclproj)
 
-#+(or allegro lispworks cmu mcl ccl clisp cormanlisp sbcl scl ecl)
+#+(or allegro lispworks cmu mcl ccl clisp cormanlisp sbcl scl ecl abcl)
 
 (asdf:defsystem :utils-kt
   :name "utils-kt"

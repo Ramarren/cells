@@ -40,6 +40,7 @@ See the Lisp Lesser GNU Public License for more details.
     #+cmu  #:mop
     #+sbcl #:sb-mop
     #+openmcl-partial-mop #:openmcl-mop
+    #+abcl #:mop
     #+(and mcl (not openmcl-partial-mop))  #:ccl)
   (:export 
    #:export!
