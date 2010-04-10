@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -29,7 +29,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (export! mdead)
 ;___________________ birth / death__________________________________
-  
+
 (defgeneric mdead (self)
   (:method ((self model-object))
     (unless *not-to-be* ;; weird - let's folks function for not-to-be cleanup
@@ -74,7 +74,7 @@ See the Lisp Lesser GNU Public License for more details.
     (declare (ignorable self))
     (let ((*not-to-be* t)
           (dbg nil))
-      
+
       (flet ((gok ()
                (if (or (eq (md-state self) :eternal-rest)
                      (md-doomed self))
@@ -90,7 +90,7 @@ See the Lisp Lesser GNU Public License for more details.
                        (c-assert (eq :quiesced (c-state c)) ()
                          "Cell ~a of dead model ~a not quiesced. Was not-to-be shadowed by
  a primary method? Use :before instead." c self))) ;; fails if user obstructs not.to-be with primary method (use :before etc)
-                   
+
                    ))))
         (if (not dbg)
             (gok)
@@ -112,7 +112,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun c-quiesce (c)
   (typecase c
-    (cell 
+    (cell
      (trc nil "c-quiesce unlinking" c)
      (c-unlink-from-used c)
      (dolist (caller (c-callers c))
@@ -172,7 +172,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 
 (defun count-model (self &key count-cells &aux (ccc 0))
-  
+
   (setf *c-d-d* (make-hash-table :test 'eq) *max-d-d* 0)
   (let ((*counted* (make-hash-table :test 'eq :size 5000)))
     (with-metrics (t nil "cells statistics for" self)
@@ -210,13 +210,13 @@ See the Lisp Lesser GNU Public License for more details.
                                                  ;(count-it! :c-input id)
                                                  )
                                              (count-it! :c-unknown))))
-                              
+
                               (loop repeat (length (c-callers c))
                                   do (count-it! :cell-callers)))
-                        
+
                         (loop repeat (length (cells-flushed self))
                             do (count-it! :flushed-cell #+toomuchinfo id)))
-                      
+
                       (loop for slot in (md-owning-slots self) do
                             (loop for k in (let ((sv (slot-value self slot)))
                                              (if (listp sv) sv (list sv)))
@@ -251,4 +251,3 @@ See the Lisp Lesser GNU Public License for more details.
                      (1+ (loop for u in (c-useds c)
                              maximizing (cdd u (1+ depth) (cons c chain))))))))
         (cdd ctop)))))
-    

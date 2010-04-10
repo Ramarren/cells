@@ -38,8 +38,3 @@
       (loop repeat 5 do
             (trc "changing bottom by -1" *data-pulse-id*)
             (decf (bottom box))))))
-  
-
-
-
-

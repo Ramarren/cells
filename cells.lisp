@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -20,7 +20,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 I don't like the way with-cc defers twice, first the whole thing and then when the
 body finally runs we are still within the original integrity and each setf gets queued
-to UFB separately before md-slot-value-assume finally runs. I think all that is going on here 
+to UFB separately before md-slot-value-assume finally runs. I think all that is going on here
 is that we want the programmer to use with-cc to show they know the setf will not be returning
 a useful value. But since they have coded the with-cc we should be able to figure out a way to
 let those SETFs thru as if they were outside integrity, and then we get a little less UFBing
@@ -64,7 +64,7 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
         (loop for c2 in (c-callers c)
             do (explore-caller c2))
         (loop for c2 in (c-useds c)
-            do 
+            do
               (explore-used c2)))
   .bgo)
 
@@ -133,7 +133,7 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
 
 (defun cells-reset (&optional client-queue-handler &key debug)
   (utils-kt-reset)
-  (setf 
+  (setf
    *c-debug* debug
    *c-prop-depth* 0
    *not-to-be* nil
@@ -170,7 +170,7 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
 
 (defmacro c-assert (assertion &optional places fmt$ &rest fmt-args)
   (declare (ignorable assertion places fmt$ fmt-args))
-   #+(or)`(progn) 
+   #+(or)`(progn)
   `(unless *stop*
      (unless ,assertion
        ,(if fmt$
@@ -181,7 +181,7 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
 (defvar *depender* nil)
 ;; 2008-03-15: *depender* let's us differentiate between the call stack and
 ;; and dependency. The problem with overloading *call-stack* with both roles
-;; is that we miss cyclic reentrance when we use without-c-dependency in a 
+;; is that we miss cyclic reentrance when we use without-c-dependency in a
 ;; rule to get "once" behavior or just when fm-traversing to find someone
 
 (defmacro def-c-trace (model-type &optional slot cell-type)

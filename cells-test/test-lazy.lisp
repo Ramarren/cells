@@ -8,19 +8,19 @@
   (let ((test-name (intern (format nil "TEST ~A" name))))
     `(progn
        (defun ,test-name ()
-	 (let ((name ',name)
-	       (form ',form)
-	       (expected-values ',values)
-	       (actual-values (multiple-value-list
-			       (handler-case ,form
-				 (error (val) val)))))
-	   (assert (equal actual-values ',values) (actual-values)
-		   "Test ~S failed~% ~
+         (let ((name ',name)
+               (form ',form)
+               (expected-values ',values)
+               (actual-values (multiple-value-list
+                               (handler-case ,form
+                                 (error (val) val)))))
+           (assert (equal actual-values ',values) (actual-values)
+                   "Test ~S failed~% ~
                     Form: ~A~% ~
                     Expected values: ~{~S~^; ~}~% ~
                     Actual values: ~{~S~^; ~}"
-		   name form expected-values actual-values)
-	   ',name))
+                   name form expected-values actual-values)
+           ',name))
        (pushnew ',name *tests*)
        ',name)))
 
@@ -65,58 +65,58 @@
 (deftest unbound-values
     (let ((self (make-instance 'unbound-values)))
       (values (unbound-error-p (test-val1 self))
-	      (unbound-error-p (test-val2 self))))
+              (unbound-error-p (test-val2 self))))
   t t)
 
 (deftest md-slot-makunbound
     (let ((self (progn (make-instance 'unbound-values
-			 'val1 (c-in nil) 'val2 (c-in nil)))))
+                         'val1 (c-in nil) 'val2 (c-in nil)))))
       (md-slot-makunbound self 'val1)
       (md-slot-makunbound self 'val2)
       (values (unbound-error-p (test-val1 self))
-	      (unbound-error-p (test-val2 self))))
+              (unbound-error-p (test-val2 self))))
   t t)
 
 (deftest formula-depends-on-unbound
     (let ((obj1 (progn (make-instance 'unbound-formulas)))
-	  (obj2 (progn (make-instance 'unbound-formulas))))
+          (obj2 (progn (make-instance 'unbound-formulas))))
       (values ;(unbound-error-p (test-formula obj1))
-	      (unbound-error-p (test-lazy-formula obj1))
+              (unbound-error-p (test-lazy-formula obj1))
 
-	      (unbound-error-p (test-lazy-formula obj2))
-	      ;(unbound-error-p (test-formula obj2))
+              (unbound-error-p (test-lazy-formula obj2))
+              ;(unbound-error-p (test-formula obj2))
        ))
   t t)
 
 (deftest unbound-ok-for-unbound-formulas
     (unbound-error-p
      (progn (let ((self (progn (make-instance 'unbound-formulas))))
-	      (setf (test-val1 self) t
-		    (test-val2 self) t))
-	    (let ((self (progn (make-instance 'unbound-formulas))))
-	      (setf (test-val2 self) t
-		    (test-val1 self) t))))
+              (setf (test-val1 self) t
+                    (test-val2 self) t))
+            (let ((self (progn (make-instance 'unbound-formulas))))
+              (setf (test-val2 self) t
+                    (test-val1 self) t))))
   nil)
 
 (deftest unbound-errs-for-eager
     (let ((self (progn (make-instance 'unbound-formulas2
-			 'val1 (c-in 1) 'val2 (c-in 2)))))
+                         'val1 (c-in 1) 'val2 (c-in 2)))))
       (values (test-formula self)
-	     (unbound-error-p (md-slot-makunbound self 'val1))
-	     (unbound-error-p (md-slot-makunbound self 'val2))
+             (unbound-error-p (md-slot-makunbound self 'val1))
+             (unbound-error-p (md-slot-makunbound self 'val2))
         ))
   2 t t
   )
 
 (deftest unbound-ok-for-unchecked-lazy
     (let ((self (progn (make-instance 'unbound-formulas
-			 'val1 (c-in 1) 'val2 (c-in 2)))))
+                         'val1 (c-in 1) 'val2 (c-in 2)))))
       (values (test-lazy-formula self)
-	      (unbound-error-p (md-slot-makunbound self 'val1))
-	      (unbound-error-p (md-slot-makunbound self 'val2))))
+              (unbound-error-p (md-slot-makunbound self 'val1))
+              (unbound-error-p (md-slot-makunbound self 'val2))))
   2 nil nil)
 
-#+(or) 
+#+(or)
 (cv-test-lazy)
 
 (defparameter *lz1-count* 0)

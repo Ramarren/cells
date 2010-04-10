@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -164,10 +164,10 @@ See the Lisp Lesser GNU Public License for more details.
     ; to "tell". I think. :) So...
     ; END OF OLD THINKING
     ;
-    ; We now allow :awaken to change things so more dependents need to be told. The problem is the implicit 
-    ; dependence on the /life/ of a model whenever there is a dependence on any /cell/ of that model. 
-    ; md-quiesce currently just flags such slots as uncurrent -- maybe /that/ should change and those should 
-    ; recalculate at once -- and then an /observer/ can run and ask for a new value from such an uncurrent cell, 
+    ; We now allow :awaken to change things so more dependents need to be told. The problem is the implicit
+    ; dependence on the /life/ of a model whenever there is a dependence on any /cell/ of that model.
+    ; md-quiesce currently just flags such slots as uncurrent -- maybe /that/ should change and those should
+    ; recalculate at once -- and then an /observer/ can run and ask for a new value from such an uncurrent cell,
     ; which now knows it must recalculate. And that recalculation of course can and likely will come up with a new value
     ; and perforce need to tell its dependents. So...
     ;
@@ -176,15 +176,15 @@ See the Lisp Lesser GNU Public License for more details.
     ; arise, and there was not even any perceived integrity whole being closed, it was just a gratuitous
     ; QA trick, and indeed for a long time many nested tells were avoidable. But the case of the quiesced
     ; dependent reverses the arrow and puts the burden on the prosecution to prove nested tells are a problem.
-    
+
     (bwhen (uqp (fifo-peek (ufb-queue :tell-dependents)))
       #+xxx (trc "retelling dependenst, one new one being" uqp)
       (go tell-dependents))
-    
+
     ;--- process client queue ------------------------------
     ;
     (when *stop* (return-from finish-business))
-    
+
     handle-clients
     (bwhen (clientq (ufb-queue :client))
       (if *client-queue-handler*
@@ -203,7 +203,7 @@ See the Lisp Lesser GNU Public License for more details.
     ; of cells3, I coded an ephemeral cell and initialized it to non-nil, hitting a runtime
     ; error (now gone) saying I had no idea what a non-nil ephemeral would mean. That had been
     ; my conclusion when the idea occurred to me the first time, so I stuck in an assertion
-    ; to warn off callers. 
+    ; to warn off callers.
     ;
     ; But the new
     ; datachange progression defined by Cells3 had already forced me to manage ephemeral resets
@@ -212,7 +212,7 @@ See the Lisp Lesser GNU Public License for more details.
     ; run. deep-cells looks to behave just right, but maybe a tougher test will present a problem?
     ;
     (just-do-it :ephemeral-reset)
-    
+
     ;--- do deferred state changes -----------------------
     ;
     (bwhen (task-info (fifo-pop (ufb-queue :change)))
@@ -230,5 +230,3 @@ See the Lisp Lesser GNU Public License for more details.
         ; want to inspect the history on the stack.
         ;
         (go tell-dependents)))))
-
-

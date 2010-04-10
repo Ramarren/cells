@@ -26,4 +26,3 @@
 
 (defmethod perform :after ((op load-op) (system (eql (find-system :cells-test))))
   (funcall (find-symbol "TEST-CELLS" "CELLS")))
-

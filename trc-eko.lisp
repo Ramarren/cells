@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -82,7 +82,7 @@ See the Lisp Lesser GNU Public License for more details.
          (call-trc t ,(format nil "TX> ~(~s~)" tgt-form)
            ,@(loop for obj in (or os (list tgt-form))
                    nconcing (list (intern (format nil "~a" obj) :keyword) obj))))))
-  
+
 (defun call-trc-to-string (fmt$ &rest fmt-args)
     (let ((o$ (make-array '(0) :element-type 'base-char
                 :fill-pointer 0 :adjustable t)))
@@ -99,7 +99,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmethod trcp (($ string))
   t)
-  
+
 
 
 (defmacro wtrc ((&optional (min 1) (max 50) &rest banner) &body body )
@@ -131,7 +131,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro wnotrc ((&optional (min 1) (max 50) &rest banner) &body body )
   (declare (ignore min max banner))
   `(progn ,@body))
-  
+
 ;------ eko --------------------------------------
 
 (defmacro eko ((&rest trcargs) &rest body)
@@ -161,4 +161,3 @@ See the Lisp Lesser GNU Public License for more details.
          (when ,label
            (trc ,label ,result))
          ,result)))
-

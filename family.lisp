@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -86,7 +86,7 @@ See the Lisp Lesser GNU Public License for more details.
   (when (slot-boundp self '.md-name)
     (unless (md-name self)
       (setf (md-name self) (gentemp (string (c-class-name (class-of self)))))))
- 
+
   (when (and (slot-boundp self '.fm-parent)
           (fm-parent self)
           (zerop (adopt-ct self)))
@@ -167,13 +167,13 @@ See the Lisp Lesser GNU Public License for more details.
       `(let ((,kid ,self))
           (find-prior ,kid (kids (fm-parent ,kid))))))
 
-(defun md-be-adopted (self &aux (fm-parent (fm-parent self)) (selftype (type-of self))) 
+(defun md-be-adopted (self &aux (fm-parent (fm-parent self)) (selftype (type-of self)))
   (c-assert self)
   (c-assert fm-parent)
   (c-assert (typep fm-parent 'family))
-  
+
   (trc nil "md be adopted >" :kid self (adopt-ct self) :by fm-parent)
-  
+
   (when (plusp (adopt-ct self))
     (c-break "2nd adopt ~a, by ~a" self fm-parent))
 
@@ -269,6 +269,3 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmacro rg! (id)
   `(fm-find-registered ,id self))
-
-
-               

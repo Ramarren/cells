@@ -19,7 +19,7 @@
   (trc "cell-2 observer raw now enqueing change and client to run second. (new,old)=" new-value old-value)
   (with-integrity (:change)
     (trc "cell-2 observer :change now running" *client-log*)
-    (ct-assert (equal *client-log* '((one two c3-unset) two c3-unset))) 
+    (ct-assert (equal *client-log* '((one two c3-unset) two c3-unset)))
     (setf (^cell-3) (case new-value (two 'three) (otherwise 'trouble))))
   (with-integrity (:client 2)
     (trc "client cell-2 :client running")
@@ -48,6 +48,3 @@
   (ct-assert (eql 2 *obs-1-count*)) ;; because the cell-2 observer does a setf on something used by c1
   (trc "testing *client-log*" *client-log*)
   (ct-assert (tree-equal *client-log* '((one nil three) three))))
-
-
-    

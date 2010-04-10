@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -42,7 +42,7 @@ See the Lisp Lesser GNU Public License for more details.
                                 (delta-greater-or-equal
                                  (delta-abs (delta-diff new-value prior-fire-value subtypename)
                                    subtypename)
-                                 (delta-abs sensitivity subtypename) 
+                                 (delta-abs sensitivity subtypename)
                                  subtypename)))
                             :propagate
                           :no-propagate)))
@@ -78,7 +78,7 @@ See the Lisp Lesser GNU Public License for more details.
            (values delta-cum propagation-code)))))
 
 (defmacro f-plusp (key &rest body)
-  `(with-synapse ,key (prior-fire-value) 
+  `(with-synapse ,key (prior-fire-value)
      (let ((new-basis (progn ,@body)))
        (values new-basis (if (xor prior-fire-value (plusp new-basis))
                              (progn
@@ -87,7 +87,7 @@ See the Lisp Lesser GNU Public License for more details.
                            :no-propagate)))))
 
 (defmacro f-zerop (key &rest body)
-  `(with-synapse ,key (prior-fire-value) 
+  `(with-synapse ,key (prior-fire-value)
      (let ((new-basis (progn ,@body)))
        (values new-basis (if (xor prior-fire-value (zerop new-basis))
                              (progn
@@ -110,7 +110,7 @@ See the Lisp Lesser GNU Public License for more details.
 ;;;                                            ;--- losing one? ----
 ;;;                                            (not (member old new-list))) ;; all olds have passed test, so skip test here
 ;;;                                        prior-list)))
-;;;             
+;;;
 ;;;             :fire-value (lambda (syn new-list)
 ;;;                                (declare (ignorable syn))
 ;;;                                ;/// excess consing on long lists
@@ -130,7 +130,7 @@ See the Lisp Lesser GNU Public License for more details.
 ;;;                                (or bingo
 ;;;                                    (and (not bingobound) ;; don't bother if fire? already looked
 ;;;                                         (find-if finder-fn new-list))))))
-                                
+
 ;;;(defun fdifferent ()
 ;;;  (mk-synapse (prior-object)
 ;;;    :fire-p (lambda (syn new-object)
@@ -138,7 +138,7 @@ See the Lisp Lesser GNU Public License for more details.
 ;;;              (trc nil  "fDiff: prior,new" (not (eql new-object prior-object))
 ;;;                prior-object new-object)
 ;;;              (not (eql new-object prior-object)))
-;;;    
+;;;
 ;;;    :fire-value (lambda (syn new-object)
 ;;;                   (declare (ignorable syn))
 ;;;                   (unless (eql new-object prior-object)
@@ -148,5 +148,3 @@ See the Lisp Lesser GNU Public License for more details.
 
 ;;;(defun f-boolean (&optional (sensitivity 't))
 ;;;  (f-delta :sensitivity sensitivity :type 'boolean))
-        
-

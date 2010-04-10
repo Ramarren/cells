@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -48,7 +48,7 @@ See the Lisp Lesser GNU Public License for more details.
             :report "Reset cells and retry getting the slot value."
             (cells-reset)
             (go retry))))))
-  
+
   ;; (count-it :md-slot-value slot-name)
   (if c
       (cell-read c)
@@ -61,7 +61,7 @@ See the Lisp Lesser GNU Public License for more details.
         (ensure-value-is-current c :c-read nil))
     (when *depender*
       (record-caller c))))
-  
+
 (defun chk (s &optional (key 'anon))
   (when (mdead s)
     (break "model ~a is dead at ~a" s key)))
@@ -83,36 +83,36 @@ See the Lisp Lesser GNU Public License for more details.
   ;(trc "evic entry" (qci c))
   (wtrcx (:on? nil) ("evic>" (qci c) debug-id (qci ensurer))
     ;(count-it! :ensure.value-is-current )
-    #+chill 
+    #+chill
     (when ensurer ; (trcp c)
       (count-it! :ensure.value-is-current (c-slot-name c) (md-name (c-model c))(c-slot-name ensurer) (md-name (c-model ensurer))))
     #+chill
     (when (and *c-debug* (trcp c)
             (> *data-pulse-id* 650))
       (bgo ens-high))
-    
+
     (trc nil ; c ;; (and *c-debug* (> *data-pulse-id* 495)(trcp c))
       "ensure.value-is-current > entry1" debug-id (qci c) :st (c-state c) :vst (c-value-state c)
-      :my/the-pulse (c-pulse c) *data-pulse-id* 
+      :my/the-pulse (c-pulse c) *data-pulse-id*
       :current (c-currentp c) :valid (c-validp c))
-    
+
     #+nahhh
     (when ensurer
       (trc (and *c-debug* (> *data-pulse-id* 495)(trcp c))
-        "ensure.value-is-current > entry2" 
+        "ensure.value-is-current > entry2"
         :ensurer (qci ensurer)))
-    
+
     (when *not-to-be*
       (when (c-unboundp c)
         (error 'unbound-cell :cell c :instance (c-model c) :name (c-slot-name c)))
       (return-from ensure-value-is-current
         (when (c-validp c) ;; probably accomplishes nothing
           (c-value c))))
-    
+
     (when (and (not (symbolp (c-model c))) ;; damn, just here because of playing around with global vars and cells
             (eq :eternal-rest (md-state (c-model c))))
       (break "model ~a of cell ~a is dead" (c-model c) c))
-    
+
     (cond
      ((c-currentp c)
       (count-it! :ensvc-is-indeed-currentp)
@@ -126,7 +126,7 @@ See the Lisp Lesser GNU Public License for more details.
                (eq (cd-optimize c) :when-value-t)
                (null (c-value c)))))
       (trc nil "evic: cool: inputp" (qci c)))
-     
+
      ((or (bwhen (nv (not (c-validp c)))
             (count-it! :ens-val-not-valid)
             (trc nil "not c-validp, gonna run regardless!!!!!!" c)
@@ -158,20 +158,20 @@ See the Lisp Lesser GNU Public License for more details.
       (calculate-and-set c :evic ensurer)
       (trc nil "kicked off calc-set of!!!!" (c-state c) (c-validp c) (qci c) :vstate (c-value-state c)
         :stamped (c-pulse c) :current-pulse *data-pulse-id*))
-     
+
      #+bahhhh ;; 2009-12-27 not sure on this. Idea is to keep the dead around as static data. Might be better not to let data go dead
      ((mdead (c-value c))
       (trc  "ensure.value-is-current> trying recalc of ~a with current but dead value ~a" c (c-value c))
       (let ((new-v (calculate-and-set c :evic-mdead ensurer)))
         (trc  "ensure.value-is-current> GOT new value ~a to replace dead!!" new-v)
         new-v))
-     
+
      (t (trc nil "ensure.current decided current, updating pulse" (c-slot-name c) debug-id)
        (c-pulse-update c :valid-uninfluenced)))
-    
+
     (when (c-unboundp c)
       (error 'unbound-cell :cell c :instance (c-model c) :name (c-slot-name c)))
-    
+
     (bwhen (v (c-value c))
       #-its-alive!
       (when (mdead v)
@@ -197,18 +197,18 @@ See the Lisp Lesser GNU Public License for more details.
                      for n below (length *call-stack*)
                      do (trc "caller> " caller #+shhh (cr-code caller))
                        when (eq caller c) do (loop-finish))))
-             (setf *stop* t)  
+             (setf *stop* t)
              (c-break ;; break is problem when testing cells on some CLs
               "cell ~a midst askers (see above)" c)
              (error 'asker-midst-askers :cell c))
-  
+
            (multiple-value-bind (raw-value propagation-code)
                (calculate-and-link c)
-             
+
              (when (and *c-debug* (typep raw-value 'cell))
                (c-break "new value for cell ~s is itself a cell: ~s. probably nested (c? ... (c? ))"
                  c raw-value))
-             
+
              (unless (c-optimized-away-p c)
                ; this check for optimized-away-p arose because a rule using without-c-dependency
                ; can be re-entered unnoticed since that clears *call-stack*. If re-entered, a subsequent
@@ -239,14 +239,14 @@ See the Lisp Lesser GNU Public License for more details.
   (unless c
     (c-break ":md-slot-makunbound > cellular slot ~a of ~a cannot be unbound unless initialized as inputp"
       slot-name self))
-  
+
   (when (c-unboundp c)
     (return-from md-slot-makunbound nil))
 
   (when *within-integrity* ;; 2006-02 oops, bad name
     (c-break "md-slot-makunbound of ~a must be deffered by wrapping code in with-integrity" c))
-  
-  ; 
+
+  ;
   ; Big change here for Cells III: before, only the propagation was deferred. Man that seems
   ; wrong. So now the full makunbound processing gets deferred. Less controversially,
   ; by contrast the without-c-dependency wrapped everything, and while that is harmless,
@@ -276,12 +276,12 @@ See the Lisp Lesser GNU Public License for more details.
     (trc "mdsetf>" self (type-of self) slot-name :new new-value))
   (when *c-debug*
     (c-setting-debug self slot-name c new-value))
-  
+
   (unless c
-    (c-break "cellular slot ~a of ~a cannot be SETFed because it is not 
-mediated by a Cell with :inputp t. To achieve this, the initial value ~s -- whether 
-supplied as an :initform, :default-initarg, or at make-instance time via 
-an :initarg -- should be wrapped in either macro C-IN or C-INPUT. 
+    (c-break "cellular slot ~a of ~a cannot be SETFed because it is not
+mediated by a Cell with :inputp t. To achieve this, the initial value ~s -- whether
+supplied as an :initform, :default-initarg, or at make-instance time via
+an :initarg -- should be wrapped in either macro C-IN or C-INPUT.
 In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
       slot-name self (slot-value self slot-name)))
 
@@ -296,12 +296,12 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
     (with-integrity (:change slot-name)
       (md-slot-value-assume c new-value nil))))
 
-  ;; new-value 
+  ;; new-value
   ;; above line commented out 2006-05-01. It seems to me we want the value assumed by the slot
   ;; not the value setf'ed (on rare occasions they diverge, or at least used to for delta slots)
   ;; anyway, if they no longer diverge the question of which to return is moot
   )
-                    
+
 (defun md-slot-value-assume (c raw-value propagation-code)
   (assert c)
   (trc nil "md-slot-value-assume entry" (qci c)(c-state c))
@@ -322,22 +322,22 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
           (return-from md-slot-value-assume absorbed-value))
 
         ; --- slot maintenance ---
-        
-        (unless (c-synaptic c) 
+
+        (unless (c-synaptic c)
           (md-slot-value-store (c-model c) (c-slot-name c) absorbed-value))
-        
+
         ; --- cell maintenance ---
         (setf
          (c-value c) absorbed-value
          (c-value-state c) :valid
          (c-state c) :awake)
-        
+
         (case (and (typep c 'c-dependent)
                    (cd-optimize c))
           ((t) (c-optimize-away?! c)) ;;; put optimize test here to avoid needless linking
           (:when-value-t (when (c-value c)
                            (c-unlink-from-used c))))
-        
+
         ; --- data flow propagation -----------
         (unless (eq propagation-code :no-propagate)
           (trc nil "md-slot-value-assume flagging as changed: prior state, value:" prior-state prior-value )
@@ -369,15 +369,15 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
           (not (c-inputp c)) ;; yes, dependent cells can be inputp
           )
     ;; (when (trcp c) (break "go optimizing ~a" c))
-    
+
     (when (trcp c)
       (trc "optimizing away" c (c-state c) (rassoc c (cells (c-model c)))(rassoc c (cells-flushed (c-model c))))
       )
 
     (count-it :c-optimized)
-    
+
     (setf (c-state c) :optimized-away)
-    
+
     (let ((entry (rassoc c (cells (c-model c)))))
       (unless entry
         (describe c)
@@ -388,7 +388,7 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
       (setf (cells (c-model c)) (delete entry (cells (c-model c))))
       #-its-alive! (push entry (cells-flushed (c-model c)))
       )
-    
+
     (dolist (caller (c-callers c) )
       ;
       ; example: on window shutdown with a tool-tip displayed, the tool-tip generator got
@@ -401,5 +401,3 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
       ;;; (trc "nested opti" c caller)
       (c-optimize-away?! caller) ;; rare but it happens when rule says (or .cache ...)
       )))
-
-    

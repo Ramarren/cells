@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -83,7 +83,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 #+test
 (let ((*kenny* 13)) (print *kenny*))
-     
+
 #+test
 (let ((c (c-in 42)))
   (md-install-cell '*test-c-variable* '*test-c-variable* c)
@@ -115,4 +115,3 @@ See the Lisp Lesser GNU Public License for more details.
       (inspect c)
       ))
   )
-

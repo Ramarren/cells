@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -49,7 +49,7 @@ See the Lisp Lesser GNU Public License for more details.
   (setf (md-census-count self) 1) ;; bad idea if we get into reinitializing
   (md-awake-record self)
   ;
-  ; for convenience and transparency of mechanism we allow client code 
+  ; for convenience and transparency of mechanism we allow client code
   ; to intialize a slot to a cell, but we want the slot to hold the functional
   ; value, partly for ease of inspection, partly for performance, mostly
   ; because sometimes we are a slave to other libraries, such as a persistence
@@ -58,7 +58,7 @@ See the Lisp Lesser GNU Public License for more details.
   ; here we shuttle cells out of the slots and into a per-instance dictionary of cells,
   ; as well as tell the cells what slot and instance they are mediating.
   ;
-  
+
   (when (slot-boundp self '.md-state)
     (loop for esd in (class-slots (class-of self))
         for sn = (slot-definition-name esd)
@@ -105,16 +105,16 @@ See the Lisp Lesser GNU Public License for more details.
     (if self
         (setf (slot-value self slot-name) c)
       (setf (symbol-value slot-name) c))))
-  
-  
+
+
 ;;; --- awaken --------
 ;
 ; -- do initial evaluation of all ruled slots
 ; -- call observers of all slots
 
 (defmethod md-awaken :around ((self model-object))
-  (when (eql :nascent (md-state self))	
-    
+  (when (eql :nascent (md-state self))
+
     ;(trc "awake" (type-of self))
     ;;#-its-alive!
     (call-next-method))
@@ -134,11 +134,11 @@ See the Lisp Lesser GNU Public License for more details.
   (c-assert (eql :nascent (md-state self)))
   (count-it :md-awaken)
   ;(count-it 'mdawaken (type-of self))
-  
+
   ; ---
 
   (setf (md-state self) :awakening)
-  
+
   (dolist (esd (class-slots (class-of self)))
     (bwhen (sct (md-slot-cell-type (type-of self) (slot-definition-name esd)))
       (let* ((slot-name (slot-definition-name esd))
@@ -148,7 +148,7 @@ See the Lisp Lesser GNU Public License for more details.
                        (slot-value self slot-name)))
             (when (typep sv 'cell)
               (c-break "md-awaken ~a found cell ~a in slot ~a" self sv esd))))
-        
+
         (cond
          ((not c)
           ;; all slots must hit any change handlers as instances come into existence to get
@@ -163,7 +163,7 @@ See the Lisp Lesser GNU Public License for more details.
           ;; until 2007-10 (unless (cdr (assoc slot-name (cells-flushed self))) ;; make sure not flushed
           ;; but first I worried about it being slow keeping the flushed list /and/ searching, then
           ;; I wondered why a flushed cell should not be observed, constant cells are. So Just Observe It
-          
+
           (let ((flushed (md-slot-cell-flushed self slot-name)))
             (when (or (null flushed) ;; constant, ie, never any cell provided for this slot
                     (> *data-pulse-id* (c-pulse-observed flushed))) ;; unfrickinlikely
@@ -172,7 +172,7 @@ See the Lisp Lesser GNU Public License for more details.
               (slot-value-observe slot-name self (bd-slot-value self slot-name) nil nil flushed))))
 
          ((find (c-lazy c) '(:until-asked :always t))
-          (trc nil "md-awaken deferring c-awaken since lazy" 
+          (trc nil "md-awaken deferring c-awaken since lazy"
             self esd))
 
          ((eq :nascent (c-state c))
@@ -180,13 +180,13 @@ See the Lisp Lesser GNU Public License for more details.
           (c-assert (eq :nascent (c-state c)))
           (trc nil "c-awaken > awakening" c)
           (count-it :c-awaken)
-                
+
           (setf (c-state c) :awake)
           (awaken-cell c))))))
-  
+
   (setf (md-state self) :awake)
   self)
-  
+
 ;;; --- utilities, accessors, etc --------------------------------------
 
 (defmethod c-slot-value ((self model-object) slot)
@@ -302,7 +302,7 @@ See the Lisp Lesser GNU Public License for more details.
         ; this next branch guessed it would only occur during kid-slotting,
         ; before any dependency-ing could have happened, but a math-editor
         ; is silently switching between implied-multiplication and mixed numbers
-        ; while they type and it 
+        ; while they type and it
         (progn
           (trc nil "second cell same slot:" slot-name :old entry :new new-cell)
           (let ((old (cdr entry))) ;; s/b being supplanted by kid-slotter

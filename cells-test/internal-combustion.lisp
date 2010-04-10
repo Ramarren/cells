@@ -3,22 +3,22 @@
 ;;;
 ;;; Copyright (c) 1995,2003 by Kenneth William Tilton.
 ;;;
-;;; Permission is hereby granted, free of charge, to any person obtaining a copy 
-;;; of this software and associated documentation files (the "Software"), to deal 
-;;; in the Software without restriction, including without limitation the rights 
-;;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
-;;; copies of the Software, and to permit persons to whom the Software is furnished 
+;;; Permission is hereby granted, free of charge, to any person obtaining a copy
+;;; of this software and associated documentation files (the "Software"), to deal
+;;; in the Software without restriction, including without limitation the rights
+;;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+;;; copies of the Software, and to permit persons to whom the Software is furnished
 ;;; to do so, subject to the following conditions:
 ;;;
-;;; The above copyright notice and this permission notice shall be included in 
+;;; The above copyright notice and this permission notice shall be included in
 ;;; all copies or substantial portions of the Software.
 ;;;
-;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-;;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-;;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-;;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-;;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
+;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+;;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+;;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+;;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+;;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 ;;; IN THE SOFTWARE.
 
 
@@ -49,7 +49,7 @@
     (flet ((test (it) (zerop (mod it 3))))
       (eql (test new-value) (test old-value)))))
 
-(defobserver cylinders () 
+(defobserver cylinders ()
   ;;(when *dbg* (break))
   (trc "cylinders output" self old-value new-value))
 
@@ -59,7 +59,7 @@
   ((cylinders :initform 33 :reader cylinders)))
 
 (defclass non-model ()())
-(defmodel faux-model (non-model)()) 
+(defmodel faux-model (non-model)())
 (defmodel true-model ()())
 (defmodel indirect-model (true-model)())
 
@@ -85,7 +85,7 @@
   ;; in mop-based implementations we specialize the slot-value-using-class accessors
   ;; to make cells work. rather than slow down all slots where a class might have only
   ;; a few cell-mediated slots, we allow a class to pick and choose which slots are cell-mediated.
-  ;; 
+  ;;
   ;; here we make sure all is well in re such mixing of cell and non-cell, by exercising first
   ;; the reader and then the writer.
   ;;
@@ -93,7 +93,7 @@
   ;; gets treated as if it were cell. but the setf will fail since cell internals reject changes
   ;; to cellular slots unless they are c-variable. (why this is so has to do with efficiency,
   ;; and will be covered when we get to cells being optimized away.)
-  ;; 
+  ;;
   (ct-assert
    (eql :gas (fuel (make-instance 'engine :fuel :gas))))
   (ct-assert
@@ -120,29 +120,29 @@
   ;; programmer-friendly and in turn yield greater productivity gains. below we /initialize/
   ;; the cylinders cell to (c-in 4) and then (c? (+ 2 2)), but when you read those slots the
   ;; cell implementation structures are not returned, the value 4 is returned.
-  ;; 
+  ;;
   ;; aside: the value 4 itself occupies the actual slot. this helped when we used Cells
   ;; with a persistent CLOS tool which maintained inverse indices off slots if asked.
   ;;
   (ct-assert
    (progn
      (eql 33 (cylinders (make-instance 'engine-w-initform)))))
-  
+
   (ct-assert
    (eql 4 (cylinders (make-instance 'engine :cylinders 4))))
-  
+
   (ct-assert
    (eql 4 (cylinders (make-instance 'engine :cylinders (c-in 4)))))
-  
+
   (ct-assert
    (eql 4 (cylinders (make-instance 'engine :cylinders (c? (+ 2 2))))))
-  
+
   (ct-assert
    (eql 16 (valves (make-instance 'engine
                      :cylinders 8
                      :valves (c? (* (cylinders self) (valves-per-cylinder self)))
                      :valves-per-cylinder (c? (floor (cylinders self) 4)))))) ;; admittedly weird semantics
-  
+
   ;; ----------------------------------------------------------
   ;;  initialization output
   ;;
@@ -158,15 +158,15 @@
   ;; one oddball exception is that cellular slots for which no output is defined do not get outputted
   ;; initially. why not? this gets a little complicated.
   ;;
-  ;; first of all, outputting requires evaluation of a ruled cell. by checking first 
-  ;; if a cell even is outputted, and punting on those that are not outputted we can defer 
-  ;; the evaluation of any ruled cell bound to an unoutputted slot until such a slot is 
+  ;; first of all, outputting requires evaluation of a ruled cell. by checking first
+  ;; if a cell even is outputted, and punting on those that are not outputted we can defer
+  ;; the evaluation of any ruled cell bound to an unoutputted slot until such a slot is
   ;; read by other code. i call this oddball because it is a rare slot that is
   ;; neither outputted nor used directly or indirectly by an outputted slot. but i have had fairly
-  ;; expensive rules on debugging slots which i did not want kicked off until i had 
+  ;; expensive rules on debugging slots which i did not want kicked off until i had
   ;; to check their values in the inspector. ie, oddball.
   ;;
-  
+
   (macrolet ((output-init (newv cylini)
                `(progn
                   (output-clear 'cylinders)
@@ -184,7 +184,7 @@
     (output-init 10 (c-in 10))
     (output-init 5 (c? (+ 2 3)))
     )
-  
+
   ;; ----------------------------------------------------------------
   ;;   write cell slot
   ;;
@@ -200,8 +200,8 @@
   ;; from outside the model, usually in an event-loop processing os events, so spaghetti dataflow
   ;; should not follow from this.
   ;;
-  ;; that said, in weak moments i resort to having the output of one cell setf some other variable cell, 
-  ;; but i always think of these as regrettable gotos and maybe someday i will try to polish them out 
+  ;; that said, in weak moments i resort to having the output of one cell setf some other variable cell,
+  ;; but i always think of these as regrettable gotos and maybe someday i will try to polish them out
   ;; of existence test.
   ;;
   ;;-------------------------
@@ -224,7 +224,7 @@
        (trc "error correctly is" error)
        (cells-reset)
        t))) ;; something non-nil to satisfy assert
-  
+
   (let ((e (make-instance 'engine :cylinders (c? (+ 2 2)))))
     (assert *c-debug*)
     (ct-assert
@@ -238,19 +238,19 @@
   (when *stop* (break "stopped! 1"))
   (cv-test-propagation-on-slot-write)
   (cv-test-no-prop-unchanged)
-  
+
   ;;
   ;; here we exercise a feature which allows the client programmer to override the default
   ;; test of eql when comparing old and new values. above we defined nonsense slot mod3 (unoutputted)
   ;; and mod3ek (outputted) with a custom "unchanged" test:
   ;;
-  
+
   ;;
   #+(or) (let ((e (make-instance 'engine
                    :mod3 (c-in 3)
                    :mod3ek (c-in 3)
                    :cylinders (c? (* 4 (mod3 self))))))
-          
+
           (ct-assert (eql 12 (cylinders e)))
           (output-clear 'mod3)
           (output-clear 'mod3ek)
@@ -265,7 +265,7 @@
           (ct-assert (not (outputted 'mod3ek))) ;; no real need to check mod3 unoutputted
           (ct-assert (eql 12 (cylinders e)))
           ;;
-          ;; now test in the other direction to make sure change according to the 
+          ;; now test in the other direction to make sure change according to the
           ;; override still works.
           ;;
           (setf (mod3 e) 5
@@ -302,15 +302,15 @@
     ;;
     (ct-assert (and (eql 4 (output-new 'cylinders))
                     (not (output-old-boundp 'cylinders))))
-    
+
     (ct-assert (valves-per-cylinder e)) ;; but no output is defined for this slot
-    
+
     (ct-assert (valves e))
     ;;
     ;; now we test true change from one value to another
     ;;
     (setf (valves-per-cylinder e) 4)
-    ;;    
+    ;;
     (ct-assert (eql 16 (valves e)))
     ))
 
@@ -345,13 +345,13 @@
       )
     (ct-assert valves-fired)
     (setf valves-fired nil)
-  
+
     (ct-assert (and 1 (not (outputted 'cylinders))))
     (setf (cylinders e) 4) ;; same value
     (trc "same cyl")
     (ct-assert (and 2 (not (outputted 'cylinders))))
     (ct-assert (not valves-fired))
-  
+
     (setf (cylinders e) 6)
     (ct-assert (outputted 'cylinders))
     (ct-assert (not valves-fired))

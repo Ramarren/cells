@@ -3,22 +3,22 @@
 ;;;
 ;;; Copyright (c) 1995,2003 by Kenneth William Tilton.
 ;;;
-;;; Permission is hereby granted, free of charge, to any person obtaining a copy 
-;;; of this software and associated documentation files (the "Software"), to deal 
-;;; in the Software without restriction, including without limitation the rights 
-;;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
-;;; copies of the Software, and to permit persons to whom the Software is furnished 
+;;; Permission is hereby granted, free of charge, to any person obtaining a copy
+;;; of this software and associated documentation files (the "Software"), to deal
+;;; in the Software without restriction, including without limitation the rights
+;;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+;;; copies of the Software, and to permit persons to whom the Software is furnished
 ;;; to do so, subject to the following conditions:
 ;;;
-;;; The above copyright notice and this permission notice shall be included in 
+;;; The above copyright notice and this permission notice shall be included in
 ;;; all copies or substantial portions of the Software.
 ;;;
-;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-;;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-;;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-;;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-;;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
+;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+;;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+;;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+;;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+;;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 ;;; IN THE SOFTWARE.
 
 
@@ -76,7 +76,7 @@
 ;;         the rest of the df graph back into line
 ;;
 ;; the really bad news is that outputs go outside the model: what if the invalid output caused
-;; a missile launch? sure, a subsequent correct calculation comes along shortly, but 
+;; a missile launch? sure, a subsequent correct calculation comes along shortly, but
 ;; irrevocable damage may have been done.
 ;;
 
@@ -89,26 +89,26 @@
     ;;(inspect it);;(cellbrk)
     (ct-assert (and (eql (aa it) 0)(eql (bb it) 0)(eql (cc it) 0)))
     (ct-assert (and (eql (dd it) 0)(eql (ddx it) 0)(eql (ee it) 0)(eql (eex it) 0)))
-    
+
     ;;;- interference handling
     ;;;
     (let ((*eex* 0))
       (trc "--------- 1 => (aa it) --------------------------")
       (setf (aa it) 1)
-      
+
       (ct-assert (and (eql (aa it) 1)(eql (bb it) 2)(eql (cc it) 3)))
       (trc "dd,ddx:" (dd it) (ddx it) )
       (ct-assert (and (eql (dd it) 0)(eql (ddx it) 5)))
       (ct-assert (and (eql (ee it) 1)(eql (eex it) 6)))
       (ct-assert (eql *eex* 1)))
-    
+
     (let ((*eex* 0))
       (trc "--------- 2 => (aa it) --------------------------")
       (setf (aa it) 2)
       (ct-assert (and (eql (aa it) 2)(eql (bb it) 4)(eql (cc it) 6)
                    (eql (dd it) 0)(eql (ddx it) 10)(eql (ee it) 2)(eql (eex it) 12)))
       (ct-assert (eql *eex* 1)))
-    
+
     (dolist (c (cells it))
       (trc "cell is" c)
       (when (typep (cdr c) 'cell)
@@ -116,5 +116,3 @@
         (dolist (u (c-callers (cdr c)))
           (print `(___ ,u)))))
     ))
-
-
