@@ -21,22 +21,23 @@ See the Lisp Lesser GNU Public License for more details.
 (defparameter *ide-app-hard-to-kill* t)
 
 (defun md-slot-value (self slot-name &aux (c (md-slot-cell self slot-name)))
-  (when (and (not *not-to-be*) (mdead self))
-    ;#-its-alive!
-    (unless *stop*
-      (trc nil "md-slot-value passed dead self:" self :asked4slot slot-name :cell c)
-      ;#-sbcl (inspect self)
-      ;(setf *stop* t)
-      ;(break "md-slot-value sees dead ~a" self)
-      )
-    (return-from md-slot-value (slot-value self slot-name))) ;; we can dream
+  (when (mdead self)
+    ;; we  used to go kersplat in here but a problem got created just to
+    ;; get its solution for a hint after which the whole shebang could
+    ;; be not-to-be'd but still be interrogated for the hinting purposes
+    ;; so... why not? The dead can still be useful.
+    ;; If the messages get annoying do something explicit to say
+    ;; not-to-be-but-expecting-use
+    #-its-alive!
+    (trcx md-slot-value-asked slot-name self)
+    (return-from md-slot-value (slot-value self slot-name)))
+
   (tagbody
     retry
     (when *stop*
       (if *ide-app-hard-to-kill*
           (progn
             (princ #\.)
-            (princ "stopped")
             (return-from md-slot-value))
         (restart-case
             (error "Cells is stopped due to a prior error.")
@@ -78,7 +79,7 @@ See the Lisp Lesser GNU Public License for more details.
   ; dependencies are up-to-date before deciding if it itself is up-to-date
   ;
   (declare (ignorable debug-id ensurer))
-  ;(count-it! :ensure.value-is-current)
+  (count-it! :ensure.value-is-current)
   ;(trc "evic entry" (qci c))
   (wtrcx (:on? nil) ("evic>" (qci c) debug-id (qci ensurer))
     ;(count-it! :ensure.value-is-current )
@@ -158,10 +159,11 @@ See the Lisp Lesser GNU Public License for more details.
       (trc nil "kicked off calc-set of!!!!" (c-state c) (c-validp c) (qci c) :vstate (c-value-state c)
         :stamped (c-pulse c) :current-pulse *data-pulse-id*))
 
+     #+bahhhh ;; 2009-12-27 not sure on this. Idea is to keep the dead around as static data. Might be better not to let data go dead
      ((mdead (c-value c))
-      (trc nil "ensure.value-is-current> trying recalc of ~a with current but dead value ~a" c (c-value c))
+      (trc  "ensure.value-is-current> trying recalc of ~a with current but dead value ~a" c (c-value c))
       (let ((new-v (calculate-and-set c :evic-mdead ensurer)))
-        (trc nil "ensure.value-is-current> GOT new value ~a to replace dead!!" new-v)
+        (trc  "ensure.value-is-current> GOT new value ~a to replace dead!!" new-v)
         new-v))
 
      (t (trc nil "ensure.current decided current, updating pulse" (c-slot-name c) debug-id)
@@ -171,14 +173,10 @@ See the Lisp Lesser GNU Public License for more details.
       (error 'unbound-cell :cell c :instance (c-model c) :name (c-slot-name c)))
 
     (bwhen (v (c-value c))
-      (if (mdead v)
-          (progn
-            #-its-alive!
-            (progn
-              (format t "~&on pulse ~a ensure.value still got and still not returning ~a dead value ~a" *data-pulse-id* c v)
-              (inspect v))
-            nil)
-        v))))
+      #-its-alive!
+      (when (mdead v)
+        #+shhh (format t "~&on pulse ~a cell ~a value dead ~a" *data-pulse-id* c v))
+      v)))
 
 
 (defun calculate-and-set (c dbgid dbgdata)

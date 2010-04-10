@@ -24,6 +24,7 @@
 
 (defpackage :cells
   (:use #:common-lisp #:utils-kt)
+  (:nicknames :cz)
   (:import-from
    ;; MOP
    #+allegro #:excl
@@ -32,7 +33,9 @@
    #+cormanlisp #:common-lisp
    #+lispworks #:clos
    #+sbcl #:sb-mop
-   #+(or ccl mcl) #:ccl
+   #+ccl #:ccl
+   #+openmcl-partial-mop #:openmcl-mop
+   #+(and mcl (not openmcl-partial-mop)) #:ccl
    #+ecl #:clos
    #+abcl #:mop
 

@@ -25,16 +25,26 @@ See the Lisp Lesser GNU Public License for more details.
 (defmodel model ()
   ((.md-name :cell nil :initform nil :initarg :md-name :accessor md-name)
    (.fm-parent :cell nil :initform nil :initarg :fm-parent :accessor fm-parent)
-   (.dbg-par :cell nil :initform nil)
+   ;;(.dbg-par :cell nil :initform nil)
    (.value :initform nil :accessor value :initarg :value)
    (register? :cell nil :initform nil :initarg :register? :reader register?)
    (zdbg :initform nil :accessor dbg :initarg :dbg)))
 
+(defmethod md-finalize ((self model))
+  ;;.bgo
+  (unless (or (slot-value self '.fnz)
+            (slot-value self '.doomed)
+            (eq (slot-value self '.md-state) :eternal-rest))
+    ;(print `(:fz-not-to-be!!! ,(slot-value self '.md-name) ,(type-of self)))
+    (setf (slot-value self '.fnz) t)
+    (not-to-be self)))
+
 (defmethod not-to-be :around ((self model))
-  (setf (slot-value self '.dbg-par) (fm-parent self)) ;; before it gets zapped
+  ;; #-its-alive! (setf (slot-value self '.dbg-par) (fm-parent self)) ;; before it gets zapped
   (call-next-method))
 
 (defmethod initialize-instance :after ((self model) &key)
+  ;(excl:schedule-finalization self 'md-finalize)
   (when (register? self)
     (fm-register self)))
 
@@ -51,11 +61,8 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmethod print-object ((self model) s)
   #+shhh (format s "~a" (type-of self))
-  (if (and (slot-boundp self '.md-state)
-           (slot-boundp self '.md-name))
-      (format s "~a~a" (if (mdead self) "DEAD!" "")
-              (or (md-name self) (type-of self)))
-      (format s "UNINITIALIZED-~a" (type-of self))))
+  (format s "~a~a" (if (mdead self) "DEAD!" "")
+    (or (md-name self) (type-of self))))
 
 (define-symbol-macro .parent (fm-parent self))
 (define-symbol-macro .pa (fm-parent self))

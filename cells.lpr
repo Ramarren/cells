@@ -1,8 +1,8 @@
-;; -*- lisp-version: "8.1 [Windows] (Oct 11, 2008 17:00)"; cg: "1.103.2.10"; -*-
+;; -*- lisp-version: "8.2 [64-bit Linux (x86-64)] (Mar 3, 2010 14:34)"; cg: "1.134"; -*-
 
 (in-package :cg-user)
 
-(defpackage :CELLS)
+(defpackage :cells)
 
 (define-project :name :cells
   :modules (list (make-instance 'module :name "defpackage.lisp")
@@ -27,10 +27,10 @@
                  (make-instance 'module :name "test-propagation.lisp")
                  (make-instance 'module :name "cells-store.lisp")
                  (make-instance 'module :name "test-cc.lisp"))
-  :projects (list (make-instance 'project-module :name
-                                 "utils-kt\\utils-kt" :show-modules
-                                 nil))
+  :projects (list (make-instance 'project-module :name "../utils-kt/utils-kt"
+                                 :show-modules nil))
   :libraries nil
+  :editable-files nil
   :distributed-files nil
   :internally-loaded-files nil
   :project-package-name :cells
@@ -51,7 +51,10 @@
   :new-space-size 6144
   :runtime-build-option :standard
   :build-number 0
+  :run-with-console nil
+  :project-file-version-info nil
   :on-initialization 'cells::test-with-cc
+  :default-error-handler-for-delivery 'report-unexpected-error-and-exit
   :on-restart 'do-default-restart)
 
 ;; End of Project Definition

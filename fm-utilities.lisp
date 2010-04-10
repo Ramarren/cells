@@ -14,7 +14,6 @@ the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
-$Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.22 2008/10/12 01:21:07 ktilton Exp $
 |#
 
 
@@ -28,7 +27,7 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
      mk-part-spec
      upper
      u^
-     container
+     kontainer
      container-typed
 
      ;; Family member finding
@@ -86,7 +85,7 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
      fm-otherv?
      fm-other?
      fm-other!
-     fm^
+     fm^ fm^v
      fm?
      fm!
      fm!v
@@ -142,21 +141,14 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
 (defmacro u^ (type)
   `(upper self ,type))
 
-(defmethod container (self) (fm-parent self))
-
-;;;(defmethod container-typed ((self model-object) type)
-;;;   (let ((parent (container self))) ;; fm- or ps-parent
-;;;      (cond
-;;;       ((null parent) nil)
-;;;       ((typep parent type) parent)
-;;;       (t (container-typed parent type)))))
+(defmethod kontainer (self) (fm-parent self))
 
 (defmethod container-typed ((self model-object) type)
-  (let ((parent (fm-parent self))) ;; fm- or ps-parent
-    (cond
-     ((null parent) nil)
-     ((typep parent type) parent)
-     (t (container-typed parent type)))))
+   (let ((parent (kontainer self))) ;; fm- or ps-parent
+      (cond
+       ((null parent) nil)
+       ((typep parent type) parent)
+       (t (container-typed parent type)))))
 
 (defun fm-descendant-typed (self type)
   (when self
@@ -593,8 +585,6 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
       :must-find ,must-find
       :global-search t)))
 
-
-(export! fm^v)
 (defmacro fm^v (id)
   `(value (fm^ ,id)))
 
@@ -689,26 +679,27 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
    (when (consp md-name) (cadr md-name)))
 
 (defun fm-find-one (family md-name &key (must-find t)
-                    (global-search t) skip-tree (test #'true-that)
-                    &aux diag)
+                     (global-search t) skip-tree (test #'true-that)
+                     &aux diag)
   (count-it :fm-find-one)
   (flet ((matcher (fm)
            (when diag
              (trc nil
-                  "fm-find-one matcher sees name" (md-name fm) :ofthing (type-of fm) :seeking md-name global-search))
+               "fm-find-one matcher sees name" (md-name fm) :ofthing (type-of fm) :seeking md-name global-search))
            (when (and (eql (name-root md-name)(md-name fm))
-                      (or (null (name-subscript md-name))
-                          (eql (name-subscript md-name) (fm-pos fm)))
-                      (progn
-                        (when diag
-                          (trc "fm-find-one testing" fm))
-                        (funcall test fm)))
+                   (or (null (name-subscript md-name))
+                     (eql (name-subscript md-name) (fm-pos fm)))
+                   (progn
+                     (when diag
+                       (trc "fm-find-one testing" fm))
+                     (funcall test fm)))
              (throw 'fm-find-one fm))))
+
     (trc nil "fm-find-one> entry " md-name family)
     (let ((match (catch 'fm-find-one
                    (fm-traverse family #'matcher
-                                :skip-tree skip-tree
-                                :global-search global-search))))
+                     :skip-tree skip-tree
+                     :global-search global-search))))
       (when (and must-find (null match))
         (trc "fm-find-one > erroring fm-not-found, in family: " family :seeking md-name :global? global-search)
         (setq diag t must-find nil)

@@ -22,6 +22,9 @@ See the Lisp Lesser GNU Public License for more details.
   (assert (not (find class directsupers))() "~a cannot be its own superclass" class)
   `(progn
      (setf (get ',class :cell-types) nil)
+
+     (setf (get ',class :model-ownings) nil)
+
      (setf (get ',class 'slots-excluded-from-persistence)
            (loop for slotspec in ',slotspecs
                  unless (and (getf (cdr slotspec) :ps t)

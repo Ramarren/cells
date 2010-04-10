@@ -24,12 +24,17 @@ See the Lisp Lesser GNU Public License for more details.
   (export '(md-name fm-parent .parent )))
 
 (defclass model-object ()
-  ((.md-state :initform :nascent :accessor md-state) ; [nil | :nascent | :alive | :doomed]
+  ((.md-state :initform :nascent :accessor md-state) ; [nil | :nascent | :alive | :eternal-rest]
+   (.doomed :initform nil :accessor md-doomed) ; goes t at start of not-to-be (prolly could fold into state w/ work)
+   (.fnz :initform nil  )
    (.awaken-on-init-p :initform nil :initarg :awaken-on-init-p :accessor awaken-on-init-p)
    (.cells :initform nil :accessor cells)
    (.cells-flushed :initform nil :accessor cells-flushed
                    :documentation "cells supplied but un-whenned or optimized-away")
    (adopt-ct :initform 0 :accessor adopt-ct)))
+
+(defmethod md-finalize ((self model-object))
+  (print `(:wow-fnz-non-mod ,(type-of self))))
 
 (defmethod register? ((self model-object)))
 
@@ -40,7 +45,9 @@ See the Lisp Lesser GNU Public License for more details.
 (defmethod shared-initialize :after ((self model-object) slotnames
                                       &rest initargs &key fm-parent)
   (declare (ignorable initargs slotnames fm-parent))
+  ;(excl:schedule-finalization self 'md-finalize)
   (setf (md-census-count self) 1) ;; bad idea if we get into reinitializing
+  (md-awake-record self)
   ;
   ; for convenience and transparency of mechanism we allow client code
   ; to intialize a slot to a cell, but we want the slot to hold the functional
@@ -105,23 +112,11 @@ See the Lisp Lesser GNU Public License for more details.
 ; -- do initial evaluation of all ruled slots
 ; -- call observers of all slots
 
-
-
-(export! md-awake-ct md-awake-ct-ct)
-(defun md-awake-ct ()
-  *awake-ct*)
-
-(defun md-awake-ct-ct ()
-  (reduce '+ *awake-ct* :key 'cdr))
-
-
 (defmethod md-awaken :around ((self model-object))
   (when (eql :nascent (md-state self))
-    #+nahh (bif (a (assoc (type-of self) *awake-ct*))
-             (incf (cdr a))
-             (push (cons (type-of self) 1) *awake-ct*))
+
     ;(trc "awake" (type-of self))
-    #+chya (push self *awake*)
+    ;;#-its-alive!
     (call-next-method))
   self)
 

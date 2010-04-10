@@ -10,20 +10,20 @@
               (- (^top)(^bottom))))))
 
 (defobserver area ()
-  (TRC "new area" new-value old-value old-value-boundp :pulse *data-pulse-id*))
+  (trc "new area" new-value old-value old-value-boundp :pulse *data-pulse-id*))
 
 (defobserver bottom ()
-  (TRC "new bottom" new-value old-value old-value-boundp :pulse *data-pulse-id*)
+  (trc "new bottom" new-value old-value old-value-boundp :pulse *data-pulse-id*)
   (with-integrity (:change 'bottom-tells-left)
     (setf (^left) new-value)))
 
 (defobserver left ()
-  (TRC "new left" new-value old-value old-value-boundp :pulse *data-pulse-id*))
+  (trc "new left" new-value old-value old-value-boundp :pulse *data-pulse-id*))
 
 (defun tcprop ()
   (untrace)
   (ukt:test-prep)
-  (LET ((box (make-instance 'tcp)))
+  (let ((box (make-instance 'tcp)))
     (trc "changing top to 10" *data-pulse-id*)
     (setf (top box) 10)
     (trc "not changing top" *data-pulse-id*)

@@ -44,12 +44,17 @@ See the Lisp Lesser GNU Public License for more details.
                 (count-it :trcfailed)))
             (count-it :tgtnileval)))))))
 
+(defparameter *trc-path-id* nil)
+
 (defun call-trc (stream s &rest os)
   ;(break)
-  (if #+cormanlisp nil #-cormanlisp (and (boundp '*trcdepth*)
-                                      *trcdepth*)
-    (format stream "~&~v,,,'.<~d~>> " (mod *trcdepth* 100) *trcdepth*)
-    (format stream "~&"))
+  (let ((path (cond
+               (*trc-path-id*)
+               ((and (boundp '*trcdepth*)
+                  *trcdepth*)
+                (format nil "~v,,,'.<~d~>> " (mod *trcdepth* 100) *trcdepth*))
+               (""))))
+    (format stream "~&~a: " path))
   ;;(format stream " ~a " (round (- (get-internal-real-time) *last-trc*) 10))
   (setf *last-trc* (get-internal-real-time))
   (format stream "~a" s)
@@ -60,21 +65,15 @@ See the Lisp Lesser GNU Public License for more details.
   (force-output stream)
   (values))
 
-(export! brk brkx .bgo bgo)
+(export! brk brkx .bgo bgo *trc-path-id*)
 
-(define-symbol-macro .bgo
-    #+gimme-a-break (break "go")
-  #-gimme-a-break nil)
+(define-symbol-macro .bgo (break "go"))
 
 (defmacro bgo (msg)
-  (declare (ignorable msg))
-  #+gimme-a-break `(break "BGO ~a" ',msg)
-  #-gimme-a-break `(progn))
+  `(break "BGO ~a" ',msg))
 
 (defmacro brkx (msg)
-  (declare (ignorable msg))
-  #+gimme-a-break  `(break "At ~a: OK?" ',msg)
-  #-gimme-a-break `(progn))
+  `(break "At ~a: OK?" ',msg))
 
 (defmacro trcx (tgt-form &rest os)
   (if (eql tgt-form 'nil)
@@ -101,12 +100,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmethod trcp (($ string))
   t)
 
-(defun trcdepth-incf ()
-  (incf *trcdepth*))
 
-(defun trcdepth-decf ()
-  (format t "decrementing trc depth ~d" *trcdepth*)
-  (decf *trcdepth*))
 
 (defmacro wtrc ((&optional (min 1) (max 50) &rest banner) &body body )
   `(let ((*trcdepth* (if *trcdepth*

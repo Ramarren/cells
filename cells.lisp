@@ -50,19 +50,92 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
 (defparameter *unfinished-business* nil)
 (defparameter *not-to-be* nil)
 
-(defparameter *awake* nil)
-(defparameter *awake-ct* nil)
+(defparameter *md-awake* nil)
+(defparameter *md-awake-where* :anon)
 
-#+test
-(cells-reset)
+(defun md-awake-ct ()
+  (if *md-awake* (hash-table-count *md-awake*) 0))
+
+(defun check-links (self where)
+  (assert (not (cells-flushed self)))
+  (print `(:model ,self ,where))
+  (loop for (nil . c) in (cells self)
+        do ;(print `(:cell ,c))
+        (loop for c2 in (c-callers c)
+            do (explore-caller c2))
+        (loop for c2 in (c-useds c)
+            do
+              (explore-used c2)))
+  .bgo)
+
+(defun explore-caller (c)
+  (unless (gethash (c-model c) *md-awake*)
+    (print `(:caller-outside? ,c))
+    .bgo)
+  (loop for u in (c-callers c)
+      do (explore-caller u)))
+
+(defun explore-used (c)
+  (unless (gethash (c-model c) *md-awake*)
+    (print `(:used-outside? ,c))
+    .bgo)
+  (loop for u in (c-useds c)
+      do (explore-used u)))
+
+
+(defmacro with-none-awake ((&key dbg diag) &body body)
+  `(call-with-none-awake ,dbg (lambda () ,@body) ,diag))
+
+(defun call-with-none-awake (dbg-info fn diag)
+  (let ((*md-awake* (make-hash-table :test 'eq :weak-keys t)))
+    (prog1
+        (funcall fn)
+      (when (md-awakep)
+        (if diag
+            (md-awake-map diag)
+          (progn
+            (print dbg-info)
+            (md-awake-dump)))
+        (break "some awake ~a" dbg-info)))))
+
+(defun md-awake-record (self &optional (where *md-awake-where*))
+  (when *md-awake*
+    ;;(trcx md-awake-record self where)
+    (setf (gethash self *md-awake*) where)))
+
+(defun md-awake-remove (self)
+  (when *md-awake*
+    (remhash self *md-awake*)))
+
+(export! md-awake-dump md-awakep md-awake-remove md-awake-record with-none-awake
+  md-awake-dump-one *md-awake-where* md-awake-map)
+
+
+(defun md-awakep ()
+  (plusp (md-awake-ct)))
+(defun md-awake-dump ()
+  (let ((j (make-hash-table :test 'equal)))
+    (loop for x  being the hash-keys of *md-awake*
+        using (hash-value where)
+        do (incf (gethash (list where (type-of x)) j 0)))
+    (maphash (lambda (k v)
+               (print (list "awake" k v))) j)
+    (loop for x  being the hash-keys of *md-awake*
+        using (hash-value where)
+        do (md-awake-dump-one x where))))
+
+(defun md-awake-map (fn)
+  (loop for x  being the hash-keys of *md-awake*
+      using (hash-value where)
+      do (funcall fn x where)))
+
+(defmethod md-awake-dump-one (x y)(declare (ignore x y)))
 
 (defun cells-reset (&optional client-queue-handler &key debug)
   (utils-kt-reset)
   (setf
    *c-debug* debug
    *c-prop-depth* 0
-   *awake-ct* nil
-   *awake* nil
    *not-to-be* nil
    *data-pulse-id* 0
    *finbiz-id* 0
@@ -71,8 +144,11 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
    *within-integrity* nil
    *unfinished-business* nil
    *trcdepth* 0)
+  #-its-alive! (md-census-start)
   (trc nil "------ cell reset ----------------------------"))
 
+#+xx
+(cells-reset)
 (defun c-stop (&optional why)
   (setf *stop* t)
   (print `(c-stop-entry ,why))

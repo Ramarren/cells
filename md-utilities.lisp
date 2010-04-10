@@ -32,14 +32,16 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defgeneric mdead (self)
   (:method ((self model-object))
-    (unless *not-to-be* ;; weird
+    (unless *not-to-be* ;; weird - let's folks function for not-to-be cleanup
       (eq :eternal-rest (md-state self))))
 
   (:method (self)
     (declare (ignore self))
     nil))
 
+(defparameter *ntb-dbg* nil)
 
+(export! *ntb-dbg*)
 
 (defgeneric not-to-be (self)
   (:method (other)
@@ -56,8 +58,13 @@ See the Lisp Lesser GNU Public License for more details.
                (not-to-be v)) self))
 
   (:method ((self model-object))
+    (when *ntb-dbg*
+      (trcx not2be self)
+      (when (and *md-awake* (not (gethash self *md-awake*)))
+        (trcx not2be-not-awake!!!! self)))
     (setf (md-census-count self) -1)
-    (md-quiesce self))
+    (md-quiesce self)
+    (md-awake-remove self))
 
   (:method :before ((self model-object))
     (loop for slot-name in (md-owning-slots self)
@@ -69,16 +76,15 @@ See the Lisp Lesser GNU Public License for more details.
           (dbg nil))
 
       (flet ((gok ()
-               (if (eq (md-state self) :eternal-rest)
-                   (trc nil "n2be already dead" self)
+               (if (or (eq (md-state self) :eternal-rest)
+                     (md-doomed self))
+                   (trc nil "n2be bailing already dead or doomed" self (md-state self)(md-doomed self))
                  (progn
+                   (setf (md-doomed self) t)
                    (call-next-method)
                    (setf (fm-parent self) nil
                      (md-state self) :eternal-rest)
-;;;                   (bif (a (assoc (type-of self) *awake-ct*))
-;;;                     (decf (cdr a))
-;;;                     (break "no awake for" (type-of self) *awake-ct*))
-;;;                   (setf *awake* (delete self *awake*))
+                   (md-awake-remove self)
                    (md-map-cells self nil
                      (lambda (c)
                        (c-assert (eq :quiesced (c-state c)) ()
@@ -135,7 +141,10 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun (setf md-census-count) (delta self)
   (when *model-pop*
-    (incf (gethash (type-of self) *model-pop* 0) delta)))
+    (incf (gethash (type-of self) *model-pop* 0) delta)
+    #-its-alive!
+    (when (minusp (gethash (type-of self) *model-pop* 0))
+      (warn  "minus pop ~a" self))))
 
 (defun md-census-report ()
   (when *model-pop*
@@ -209,7 +218,7 @@ See the Lisp Lesser GNU Public License for more details.
                             do (count-it! :flushed-cell #+toomuchinfo id)))
 
                       (loop for slot in (md-owning-slots self) do
-                            (loop for k in (let ((sv (SLOT-VALUE self slot)))
+                            (loop for k in (let ((sv (slot-value self slot)))
                                              (if (listp sv) sv (list sv)))
                                 do (cc k self)))
                       #+nahhh

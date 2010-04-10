@@ -44,15 +44,7 @@ See the Lisp Lesser GNU Public License for more details.
       (push used (cd-useds *depender*))
       (caller-ensure used *depender*) ;; 060604 experiment was in unlink
       )
-    (let ((cd-usage (cd-usage *depender*)))
-      (when (>= used-pos (array-dimension cd-usage 0))
-        (setf cd-usage
-          (setf (cd-usage *depender*)
-            (adjust-array (cd-usage *depender*)
-              (+ used-pos 16)
-              :initial-element 0))))
-      (setf (sbit cd-usage used-pos) 1))
-    #+nonportable
+
     (handler-case
         (setf (sbit (cd-usage *depender*) used-pos) 1)
       (type-error (error)
@@ -105,12 +97,7 @@ See the Lisp Lesser GNU Public License for more details.
 ; ---------------------------------------------
 
 (defun cd-usage-clear-all (c)
-  (setf (cd-usage c) (blank-usage-mask))
-  #+wowo (loop with mask = (cd-usage c)
-        for n fixnum below (array-dimension mask 0)
-        do (setf (sbit mask n) 0)
-        finally (return mask))
-  )
+  (setf (cd-usage c) (blank-usage-mask)))
 
 
 ;--- unlink from used ----------------------

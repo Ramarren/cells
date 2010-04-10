@@ -180,10 +180,8 @@
     ;;    - all cells accessed are constant.
     ;;
     (ct-assert (null (md-slot-cell p 'speech)))
-    #-its-alive!
-    (progn
-      (ct-assert (assoc 'speech (cells-flushed  p)))
-      (ct-assert (c-optimized-away-p (cdr (assoc 'speech (cells-flushed  p))))))
+    (ct-assert (assoc 'speech (cells-flushed  p)))
+    (ct-assert (c-optimized-away-p (cdr (assoc 'speech (cells-flushed  p)))))
 
     (ct-assert (not (c-optimized-away-p (md-slot-cell p 'thought)))) ;; pulse is variable, so cannot opti
     (ct-assert (eql 1 (length (cd-useds (md-slot-cell p 'thought))))) ;; but speech is opti, so only 1 used
@@ -210,8 +208,6 @@
   ;;   make sure cyclic dependencies are trapped:
   ;;
   (cells-reset)
-  #+its-alive! t
-  #-its-alive!
   (ct-assert
    (handler-case
        (progn
@@ -222,9 +218,10 @@
                            (length (names self)))))
          nil)
      (t (error)
-       (describe  error)
+        (describe  error)
        (setf *stop* nil)
-       t))))
+        t)))
+  )
 ;;
 ;; we'll toss off a quick class to test tolerance of cyclic
 
