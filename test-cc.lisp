@@ -27,7 +27,7 @@
 
 
 (defun test-with-cc ()
-  (let ((self (make-instance 'tcc 
+  (let ((self (make-instance 'tcc
                  :tccversion 2 ;:tcc-2a
                 )))
     (trcx cool 42)
@@ -37,4 +37,3 @@
 
 #+test
 (test-with-cc)
-

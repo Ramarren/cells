@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -30,7 +30,7 @@ See the Lisp Lesser GNU Public License for more details.
      (loop for slotspec in ',slotspecs
            do (destructuring-bind
                     (slotname &rest slotargs
-                     &key (cell t)      
+                     &key (cell t)
                      &allow-other-keys)
                   slotspec
                 (declare (ignorable slotargs))
@@ -57,7 +57,7 @@ See the Lisp Lesser GNU Public License for more details.
                                      (ensure-generic-function '(setf ,writer-fn) :lambda-list '(new-value self))))))))))
                slotspecs)
      ;; define slot macros before class so they can appear in
-     ;; initforms and default-initargs 
+     ;; initforms and default-initargs
      ,@(loop for slotspec in slotspecs
              nconcing (destructuring-bind
                             (slotname &rest slotargs
@@ -104,7 +104,7 @@ See the Lisp Lesser GNU Public License for more details.
              (error "If no superclass of ~a inherits directly
 or indirectly from model-object, model-object must be included as a direct super-class in
 the defmodel form for ~a" ',class ',class))))
-       
+
                                         ;
                                         ; slot accessors once class is defined...
                                         ;
@@ -114,7 +114,7 @@ the defmodel form for ~a" ',class ',class))))
                         &key (cell t) unchanged-if (accessor slotname) reader writer type
                         &allow-other-keys)
                      slotspec
-                     
+
                    (declare (ignorable slotargs))
                    (when cell
                      (let* ((reader-fn (or reader accessor))
@@ -168,7 +168,7 @@ the defmodel form for ~a" ',class ',class))))
      (when unchanged-if-p (list :unchanged-if unchanged-if))
      (when reader-p (list :reader reader))
      (when writer-p (list :writer writer))
-     (when (or accessor-p 
+     (when (or accessor-p
              (not (and reader-p writer-p)))
        (list :accessor accessor))
      (when allocation-p (list :allocation allocation))
@@ -204,7 +204,7 @@ the defmodel form for ~a" ',class ',class))))
                            (list* `(:default-initargs ,@definitargs)
                              (nreverse class-options)))))))))
 
-    
+
 
 #+test
 (progn
@@ -218,6 +218,3 @@ the defmodel form for ~a" ',class ',class))))
     (ddd (c-in nil) :cell :ephemeral)
     :superx 42 ;; default-initarg
     (:documentation "as if!")))
-
-
-

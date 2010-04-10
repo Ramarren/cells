@@ -9,14 +9,14 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
 |#
 
-(in-package :cells) 
+(in-package :cells)
 
 ;----------------- change detection ---------------------------------
 
@@ -29,7 +29,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro def-c-unchanged-test ((class slotname) &body test)
   `(defmethod c-unchanged-test ((self ,class) (slotname (eql ',slotname)))
      ,@test))
-     
+
 (defmethod c-unchanged-test (self slotname)
   (declare (ignore self slotname))
   nil)
@@ -71,19 +71,19 @@ See the Lisp Lesser GNU Public License for more details.
 
   (count-it :cpropagate)
   (setf (c-pulse-last-changed c) *data-pulse-id*)
-          
+
   (when prior-value
     (assert prior-value-supplied () "How can prior-value-supplied be nil if prior-value is not?!! ~a" c))
   (let (*depender* *call-stack* ;; I think both need clearing, cuz we are neither depending nor calling when we prop to callers
         (*c-prop-depth*  (1+ *c-prop-depth*))
         (*defer-changes* t))
     (trc nil "c.propagate clearing *depender*" c)
-    
+
     ;------ debug stuff ---------
     ;
     (when *stop*
       (princ #\.)(princ #\!)
-      (return-from c-propagate))    
+      (return-from c-propagate))
     (trc nil  "c.propagate> !!!!!!! propping" c (c-value c) :caller-ct (length (c-callers c)))
     #+slow (trc nil "c.propagate> !!!! new value" (c-value c) :prior-value prior-value :caller-ct (length (c-callers c)) c)
     (when *c-debug*
@@ -91,7 +91,7 @@ See the Lisp Lesser GNU Public License for more details.
         (trc nil "c.propagate deep" *c-prop-depth* (c-model c) (c-slot-name c) #+nah c))
       (when (> *c-prop-depth* 300)
         (c-break "c.propagate looping ~c" c)))
-    
+
     ; --- manifest new value as needed ---
     ;
     ; 20061030 Trying not.to.be first because doomed instances may be interested in callers
@@ -115,7 +115,7 @@ See the Lisp Lesser GNU Public License for more details.
                                          (md-slot-owning? (type-of (c-model c)) (c-slot-name c)))))
             (mapcar 'not-to-be lost))
           (trc nil "no owned lost!!!!!"))))
-    
+
     ; propagation to callers jumps back in front of client slot-value-observe handling in cells3
     ; because model adopting (once done by the kids change handler) can now be done in
     ; shared-initialize (since one is now forced to supply the parent to make-instance).
@@ -123,10 +123,10 @@ See the Lisp Lesser GNU Public License for more details.
     ; we wnat it here to support (eventually) state change rollback. change handlers are
     ; expected to have side-effects, so we want to propagate fully and be sure no rule
     ; wants a rollback before starting with the side effects.
-    ; 
-    (progn ;; unless (member (c-lazy c) '(t :always :once-asked)) ;; 2006-09-26 still fuzzy on this 
+    ;
+    (progn ;; unless (member (c-lazy c) '(t :always :once-asked)) ;; 2006-09-26 still fuzzy on this
       (c-propagate-to-callers c))
-    
+
     (trc nil "c.propagate observing" c)
 
     ; this next assertion is just to see if we can ever come this way twice. If so, just
@@ -135,8 +135,8 @@ See the Lisp Lesser GNU Public License for more details.
       (setf (c-pulse-observed c) *data-pulse-id*)
       (slot-value-observe (c-slot-name c) (c-model c)
         (c-value c) prior-value prior-value-supplied c))
-    
-    
+
+
     ;
     ; with propagation done, ephemerals can be reset. we also do this in c-awaken, so
     ; let the fn decide if C really is ephemeral. Note that it might be possible to leave
@@ -288,4 +288,3 @@ See the Lisp Lesser GNU Public License for more details.
           (*the-unpropagated* nil))
       (funcall f)
       *the-unpropagated*)))
-  

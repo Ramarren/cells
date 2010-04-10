@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -30,7 +30,7 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
      u^
      container
      container-typed
-     
+
      ;; Family member finding
      fm-descendant-typed
      fm-ascendant-typed
@@ -59,7 +59,7 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
      fm-find-next
      fm-find-next-within
      fm-find-prior
-     fm-find-prior-within 
+     fm-find-prior-within
      fm-find-last-if
      fm-prior-sib
      fm-next-sib-if
@@ -106,7 +106,7 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
      fm-find-one
      fm-find-kid
      fm-kid-typed
-     
+
      ;; Other family stuff
      make-name
      name-root
@@ -115,7 +115,7 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
 
      ;; Debug flags
      *fmdbg*
-     
+
      )))
 
 (defparameter *fmdbg* nil)
@@ -260,7 +260,7 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
        (flet ((tv ()
                 (tv-family family)
                 (when global-search
-                  (fm-traverse (fm-parent family) applied-fn 
+                  (fm-traverse (fm-parent family) applied-fn
                     :global-search t
                     :skip-tree family
                     :skip-node skip-node
@@ -289,13 +289,13 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
     :kids (c? (when (< (depth self) 4)
                 (loop repeat (1+ (depth self))
                     collecting (make-kid 'bftree :depth (1+ (depth self)))))))
-  
+
   (defun klin (self)
     (when self
       (if .parent
           (cons (kid-no self) (klin .parent))
         (list 0))))
-  
+
   (defun test-bf ()
     (let ((self (make-instance 'bftree)))
       (fm-traverse-bf self
@@ -308,7 +308,7 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
                      (cond
                       ((eq n n1)(return-from fm-ordered-p t))
                       ((eq n n2)(return-from fm-ordered-p nil))))))
-  
+
 
 (defmethod sub-nodes (other)
   (declare (ignore other)))
@@ -416,7 +416,7 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
       (if fm-parent
           (fm-find-prior-within fm-parent test-fn upperbound)
         (fm-find-last-if fm test-fn)))))
-  
+
   (defun fm-find-last-if (family test-fn)
     (let ((last))
       (or (and (kids family)
@@ -606,7 +606,7 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
           :global-search ,global-search))
 
 (defmacro fm! (md-name &optional (starting 'self))
-    `(without-c-dependency 
+    `(without-c-dependency
       (fm-find-one ,starting ,(if (consp md-name)
                                   `(list ',(car md-name) ,(cadr md-name))
                                 `',md-name)
@@ -689,26 +689,26 @@ $Header: /home/ramarren/LISP/cells-hack/rsynced-cvs/cells/fm-utilities.lisp,v 1.
    (when (consp md-name) (cadr md-name)))
 
 (defun fm-find-one (family md-name &key (must-find t)
-		    (global-search t) skip-tree (test #'true-that)
-		    &aux diag)
+                    (global-search t) skip-tree (test #'true-that)
+                    &aux diag)
   (count-it :fm-find-one)
   (flet ((matcher (fm)
            (when diag
              (trc nil
-		  "fm-find-one matcher sees name" (md-name fm) :ofthing (type-of fm) :seeking md-name global-search))
+                  "fm-find-one matcher sees name" (md-name fm) :ofthing (type-of fm) :seeking md-name global-search))
            (when (and (eql (name-root md-name)(md-name fm))
-		      (or (null (name-subscript md-name))
-			  (eql (name-subscript md-name) (fm-pos fm)))
-		      (progn
-			(when diag
-			  (trc "fm-find-one testing" fm))
-			(funcall test fm)))
+                      (or (null (name-subscript md-name))
+                          (eql (name-subscript md-name) (fm-pos fm)))
+                      (progn
+                        (when diag
+                          (trc "fm-find-one testing" fm))
+                        (funcall test fm)))
              (throw 'fm-find-one fm))))
-    (trc nil "fm-find-one> entry " md-name family)    
+    (trc nil "fm-find-one> entry " md-name family)
     (let ((match (catch 'fm-find-one
                    (fm-traverse family #'matcher
-				:skip-tree skip-tree
-				:global-search global-search))))
+                                :skip-tree skip-tree
+                                :global-search global-search))))
       (when (and must-find (null match))
         (trc "fm-find-one > erroring fm-not-found, in family: " family :seeking md-name :global? global-search)
         (setq diag t must-find nil)

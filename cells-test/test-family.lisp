@@ -3,22 +3,22 @@
 ;;;
 ;;; Copyright (c) 1995,2003 by Kenneth William Tilton.
 ;;;
-;;; Permission is hereby granted, free of charge, to any person obtaining a copy 
-;;; of this software and associated documentation files (the "Software"), to deal 
-;;; in the Software without restriction, including without limitation the rights 
-;;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
-;;; copies of the Software, and to permit persons to whom the Software is furnished 
+;;; Permission is hereby granted, free of charge, to any person obtaining a copy
+;;; of this software and associated documentation files (the "Software"), to deal
+;;; in the Software without restriction, including without limitation the rights
+;;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+;;; copies of the Software, and to permit persons to whom the Software is furnished
 ;;; to do so, subject to the following conditions:
 ;;;
-;;; The above copyright notice and this permission notice shall be included in 
+;;; The above copyright notice and this permission notice shall be included in
 ;;; all copies or substantial portions of the Software.
 ;;;
-;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-;;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-;;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-;;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-;;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
+;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+;;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+;;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+;;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+;;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 ;;; IN THE SOFTWARE.
 
 (in-package :cells)
@@ -31,10 +31,10 @@
     (print `(i have ,(length new-value) kids))
     (dolist (k new-value)
       (trc "one kid is named" (md-name k) :age (age k)))))
-  
+
 (defobserver age ((k human))
   (format t "~&~a is ~d years old" (md-name k) (age k)))
-  
+
 (def-cell-test cv-test-family ()
   (cells-reset)
   (let ((mom (make-instance 'human)))
@@ -58,14 +58,14 @@
     ;
     ; one consequence of this is that one not need call to-be on new instances being added to
     ; a larger model family, it will be done as a matter of course.
-    ;    
+    ;
     (push (make-instance 'human :fm-parent mom :md-name 'natalia :age (c-in 23)) (kids mom))
     (push (make-instance 'human :fm-parent mom :md-name 'veronica :age (c? (- (age (fm-other natalia)) 6))) (kids mom))
     (push (make-instance 'human :fm-parent mom :md-name 'aaron :age (c? (- (age (fm-other veronica)) 4))) (kids mom))
     (push (make-instance 'human :fm-parent mom :md-name 'melanie :age (c? (- (age (fm-other veronica)) 12))) (kids mom))
     ;
-    ; some of the above rules invoke the macro fm-other. that searches the model space, first searching the 
-    ; kids of the starting point (which defaults to a captured 'self), then recursively up to the 
+    ; some of the above rules invoke the macro fm-other. that searches the model space, first searching the
+    ; kids of the starting point (which defaults to a captured 'self), then recursively up to the
     ; parent and the parent's kids (ie, self's siblings)
     ;
     (flet ((nat-age (n)
@@ -86,9 +86,9 @@
 #+(or)
 
 (cv-test-family)
-    
+
 ;------------ family-values ------------------------------------------
-;;; 
+;;;
 ;;; while family-values is itself rather fancy, the only cell concept introduced here
 ;;; is that cell rules have convenient access to the current value of the slot, via
 ;;; the symbol-macro ".cache" (leading and trailing full-stops). to see this we need to
@@ -107,7 +107,7 @@
 ;;;                                             (list oldkid))))
 ;;;                               .cache)
 ;;;                             newkids))))
-;;; 
+;;;
 ;;; for efficiency's sake, family-values (fvs) generate kids only as needed based on determining
 ;;; kidvalues cell. wherever possible existing kids are kept. this is done by looking in the current
 ;;; value of the kids slot for a kid matching each new kidvalue and reusing that. we cannot use the
@@ -141,7 +141,7 @@
                                                        (^value)
                                                        (length (kids f)))))))))
     (ct-assert (eql 5 kf-calls))
-   
+
     (setq kf-calls 0)
     (decf (value wall))
     (ct-assert (eql 4 (length (kids wall))))

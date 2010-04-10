@@ -3,22 +3,22 @@
 ;;;
 ;;; Copyright (c) 1995,2003 by Kenneth William Tilton.
 ;;;
-;;; Permission is hereby granted, free of charge, to any person obtaining a copy 
-;;; of this software and associated documentation files (the "Software"), to deal 
-;;; in the Software without restriction, including without limitation the rights 
-;;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
-;;; copies of the Software, and to permit persons to whom the Software is furnished 
+;;; Permission is hereby granted, free of charge, to any person obtaining a copy
+;;; of this software and associated documentation files (the "Software"), to deal
+;;; in the Software without restriction, including without limitation the rights
+;;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+;;; copies of the Software, and to permit persons to whom the Software is furnished
 ;;; to do so, subject to the following conditions:
 ;;;
-;;; The above copyright notice and this permission notice shall be included in 
+;;; The above copyright notice and this permission notice shall be included in
 ;;; all copies or substantial portions of the Software.
 ;;;
-;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-;;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-;;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-;;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-;;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
+;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+;;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+;;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+;;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+;;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 ;;; IN THE SOFTWARE.
 
 
@@ -38,7 +38,7 @@
 (def-cell-test boiler-1 ()
 
   ;; resets debugging/testing specials
-  (cells-reset)   
+  (cells-reset)
 
   (let ((b (make-instance 'boiler1
              :temp  (c-in 20)
@@ -65,7 +65,7 @@
 
 ;
 ; now let's see how output functions can be used...
-; and let's also demonstrate inter-object dependency by 
+; and let's also demonstrate inter-object dependency by
 ; separating out the thermometer
 ;
 
@@ -135,8 +135,8 @@
 
 
 (def-cell-test boiler-2 ()
-  (cells-reset)    
-  (let ((b (make-instance 'boiler2 
+  (cells-reset)
+  (let ((b (make-instance 'boiler2
                     :status (c? (eko ("boiler2 status c?")
                                      (if (< (temp (thermometer self)) 100)
                                          :on :off)))
@@ -145,13 +145,13 @@
                                  (:off :closed)))
                     :thermometer (make-instance 'thermometer
                                    :temp (c-in 20)))))
-                   
+
     (ct-assert (eql 20 (temp (thermometer b))))
     (ct-assert (eql :on (status b)))
     (ct-assert (eql :open (vent b)))
-    
+
     (setf (temp (thermometer b)) 100)
-    
+
     (ct-assert (eql 100 (temp (thermometer b))))
     (ct-assert (eql :off (status b)))
     (ct-assert (eql :closed (vent b)))
@@ -164,7 +164,7 @@
 ;;; ***********************************************
 ;;; ***********************************************
 
-#|          intro to cells, example 3        |# 
+#|          intro to cells, example 3        |#
 
 ;;; ***********************************************
 ;;; ***********************************************
@@ -211,9 +211,9 @@
 
 (def-cell-test boiler-3 (&key (sensitivity-enabled t))
   (declare (ignorable sensitivity-enabled))
-  (cells-reset) 
+  (cells-reset)
   #+soon
-  (let ((b (make-instance 'boiler2 
+  (let ((b (make-instance 'boiler2
               :status (c? (let ((temp (if sensitivity-enabled
                                           (temp (thermometer self) (f-sensitivity 0.05))
                                         (temp (thermometer self)))))
@@ -250,9 +250,9 @@
 
 (def-cell-test boiler-5 ()
 
-  (cells-reset) 
+  (cells-reset)
   #+soon
-  (let ((b (make-instance 'boiler2 
+  (let ((b (make-instance 'boiler2
               :status (c-in :off)
               :vent (c? (trc "caculating vent" (^status))
                       (if (eq (^status) :on)
@@ -280,9 +280,9 @@
               (eko ("fire-p decides" prior-fire-value sensitivity)
                 (delta-greater-or-equal
                  (delta-abs (delta-diff new-value prior-fire-value subtypename) subtypename)
-                 (delta-abs sensitivity subtypename) 
+                 (delta-abs sensitivity subtypename)
                  subtypename)))
-    
+
     :fire-value (lambda (syn new-value)
                    (declare (ignorable syn))
                    (eko ("f-sensitivity relays")

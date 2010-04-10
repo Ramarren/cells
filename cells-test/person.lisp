@@ -3,22 +3,22 @@
 ;;;
 ;;; Copyright (c) 1995,2003 by Kenneth William Tilton.
 ;;;
-;;; Permission is hereby granted, free of charge, to any person obtaining a copy 
-;;; of this software and associated documentation files (the "Software"), to deal 
-;;; in the Software without restriction, including without limitation the rights 
-;;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
-;;; copies of the Software, and to permit persons to whom the Software is furnished 
+;;; Permission is hereby granted, free of charge, to any person obtaining a copy
+;;; of this software and associated documentation files (the "Software"), to deal
+;;; in the Software without restriction, including without limitation the rights
+;;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+;;; copies of the Software, and to permit persons to whom the Software is furnished
 ;;; to do so, subject to the following conditions:
 ;;;
-;;; The above copyright notice and this permission notice shall be included in 
+;;; The above copyright notice and this permission notice shall be included in
 ;;; all copies or substantial portions of the Software.
 ;;;
-;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-;;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-;;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-;;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-;;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
+;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+;;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+;;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+;;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+;;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 ;;; IN THE SOFTWARE.
 
 
@@ -32,7 +32,7 @@
    (names :initform nil :initarg :names :accessor names)
    (pulse :initform nil :initarg :pulse :accessor pulse)
    (name-ct :initarg :name-ct :accessor name-ct
-            :initform (c? "name-ct" 
+            :initform (c? "name-ct"
                           (incf *name-ct-calc*)
                           (length (names self))))))
 
@@ -68,10 +68,10 @@
   ((e-value :cell :ephemeral :initarg :e-value :accessor e-value)
    (s-value :initarg :s-value :reader s-value)))
 
-(defobserver s-value () 
+(defobserver s-value ()
   :test)
 
-(defobserver e-value () 
+(defobserver e-value ()
   :test)
 
 (def-cell-test cv-test-person ()
@@ -83,7 +83,7 @@
   )
 
 (def-cell-test cv-test-person-1 ()
-  ;; 
+  ;;
   ;; a recent exchange with someone who has developed with others a visual
   ;; programming system was interesting. i mentioned my dataflow thing, he mentioned
   ;; they liked the event flow model. i responded that events posed a problem for
@@ -110,14 +110,14 @@
   ;; to change clicked back to nil? a deep fix seemed appropriate: teach cells about events, so...
   ;;
   ;; cellular slots can be defined to be :ephemeral if the slot will be used for
-  ;; event-like data. [defining slots and not cells as ephemeral means one cannot arrange for such a 
-  ;; slot to have a non-ephemeral value for one instance and ephemeral values for other instances. we 
-  ;; easily could go the other way on this, but this seems right.] 
+  ;; event-like data. [defining slots and not cells as ephemeral means one cannot arrange for such a
+  ;; slot to have a non-ephemeral value for one instance and ephemeral values for other instances. we
+  ;; easily could go the other way on this, but this seems right.]
   ;;
-  ;; the way ephemerals work is this: when a new value arrives in an ephemeral slot it is outputted and 
+  ;; the way ephemerals work is this: when a new value arrives in an ephemeral slot it is outputted and
   ;; propagated to dependent cells normally, but then internally the slot value is cleared to nil.
   ;; thus during the output and any dataflow direct or indirect the value is visible to other code, but
-  ;; no longer than that. note that setting the slot back to nil bypasses propagation: no output, no 
+  ;; no longer than that. note that setting the slot back to nil bypasses propagation: no output, no
   ;; triggering of slot dependents.
   ;;
   ;;
@@ -184,7 +184,7 @@
     (progn
       (ct-assert (assoc 'speech (cells-flushed  p)))
       (ct-assert (c-optimized-away-p (cdr (assoc 'speech (cells-flushed  p))))))
-    
+
     (ct-assert (not (c-optimized-away-p (md-slot-cell p 'thought)))) ;; pulse is variable, so cannot opti
     (ct-assert (eql 1 (length (cd-useds (md-slot-cell p 'thought))))) ;; but speech is opti, so only 1 used
     ))
@@ -201,8 +201,8 @@
   ;; would be allowed. we would likewise change things so propagation was breadth first. then
   ;; state change, once set in motion, would continue indefinitely. (propagation would also have to
   ;; be non-recursive.) we would want to check for os events after each propagation and where
-  ;; real-time synchronization was necessary do some extra work. this in contrast to having a timer 
-  ;; or os null events artificially move forward the state of, say, a simulation of a physical system. 
+  ;; real-time synchronization was necessary do some extra work. this in contrast to having a timer
+  ;; or os null events artificially move forward the state of, say, a simulation of a physical system.
   ;; allowing propagation to loop back on itslef means the system would simply run, and might make
   ;; parallelization feasible since we already have logic to serialize where semantically necessary.
   ;; anyway, a prospect for future investigation.
@@ -293,7 +293,7 @@
   ;; make sure cyclic setf is trapped
   ;;
   (cells-reset)
-  
+
   ;;;  (trc "start unguarded cyclic")
   ;;;
   ;;;  (let ((tk (make-instance 'talker)))
@@ -301,9 +301,9 @@
   ;;;     (string-equal "yes" (words tk))
   ;;;     (setf (words tk) "no")
   ;;;     (string-equal "no" (idea tk)))
-  
+
   (trc "start guarded cyclic")
-  
+
   #+(or) (ct-assert-error
          (let ((tk (make-instance 'talker)))
            (setf (idea tk) "yes")

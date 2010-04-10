@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -55,7 +55,7 @@ See the Lisp Lesser GNU Public License for more details.
   ; (for another day) is to separate awakening (ie, linking to independent
   ; cs) from evaluation, tho also evaluating if necessary during
   ; awakening, because awakening's other role is to get an instance up to speed
-  ; at once upon instantiation 
+  ; at once upon instantiation
   ;
   (calculate-and-set c :fn-awaken-cell nil)
   (cond ((c-validp c) (c-value c))

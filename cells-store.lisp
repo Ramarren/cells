@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -22,20 +22,20 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmacro c?-with-stored ((var key store &optional default) &body body)
   `(c? (bwhen-c-stored (,var ,key ,store ,default)
-	 ,@body)))
+         ,@body)))
 
 (defmacro bwhen-c-stored ((var key store &optional if-not) &body body)
   (with-gensyms (gkey gstore glink gifnot)
     `(let ((,gkey ,key)
-	   (,gstore ,store)
-	   (,gifnot ,if-not))
-	(let ((,glink (query-c-link ,gkey ,gstore)))
-	  (declare (ignorable ,glink))
-	  (trc nil "executing bwhen-c-stored" self :update-tick ,glink :lookup (store-lookup ,gkey ,gstore))
-	  (bif (,var (store-lookup ,gkey ,gstore))
-	       (progn
-		 ,@body)
-	       ,gifnot)))))
+           (,gstore ,store)
+           (,gifnot ,if-not))
+        (let ((,glink (query-c-link ,gkey ,gstore)))
+          (declare (ignorable ,glink))
+          (trc nil "executing bwhen-c-stored" self :update-tick ,glink :lookup (store-lookup ,gkey ,gstore))
+          (bif (,var (store-lookup ,gkey ,gstore))
+               (progn
+                 ,@body)
+               ,gifnot)))))
 
 (defmodel cells-store (family)
   ((data :accessor data :initarg :data :cell nil))
@@ -76,7 +76,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defmethod query-c-link (key (store cells-store))
   (trc "c-link> query link" key store (c-link key store))
   (value (or (c-link key store)
-	     (setf (c-link key store) (make-instance 'c-link)))))
+             (setf (c-link key store) (make-instance 'c-link)))))
 
 (defmethod kick-c-link (key (store cells-store))
   (bwhen (link (c-link key store))
@@ -87,15 +87,15 @@ See the Lisp Lesser GNU Public License for more details.
 (defmacro with-store-item ((item key store) &body body)
   `(prog1
        (symbol-macrolet ((,item '(item key store)))
-	(progn
-	  ,@body))
+        (progn
+          ,@body))
      (kick-c-link ,key ,store)))
 
 
 (defmacro with-store-entry ((key store &key quiet) &body body)
   `(prog1
        (progn
-	 ,@body)
+         ,@body)
      (unless ,quiet
        (kick-c-link ,key ,store))))
 
@@ -138,12 +138,12 @@ See the Lisp Lesser GNU Public License for more details.
   (when (boundp '*observers*)
     (push self *observers*)))
 
-(defmacro with-assert-observers ((desc &rest asserted-observers) &body body)  
+(defmacro with-assert-observers ((desc &rest asserted-observers) &body body)
   `(let ((*observers* nil))
      (trc ,desc " -- checking observers")
      ,@body
      (let ((superfluous-observers (loop for run in *observers* if (not (member run (list ,@asserted-observers))) collect run))
-	   (failed-observers (loop for asserted in (list ,@asserted-observers) if (not (member asserted *observers*)) collect asserted)))
+           (failed-observers (loop for asserted in (list ,@asserted-observers) if (not (member asserted *observers*)) collect asserted)))
        (trc "called observers on" *observers* :superflous superfluous-observers :failed failed-observers)
        (assert (not superfluous-observers))
        (assert (not failed-observers)))))
@@ -152,24 +152,24 @@ See the Lisp Lesser GNU Public License for more details.
   `(progn
      (trc ,desc)
      ,@(loop for (obj val) in objects-and-values
-	    collect `(assert (eql (value ,obj) ,val)))))
+            collect `(assert (eql (value ,obj) ,val)))))
 
 (defun test-cells-store ()
   (trc "testing cells-store -- making objects")
   (let* ((store (make-instance 'cells-store))
-	 (foo (make-instance 'test-store-item :value (c?-with-stored (v :foo store 'nothing)
-						       (bwhen (val (value v)) val))))
-	 (foo+1 (make-instance 'test-store-item :value (c?-with-stored (v :foo store 'nothing)
-							 (bwhen (val (value v)) (1+ val)))))
-	 (bar (make-instance 'test-store-item :value (c?-with-stored (v :bar store 'nothing)
-						       (bwhen (val (value v)) val))))
-	 (bar-1 (make-instance 'test-store-item :value (c?-with-stored (v :bar store 'nothing)
-							 (bwhen (val (value v)) (1- val)))))
-	 (bypass-lookup? (make-instance 'family :value (c-in t)))
-	 (baz (make-instance 'test-store-item :value (c? (if (value bypass-lookup?)
-							     'no-lookup
-							     (bwhen-c-stored (v :bar store 'nothing)
-							       (value v)))))))
+         (foo (make-instance 'test-store-item :value (c?-with-stored (v :foo store 'nothing)
+                                                       (bwhen (val (value v)) val))))
+         (foo+1 (make-instance 'test-store-item :value (c?-with-stored (v :foo store 'nothing)
+                                                         (bwhen (val (value v)) (1+ val)))))
+         (bar (make-instance 'test-store-item :value (c?-with-stored (v :bar store 'nothing)
+                                                       (bwhen (val (value v)) val))))
+         (bar-1 (make-instance 'test-store-item :value (c?-with-stored (v :bar store 'nothing)
+                                                         (bwhen (val (value v)) (1- val)))))
+         (bypass-lookup? (make-instance 'family :value (c-in t)))
+         (baz (make-instance 'test-store-item :value (c? (if (value bypass-lookup?)
+                                                             'no-lookup
+                                                             (bwhen-c-stored (v :bar store 'nothing)
+                                                               (value v)))))))
 
     (assert-values ("assert fresh initialization")
       (foo 'nothing)
@@ -185,7 +185,7 @@ See the Lisp Lesser GNU Public License for more details.
       (foo+1 nil)
       (bar 'nothing)
       (bar-1 'nothing))
-    
+
     (with-assert-observers ("changing foo" foo foo+1)
       (setf (value (store-lookup :foo store)) 1))
 
@@ -194,7 +194,7 @@ See the Lisp Lesser GNU Public License for more details.
       (foo+1 2)
       (bar 'nothing)
       (bar-1 'nothing))
-   
+
     (with-assert-observers ("adding bar = 42" bar bar-1)
       (store-add :bar store (make-instance 'family :value (c-in 42))))
 
@@ -203,7 +203,7 @@ See the Lisp Lesser GNU Public License for more details.
       (foo+1 2)
       (bar 42)
       (bar-1 41))
-    
+
     (with-assert-observers ("changing bar to 2" bar bar-1)
       (setf (value (store-lookup :bar store)) 2))
 

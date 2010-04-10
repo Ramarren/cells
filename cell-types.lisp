@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -22,11 +22,11 @@ See the Lisp Lesser GNU Public License for more details.
   model
   slot-name
   value
-  
+
   inputp ;; t for old c-variable class
   synaptic
   (caller-store (make-fifo-queue) :type cons) ;; (C3) probably better to notify callers FIFO
-  
+
   (state :nascent :type symbol) ;; :nascent, :awake, :optimized-away
   (value-state :unbound :type symbol) ;; {:unbound | :unevaluated | :uncurrent | :valid}
                                                        ; uncurrent (aka dirty) new for 06-10-15. we need this so
@@ -105,7 +105,7 @@ See the Lisp Lesser GNU Public License for more details.
   (fifo-delete (c-caller-store used) caller))
 
 ; --- ephemerality --------------------------------------------------
-; 
+;
 ; Not a type, but an option to the :cell parameter of defmodel
 ;
 (defun ephemeral-p (c)
@@ -188,4 +188,3 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmethod c-print-value (c stream)
   (declare (ignore c stream)))
-

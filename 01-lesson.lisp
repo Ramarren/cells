@@ -32,9 +32,7 @@
 ;;; something hopefully easier to learn by developers already familiar with CLOS.
 ;;;
 ;;; The first extension we see is that the len initform refers to the
-;;; Smalltalk-like anaphoric variable self, to which will be bound 
-;;; the rectangle instance being initialized. Normally an initform is evaluated 
+;;; Smalltalk-like anaphoric variable self, to which will be bound
+;;; the rectangle instance being initialized. Normally an initform is evaluated
 ;;; without being able to see the instance, and any initialization requiring
 ;;; that must be done in the class initializer.
-
-

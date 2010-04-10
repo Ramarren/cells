@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -28,30 +28,30 @@ See the Lisp Lesser GNU Public License for more details.
    (kv-collector :initarg :kv-collector
      :initform #'identity
      :reader kv-collector)
-   
+
    (kid-values :initform (c? (when (kv-collector self)
                                (funcall (kv-collector self) (^value))))
      :accessor kid-values
      :initarg :kid-values)
-   
+
    (kv-key :initform #'identity
      :initarg :kv-key
      :reader kv-key)
-   
+
    (kv-key-test :initform #'equal
      :initarg :kv-key-test
      :reader kv-key-test)
-   
+
    (kid-factory :initform #'identity
      :initarg :kid-factory
      :reader kid-factory)
-   
+
    (.kids :initform (c? (c-assert (listp (kid-values self)))
                       (let ((new-kids (mapcan (lambda (kid-value)
                                                 (list (or (find kid-value .cache
                                                             :key (kv-key self)
                                                             :test (kv-key-test self))
-                                                        (trc nil "family-values forced to make new kid" 
+                                                        (trc nil "family-values forced to make new kid"
                                                           self .cache kid-value)
                                                         (funcall (kid-factory self) self kid-value))))
                                         (^kid-values))))

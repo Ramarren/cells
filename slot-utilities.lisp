@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -24,7 +24,7 @@ See the Lisp Lesser GNU Public License for more details.
    ((null c)
     (format t "c-setting-debug > constant  ~a in ~a may not be altered..init to (c-in nil)"
       slot-name self)
-        
+
     (c-break "setting-const-cell")
     (error "setting-const-cell"))
    ((c-inputp c))
@@ -41,7 +41,7 @@ See the Lisp Lesser GNU Public License for more details.
          ;(trc "setting c-dependent" c newvalue)
          (format t "c-setting-debug > ruled  ~a in ~a may not be setf'ed"
            (c-slot-name c) self)
-         
+
          (c-break "setting-ruled-cell")
          (error "setting-ruled-cell"))
         )))))

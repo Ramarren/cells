@@ -9,8 +9,8 @@ This library is free software; you can redistribute it and/or
 modify it under the terms of the Lisp Lesser GNU Public License
  (http://opensource.franz.com/preamble.html), known as the LLGPL.
 
-This library is distributed  WITHOUT ANY WARRANTY; without even 
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+This library is distributed  WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the Lisp Lesser GNU Public License for more details.
 
@@ -26,7 +26,7 @@ See the Lisp Lesser GNU Public License for more details.
   (assert *depender*)
   #+shhh (trc used "record-caller caller entry: used=" (qci used)
     :caller *depender*)
-  
+
   (multiple-value-bind (used-pos useds-len)
       (loop with u-pos
           for known in (cd-useds *depender*)
@@ -90,7 +90,7 @@ See the Lisp Lesser GNU Public License for more details.
                          (handle-used (incf rev-pos)))
                      (handle-used (setf rev-pos 0))))))
         (trc nil "cd-useds length" (length (cd-useds c)) c)
-        
+
         (nail-unused (cd-useds c))
         (setf (cd-useds c) (delete nil (cd-useds c)))
         (trc nil "useds of" c :now (mapcar 'qci (cd-useds c)))))))
@@ -114,7 +114,7 @@ See the Lisp Lesser GNU Public License for more details.
 
 
 ;--- unlink from used ----------------------
-                     
+
 (defmethod c-unlink-from-used ((caller c-dependent))
   (dolist (used (cd-useds caller))
     (trc nil "unlinking from used" caller used)
