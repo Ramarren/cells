@@ -56,6 +56,11 @@
            #:defmodel #:defmd #:defobserver #:slot-value-observe #:def-c-unchanged-test
            #:new-value #:old-value #:old-value-boundp #:c...
            #:md-awaken
+           #:md-awake-dump-one #:md-awake-map #:md-awakep
+           #:md-awake-dump #:with-none-awake
+           #:md-awake-record #:*ntb-dbg*
+           #:md-awake-remove #:*trc-path-id*
+           #:*md-awake-where*
            #:mkpart #:make-kid #:the-kids #:nsib #:value #:^value #:.value #:kids #:^kids #:.kids
            #:cells-reset #:upper #:fm-max #:nearest #:fm-min-kid #:fm-max-kid #:mk-kid-slot
            #:def-kid-slots #:find-prior #:fm-pos #:kid-no #:fm-includes #:fm-ascendant-common
@@ -86,7 +91,7 @@
            #:.cdbg #:name-subscript #:c?n
            #:fm-find-next-within #:fm-ascendant-named
            #:^fm-next-sib #:^sort-predicate
-           #:fm-quiesce-all #:container #:cll-outer
+           #:fm-quiesce-all #:kontainer #:cll-outer
            #:with-cc #:store-remove #:f-zerop
            #:with-store-item #:fm-descendant-if
            #:c-value-incf #:md-census-count
