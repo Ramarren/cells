@@ -3,16 +3,7 @@
 
     Cells -- Automatic Dataflow Managememnt
 
-Copyright (C) 1995, 2006 by Kenneth Tilton
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the Lisp Lesser GNU Public License
- (http://opensource.franz.com/preamble.html), known as the LLGPL.
-
-This library is distributed  WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-See the Lisp Lesser GNU Public License for more details.
+(See defpackage.lisp for license and copyright notigification)
 
 |#
 
@@ -53,6 +44,7 @@ See the Lisp Lesser GNU Public License for more details.
 (defun call-with-integrity (opcode defer-info action code)
   (declare (ignorable code))
   (when *stop*
+    (print :cwi-sees-stop)
     (return-from call-with-integrity))
   (if *within-integrity*
       (if opcode
@@ -82,6 +74,7 @@ See the Lisp Lesser GNU Public License for more details.
                (prog1
                    (funcall action opcode defer-info)
                  (setf *finbiz-id* 0)
+                 ;(print :finishing-business)
                  (finish-business)))))
       (if nil ;; *c-debug*
           (let ((*istack* (list (list opcode defer-info)

@@ -3,16 +3,7 @@
 
     The Newly Cells-aware TRC trace and EKO value echo facilities
 
-Copyright (C) 1995, 2006 by Kenneth Tilton
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the Lisp Lesser GNU Public License
- (http://opensource.franz.com/preamble.html), known as the LLGPL.
-
-This library is distributed  WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-See the Lisp Lesser GNU Public License for more details.
+(See defpackage.lisp for license and copyright notigification)
 
 |#
 
@@ -24,6 +15,8 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defun trcdepth-reset ()
   (setf *trcdepth* 0))
+
+
 
 (defmacro trc (tgt-form &rest os)
   (if (eql tgt-form 'nil)
@@ -65,7 +58,7 @@ See the Lisp Lesser GNU Public License for more details.
   (force-output stream)
   (values))
 
-(export! brk brkx .bgo bgo *trc-path-id*)
+(export! brk brkx .bgo bgo *trc-path-id* ntrcx)
 
 (define-symbol-macro .bgo (break "go"))
 
@@ -83,6 +76,10 @@ See the Lisp Lesser GNU Public License for more details.
            ,@(loop for obj in (or os (list tgt-form))
                    nconcing (list (intern (format nil "~a" obj) :keyword) obj))))))
 
+(defmacro ntrcx (&rest os)
+  (declare (ignore os))
+  '(progn))
+  
 (defun call-trc-to-string (fmt$ &rest fmt-args)
     (let ((o$ (make-array '(0) :element-type 'base-char
                 :fill-pointer 0 :adjustable t)))

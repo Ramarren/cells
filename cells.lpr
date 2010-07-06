@@ -1,4 +1,4 @@
-;; -*- lisp-version: "8.2 [64-bit Linux (x86-64)] (Mar 3, 2010 14:34)"; cg: "1.134"; -*-
+;; -*- lisp-version: "8.2 [64-bit Windows] (Jan 25, 2010 15:11)"; cg: "1.134"; -*-
 
 (in-package :cg-user)
 
@@ -25,10 +25,9 @@
                  (make-instance 'module :name "fm-utilities.lisp")
                  (make-instance 'module :name "family-values.lisp")
                  (make-instance 'module :name "test-propagation.lisp")
-                 (make-instance 'module :name "cells-store.lisp")
                  (make-instance 'module :name "test-cc.lisp"))
   :projects (list (make-instance 'project-module :name "../utils-kt/utils-kt"
-                                 :show-modules nil))
+                                 :show-modules t))
   :libraries nil
   :editable-files nil
   :distributed-files nil

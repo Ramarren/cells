@@ -3,16 +3,7 @@
 
     Cells -- Automatic Dataflow Managememnt
 
-Copyright (C) 1995, 2006 by Kenneth Tilton
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the Lisp Lesser GNU Public License
- (http://opensource.franz.com/preamble.html), known as the LLGPL.
-
-This library is distributed  WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-See the Lisp Lesser GNU Public License for more details.
+(See defpackage.lisp for license and copyright notigification)
 
 |#
 
@@ -85,7 +76,10 @@ See the Lisp Lesser GNU Public License for more details.
 
   (when (slot-boundp self '.md-name)
     (unless (md-name self)
-      (setf (md-name self) (gentemp (string (c-class-name (class-of self)))))))
+      ; lotsa symbols over time in a web app
+      ;(setf (md-name self) (gentemp (string (c-class-name (class-of self)))))
+      (setf (md-name self) (gensym (string (c-class-name (class-of self)))))
+      ))
 
   (when (and (slot-boundp self '.fm-parent)
           (fm-parent self)
@@ -117,6 +111,8 @@ See the Lisp Lesser GNU Public License for more details.
    (registry :cell nil
      :initform nil
      :accessor registry)))
+
+(export! registry?)
 
 #+test
 (let ((c (find-class 'family)))
@@ -239,7 +235,7 @@ See the Lisp Lesser GNU Public License for more details.
     (setf (registry self) (make-hash-table :test 'eq))))
 
 (defmethod fm-register (self &optional (guest self))
-  (assert self)
+  (assert self () "fm-register: nil self registering ~a" guest)
   (if (registry? self)
       (progn
         ;(trc "fm-registering" (md-name guest) :with self)
@@ -256,16 +252,25 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmethod fm-find-registered (id self &optional (must-find? self  must-find?-supplied?))
   (or (if (registry? self)
-          (gethash id (registry self))
+          (or (gethash id (registry self))
+            (prog1 nil
+              (when must-find?
+                (loop for k being the hash-keys of (registry self)
+                    do (print `(,id :no-but-yes ,k))))))
         (bwhen (p (fm-parent self))
           (fm-find-registered id p must-find?)))
     (when (and must-find? (not must-find?-supplied?))
-      (break "fm-find-registered failed seeking ~a starting search at node ~a" id self))))
+      (error "fm-find-registered failed seeking ~a starting search at node ~a" id self))))
 
-(export! rg? rg!)
+(export! rg? rg! fm-dump-lineage)
 
 (defmacro rg? (id)
   `(fm-find-registered ,id self nil))
 
 (defmacro rg! (id)
   `(fm-find-registered ,id self))
+
+(defun fm-dump-lineage (self tag)
+  (when self
+    (print (list tag self))
+    (fm-dump-lineage .pa tag)))

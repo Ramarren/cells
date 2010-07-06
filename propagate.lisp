@@ -3,16 +3,7 @@
 
     Cells -- Automatic Dataflow Managememnt
 
-Copyright (C) 1995, 2006 by Kenneth Tilton
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the Lisp Lesser GNU Public License
- (http://opensource.franz.com/preamble.html), known as the LLGPL.
-
-This library is distributed  WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-See the Lisp Lesser GNU Public License for more details.
+(See defpackage.lisp for license and copyright notigification)
 
 |#
 
@@ -153,8 +144,11 @@ See the Lisp Lesser GNU Public License for more details.
 
 (defmacro defobserver (slotname &rest args &aux (aroundp (eq :around (first args))))
   (when aroundp (setf args (cdr args)))
+
+  #+irritating
   (when (find slotname '(value kids))
-    (break "d: did you mean .value or .kids when you coded ~a?" slotname))
+    (warn "d: did you mean .value or .kids when you coded ~a?" slotname))
+
   (destructuring-bind ((&optional (self-arg 'self) (new-varg 'new-value)
                          (oldvarg 'old-value) (oldvargboundp 'old-value-boundp) (cell-arg 'c))
                        &body output-body) args
