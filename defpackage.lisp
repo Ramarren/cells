@@ -125,6 +125,7 @@
            #:c-in-lazy #:fm-ascendant-typed #:model
            #:kid2 #:.stopped #:c?+n
            #:fm-next-sib-if #:f-plusp
+           #:fm-dump-lineage #:ntrcx #:n^ #:registry?
            )
   #+allegro (:shadowing-import-from #:excl #:fasl-write #:fasl-read #:gc)
   )
