@@ -13,7 +13,8 @@
                                  :awaken
                                  :client
                                  :ephemeral-reset
-                                 :change))
+                                 :change
+                                 :post-change))
 
 (defmacro with-integrity ((&optional opcode defer-info debug) &rest body)
   (declare (ignorable debug))
@@ -108,18 +109,21 @@
   (trc nil "ufb-add deferring" opcode (when (eql opcode :client)(car continuation)))
   (fifo-add (ufb-queue-ensure opcode) continuation))
 
+(defparameter *just-do-it-q* nil)
+
 (defun just-do-it (op-or-q &optional (op-code op-or-q) ;; [mb]
-                    &aux (q (if (keywordp op-or-q)
-                                (ufb-queue op-or-q)
-                              op-or-q)))
+                   &aux (q (if (keywordp op-or-q)
+                               (ufb-queue op-or-q)
+                               op-or-q)))
   (declare (ignorable op-code))
-  (trc nil "----------------------------just do it doing---------------------" op-or-q)
-  (loop for (defer-info . task) = (fifo-pop q)
-        while task
-        do (trc nil "unfin task is" opcode task)
-        #+chill (when *c-debug*
-          (push (list op-code defer-info) *istack*))
-        (funcall task op-or-q defer-info)))
+  (let ((*just-do-it-q* op-or-q)) ;; debug aid
+    (trc nil "----------------------------just do it doing---------------------" op-or-q)
+    (loop for (defer-info . task) = (fifo-pop q)
+          while task
+          do (trc nil "unfin task is" opcode task)
+          #+chill (when *c-debug*
+                    (push (list op-code defer-info) *istack*))
+                  (funcall task op-or-q defer-info))))
 
 (defun finish-business ()
   (when *stop* (return-from finish-business))

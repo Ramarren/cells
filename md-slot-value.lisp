@@ -190,6 +190,8 @@ See the Lisp Lesser GNU Public License for more details.
            (bwhen (x (find c *call-stack*)) ;; circularity
              (unless nil ;; *stop*
                (let ()
+                 (print `(:circler ,c))
+                 (print `(*call-stack* ,*call-stack*))
                  (inspect c)
                  (trc "calculating cell:" c (cr-code c))
                  (trc "appears-in-call-stack (newest first): " (length *call-stack*))
@@ -197,7 +199,7 @@ See the Lisp Lesser GNU Public License for more details.
                      for n below (length *call-stack*)
                      do (trc "caller> " caller #+shhh (cr-code caller))
                        when (eq caller c) do (loop-finish))))
-             (setf *stop* t)
+             (c-stop :cell-midst-askers)
              (c-break ;; break is problem when testing cells on some CLs
               "cell ~a midst askers (see above)" c)
              (error 'asker-midst-askers :cell c))
@@ -277,6 +279,7 @@ See the Lisp Lesser GNU Public License for more details.
   (when *c-debug*
     (c-setting-debug self slot-name c new-value))
 
+  (trc nil "setf md-slot-value" *within-integrity* *c-debug* *defer-changes* c)
   (unless c
     (c-break "cellular slot ~a of ~a cannot be SETFed because it is not
 mediated by a Cell with :inputp t. To achieve this, the initial value ~s -- whether
@@ -287,7 +290,7 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
 
   (cond
    ((find (c-lazy c) '(:once-asked :always t))
-    (md-slot-value-assume c new-value nil))
+    (md-slot-value-assume c new-value nil)) ;; I can see :no-pragate here eventually)
 
    (*defer-changes*
     (c-break "SETF of ~a must be deferred by wrapping code in WITH-INTEGRITY" c))
@@ -355,9 +358,6 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
 ;---------- optimizing away cells whose dependents all turn out to be constant ----------------
 ;
 
-(defun flushed? (c)
-  (rassoc c (cells-flushed (c-model c))))
-
 (defun c-optimize-away?! (c)
   #+shhh (trc nil "c-optimize-away?! entry" (c-state c) c)
   (when (and (typep c 'c-dependent)
@@ -370,8 +370,9 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
           )
     ;; (when (trcp c) (break "go optimizing ~a" c))
 
+#-its-alive!
     (when (trcp c)
-      (trc "optimizing away" c (c-state c) (rassoc c (cells (c-model c)))(rassoc c (cells-flushed (c-model c))))
+      (trc "optimizing away" c (c-state c))
       )
 
     (count-it :c-optimized)
@@ -381,12 +382,18 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
     (let ((entry (rassoc c (cells (c-model c)))))
       (unless entry
         (describe c)
-        (bwhen (fe (rassoc c (cells-flushed (c-model c))))
+        (bwhen (fe (md-slot-cell-flushed (c-model c) (c-slot-name c)))
           (trc "got in flushed thoi!" fe)))
       (c-assert entry)
       ;(trc (eq (c-slot-name c) 'cgtk::id) "c-optimize-away?! moving cell to flushed list" c)
       (setf (cells (c-model c)) (delete entry (cells (c-model c))))
-      #-its-alive! (push entry (cells-flushed (c-model c)))
+      ;; next was eschewed on feature its-alive! for performance (and gc) reasons
+      ;; but during md-awaken any absence of a cell in slot or flushed is taken to
+      ;; mean it was a constant hence needs a one-time observe; this is a false
+      ;; conclusion if a cell gets optimized away, so it gets observed twice in the
+      ;; same data pulse and since observers exist to provide effects this is a Bad Thing
+      ;; so let's 
+      (md-cell-flush c)
       )
 
     (dolist (caller (c-callers c) )

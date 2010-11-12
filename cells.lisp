@@ -43,6 +43,7 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
 
 (defparameter *md-awake* nil)
 (defparameter *md-awake-where* :anon)
+(defparameter *ntb-dbg* nil)
 
 (defun md-awake-ct ()
   (if *md-awake* (hash-table-count *md-awake*) 0))
@@ -78,7 +79,9 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
   `(call-with-none-awake ,dbg (lambda () ,@body) ,diag))
 
 (defun call-with-none-awake (dbg-info fn diag)
-  (let ((*md-awake* (make-hash-table :test 'eq :weak-keys t)))
+  (let ((*md-awake* (make-hash-table :test 'eq
+                                     #-sbcl :weak-keys #-sbcl t
+                                     #+sbcl :weakness #+sbcl :key)))
     (prog1
         (funcall fn)
       (when (md-awakep)
@@ -128,6 +131,7 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
    *c-debug* debug
    *c-prop-depth* 0
    *not-to-be* nil
+   *ntb-dbg* nil
    *data-pulse-id* 0
    *finbiz-id* 0
    *defer-changes* nil ;; should not be necessary, but cannot be wrong
@@ -140,10 +144,16 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
 
 #+xx
 (cells-reset)
+
+(defparameter *c-stopper* 'c-stopper)
+
 (defun c-stop (&optional why)
+  (funcall *c-stopper* why))
+
+(defun c-stopper (why)
   (setf *stop* t)
   (print `(c-stop-entry ,why))
-  (format t "~&C-STOP> stopping because ~a" why)  )
+  (format t "~&C-STOP> stopping because ~a" why))  
 
 (define-symbol-macro .stop
     (c-stop :user))
@@ -195,6 +205,8 @@ a cellular slot (or in a list in such) and then mop those up on not-to-be.
 
 (define-condition unbound-cell (unbound-slot)
   ((cell :initarg :cell :reader cell :initform nil)))
+
+(defparameter *observe-why* nil) ;; debug aid
 
 (defgeneric slot-value-observe (slotname self new old old-boundp cell)
   #-(or cormanlisp)

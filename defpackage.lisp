@@ -126,6 +126,7 @@
            #:kid2 #:.stopped #:c?+n
            #:fm-next-sib-if #:f-plusp
            #:fm-dump-lineage #:ntrcx #:n^ #:registry?
+           #:fm-heritage #:*trc-path-id-filter* #:trc-pathp
            )
   #+allegro (:shadowing-import-from #:excl #:fasl-write #:fasl-read #:gc)
   )

@@ -117,7 +117,7 @@
 
 (defmacro mk-part (md-name (md-class) &rest initargs)
   `(make-part ',md-name ',md-class ,@initargs
-     :fm-parent (progn (assert self) self)))
+              :fm-parent (progn (assert self () "mk-part null self for parent") self)))
 
 (defmethod make-part-spec ((part-class symbol))
   (make-part part-class part-class))
@@ -342,6 +342,13 @@
 ;; should be modified to go through 'gather', which should be the real fm-find-all
 ;;
 
+(export! fm-heritage)
+
+(defun fm-heritage (self)
+  (loop for p = self then (fm-parent p)
+        while p
+        collect p))
+
 (defun fm-do-up (self &optional (fn 'identity))
   (when self
     (funcall fn self)
@@ -356,23 +363,23 @@
           (kids family)))))
 
 (defun fm-find-all (family md-name &key (must-find t) (global-search t))
-     (let ((matches (catch 'fm-find-all
-                             (with-dynamic-fn
-                              (traveller (family)
-                               (with-dynamic-fn
-                                (filter (kid) (eql md-name (md-name kid)))
-                                (let ((matches (remove-if-not filter (kids family))))
-                                   (when matches
+  (let ((matches (catch 'fm-find-all
+                   (with-dynamic-fn
+                       (traveller (family)
+                                  (with-dynamic-fn
+                                      (filter (kid) (eql md-name (md-name kid)))
+                                    (let ((matches (remove-if-not filter (kids family))))
+                                      (when matches
                                         (throw 'fm-find-all matches)))))
-                              (fm-traverse family traveller :global-search global-search)))))
-        (when (and must-find (null matches))
-           (setf *stop* t)
-          (fm-traverse family (lambda (node)
-                                (trc "known node" (md-name node))) :global-search global-search)
-          (break "fm-find-all > *stop*ping...did not find ~a ~a ~a" family md-name global-search)
-          ;; (error 'fm-not-found (list md-name family global-search))
-          )
-        matches))
+                     (fm-traverse family traveller :global-search global-search)))))
+    (when (and must-find (null matches))
+      (c-stop :fm-find-all-must-find-failed)
+      (fm-traverse family (lambda (node)
+                            (trc "known node" (md-name node))) :global-search global-search)
+      (break "fm-find-all > *stop*ping...did not find ~a ~a ~a" family md-name global-search)
+      ;; (error 'fm-not-found (list md-name family global-search))
+      )
+    matches))
 
 (defun fm-find-next (fm test-fn)
   (fm-find-next-within fm test-fn))

@@ -30,8 +30,6 @@
     (declare (ignore self))
     nil))
 
-(defparameter *ntb-dbg* nil)
-
 (export! *ntb-dbg*)
 
 (defgeneric not-to-be (self)
@@ -93,7 +91,8 @@
 
 
 (defun md-quiesce (self)
-  (trc nil "md-quiesce nailing cells" self (type-of self))
+  #+xxxx (unless (search "QX-" (string (md-name self)))
+           (trc "md-quiescing" self (type-of self)(type-of (fm-parent self))))
   (md-map-cells self nil (lambda (c)
                            (trc nil "quiescing" c)
                            (c-assert (not (find c *call-stack*)))
