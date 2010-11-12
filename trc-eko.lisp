@@ -37,6 +37,7 @@
                 (count-it :trcfailed)))
             (count-it :tgtnileval)))))))
 
+(defparameter *trc-path-id* nil)
 (defparameter *trc-path-id-filter* nil)
 
 (defun trc-pathp (path)
