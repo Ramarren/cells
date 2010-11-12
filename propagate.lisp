@@ -130,7 +130,7 @@
             (setf (c-pulse-observed c) *data-pulse-id*))
       (let ((*observe-why* :propagate))
         (slot-value-observe (c-slot-name c) (c-model c)
-                            (c-value c) prior-value prior-value-supplied c))))
+                            (c-value c) prior-value prior-value-supplied c)))
 
     ;
     ; with propagation done, ephemerals can be reset. we also do this in c-awaken, so
