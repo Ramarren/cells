@@ -290,7 +290,7 @@ In brief, initialize ~0@*~a to (c-in ~2@*~s) instead of plain ~:*~s"
 
   (cond
    ((find (c-lazy c) '(:once-asked :always t))
-    (md-slot-value-assume c new-value nil)) ;; I can see :no-pragate here eventually)
+    (md-slot-value-assume c new-value nil)) ;; I can see :no-pragate here eventually
 
    (*defer-changes*
     (c-break "SETF of ~a must be deferred by wrapping code in WITH-INTEGRITY" c))
