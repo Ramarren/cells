@@ -33,9 +33,8 @@
    #+cormanlisp #:common-lisp
    #+lispworks #:clos
    #+sbcl #:sb-mop
-   #+ccl #:ccl
    #+openmcl-partial-mop #:openmcl-mop
-   #+(and mcl (not openmcl-partial-mop)) #:ccl
+   #+(and ccl (not openmcl-partial-mop)) #:ccl
    #+ecl #:clos
    #+abcl #:mop
 
